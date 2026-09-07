@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { createServerClient } from "@/lib/supabase/server";
+import { logout } from "@/app/actions/auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,13 +19,39 @@ export const metadata: Metadata = {
   description: "Gestión personal de ingresos, egresos y deudas",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Best-effort auth check — layout renders for both / and /login.
+  // If no session, user is null and we render nothing in the auth bar.
+  let userEmail: string | null = null
+  try {
+    const supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    userEmail = user?.email ?? null
+  } catch {
+    // Missing env vars during static rendering — silently skip
+  }
+
   return (
     <html
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-950">{children}</body>
+      <body className="min-h-full flex flex-col bg-zinc-950">
+        {userEmail && (
+          <div className="flex items-center justify-end gap-3 px-4 py-2 bg-zinc-900 border-b border-zinc-800/60 text-xs text-zinc-500">
+            <span>{userEmail}</span>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="rounded px-2 py-1 hover:bg-zinc-800 hover:text-zinc-300 transition-colors"
+              >
+                Cerrar sesión
+              </button>
+            </form>
+          </div>
+        )}
+        {children}
+      </body>
     </html>
   );
 }

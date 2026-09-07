@@ -31,7 +31,8 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
   function openEdit(d: Debt) {
     setEditing(d)
     setDescription(d.description)
-    setAmount(d.amount)
+    // amount is now a number — convert to string for the input
+    setAmount(String(d.amount))
     setCurrency(d.currency)
     setShowForm(true)
   }
@@ -39,10 +40,22 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!description || !amount) return
+    const parsedAmount = parseFloat(amount)
+    if (isNaN(parsedAmount) || parsedAmount <= 0) return
+
     if (editing) {
-      onUpdate({ ...editing, description: description.toUpperCase(), amount, currency })
+      onUpdate({
+        ...editing,
+        description: description.toUpperCase(),
+        amount: parsedAmount,
+        currency,
+      })
     } else {
-      onAdd({ description: description.toUpperCase(), amount, currency })
+      onAdd({
+        description: description.toUpperCase(),
+        amount: parsedAmount,
+        currency,
+      })
     }
     setShowForm(false)
   }
@@ -79,7 +92,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
               </div>
               <div className="flex items-center gap-4">
                 <span className="font-mono text-base font-bold text-amber-400">
-                  {Number(d.amount).toLocaleString('es-AR')}
+                  {d.amount.toLocaleString('es-AR')}
                 </span>
                 <div className="flex gap-1">
                   <button
