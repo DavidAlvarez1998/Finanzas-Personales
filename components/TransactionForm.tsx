@@ -97,7 +97,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
                 required
               />
             </div>
-            <div className="w-24">
+            <div className="w-20">
               <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
                 Moneda
               </label>

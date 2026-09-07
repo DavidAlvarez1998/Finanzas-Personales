@@ -138,7 +138,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0 bg-black/50 backdrop-blur-sm dark:bg-black/60" onClick={() => setShowForm(false)}>
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white p-4 sm:p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
             <h3 className="mb-5 text-lg font-bold text-zinc-950 dark:text-white">
               {editing ? 'Editar Deuda' : 'Nueva Deuda'}
             </h3>
@@ -164,7 +164,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                     required
                   />
                 </div>
-                <div className="w-24">
+                <div className="w-20">
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Moneda</label>
                   <select
                     value={currency}
