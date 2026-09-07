@@ -47,8 +47,10 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
       <div className="w-full max-w-md rounded-2xl border border-zinc-700/50 bg-zinc-900 p-6 shadow-2xl">
-        <h2 className="mb-5 text-lg font-bold text-white">
-          {editing ? 'Editar Registro' : 'Nuevo Registro'}
+        <h2 className={`mb-5 text-lg font-bold ${type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+          {editing
+            ? (type === 'income' ? 'Editar Ingreso' : 'Editar Egreso')
+            : (type === 'income' ? 'Nuevo Ingreso' : 'Nuevo Egreso')}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,36 +79,6 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
               required
               className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-sky-500 focus:outline-none"
             />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Tipo
-            </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setType('income')}
-                className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-                  type === 'income'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                }`}
-              >
-                Ingreso
-              </button>
-              <button
-                type="button"
-                onClick={() => setType('expense')}
-                className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-                  type === 'expense'
-                    ? 'bg-rose-600 text-white'
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                }`}
-              >
-                Egreso
-              </button>
-            </div>
           </div>
 
           <div className="flex gap-2">
@@ -145,7 +117,11 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
             </button>
             <button
               type="submit"
-              className="flex-1 rounded-lg bg-sky-600 py-2 text-sm font-medium text-white hover:bg-sky-500 transition-colors"
+              className={`flex-1 rounded-lg py-2 text-sm font-medium text-white transition-colors ${
+                type === 'income'
+                  ? 'bg-emerald-600 hover:bg-emerald-500'
+                  : 'bg-rose-600 hover:bg-rose-500'
+              }`}
             >
               {editing ? 'Guardar Cambios' : 'Agregar'}
             </button>
