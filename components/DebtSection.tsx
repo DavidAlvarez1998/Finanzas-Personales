@@ -98,7 +98,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                 {d.remaining != null && (
                   <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-zinc-500">
                     <span>Original: <span className="font-mono">${d.amount.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span></span>
-                    <span>Abonado: <span className="font-mono text-emerald-600 dark:text-emerald-400">${d.total_paid.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span></span>
+                    <span>Abonado: <span className="font-mono text-emerald-600 dark:text-emerald-400">${(d.total_paid ?? 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span></span>
                     <span>Restante: <span className="font-mono text-amber-600 dark:text-amber-400">${(d.remaining ?? d.amount).toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span></span>
                   </div>
                 )}
