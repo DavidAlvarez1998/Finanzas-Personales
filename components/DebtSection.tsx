@@ -93,7 +93,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
               </div>
               <div className="flex items-center gap-4">
                 <span className="font-mono text-base font-bold text-amber-400">
-                  {d.amount.toLocaleString('es-AR')}
+                  {d.amount.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
                 </span>
                 <div className="flex gap-1">
                   <button

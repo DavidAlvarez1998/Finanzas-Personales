@@ -7,7 +7,7 @@ interface SummaryCardsProps {
 }
 
 function fmt(n: number) {
-  return `$${n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return `$${n.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
 }
 
 export function SummaryCards({ totalIncome, totalExpense, balance }: SummaryCardsProps) {

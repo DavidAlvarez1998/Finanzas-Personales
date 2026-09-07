@@ -16,7 +16,7 @@ const MONTHS = [
 
 function fmt(n: number | null) {
   if (n == null || n === 0) return ''
-  return `$${n.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
+  return `$${n.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
 }
 
 function parseMonth(dateStr: string) {
