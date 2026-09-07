@@ -38,13 +38,26 @@ export function TransactionForm({ onSave, onClose, editing }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
       <div className="w-full max-w-md rounded-2xl border border-zinc-700/50 bg-zinc-900 p-6 shadow-2xl">
         <h2 className="mb-5 text-lg font-bold text-white">
           {editing ? 'Editar Registro' : 'Nuevo Registro'}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+              Fecha
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              required
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-sky-500 focus:outline-none"
+            />
+          </div>
+
           <div>
             <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
               Descripción

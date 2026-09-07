@@ -39,7 +39,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-zinc-950">
         {userEmail && (
           <div className="flex items-center justify-end gap-3 px-4 py-2 bg-zinc-900 border-b border-zinc-800/60 text-xs text-zinc-500">
-            <span>{userEmail}</span>
+            <span className="truncate max-w-[180px] inline-block">{userEmail}</span>
             <form action={logout}>
               <button
                 type="submit"
