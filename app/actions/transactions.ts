@@ -2,12 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
-import { getSession } from '@/lib/supabase/dal'
+import { verifySession } from '@/lib/auth/session'
 
 export async function createTransaction(
   formData: FormData
 ): Promise<{ error: string } | void> {
-  const session = await getSession()
+  const session = await verifySession()
 
   const description = formData.get('description') as string | null
   const date = formData.get('date') as string | null
@@ -26,9 +26,9 @@ export async function createTransaction(
   const income = type === 'income' ? amount : null
   const expense = type === 'expense' ? amount : null
 
-  const supabase = await createServerClient()
+  const supabase = createServerClient()
   const { error } = await supabase.from('transactions').insert({
-    user_id: session.user.id,
+    user_id: session.userId,
     date,
     description: description.toUpperCase(),
     income,
@@ -46,7 +46,7 @@ export async function updateTransaction(
   id: string,
   formData: FormData
 ): Promise<{ error: string } | void> {
-  const session = await getSession()
+  const session = await verifySession()
 
   const description = formData.get('description') as string | null
   const date = formData.get('date') as string | null
@@ -65,7 +65,7 @@ export async function updateTransaction(
   const income = type === 'income' ? amount : null
   const expense = type === 'expense' ? amount : null
 
-  const supabase = await createServerClient()
+  const supabase = createServerClient()
   const { error } = await supabase
     .from('transactions')
     .update({
@@ -75,7 +75,7 @@ export async function updateTransaction(
       expense,
     })
     .eq('id', id)
-    .eq('user_id', session.user.id) // RLS + explicit app-layer guard
+    .eq('user_id', session.userId) // RLS + explicit app-layer guard
 
   if (error) {
     return { error: `Error al actualizar: ${error.message}` }
@@ -87,14 +87,14 @@ export async function updateTransaction(
 export async function deleteTransaction(
   id: string
 ): Promise<{ error: string } | void> {
-  const session = await getSession()
+  const session = await verifySession()
 
-  const supabase = await createServerClient()
+  const supabase = createServerClient()
   const { error } = await supabase
     .from('transactions')
     .delete()
     .eq('id', id)
-    .eq('user_id', session.user.id) // RLS + explicit app-layer guard
+    .eq('user_id', session.userId) // RLS + explicit app-layer guard
 
   if (error) {
     return { error: `Error al eliminar: ${error.message}` }

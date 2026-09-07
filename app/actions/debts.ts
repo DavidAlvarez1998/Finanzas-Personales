@@ -2,12 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
-import { getSession } from '@/lib/supabase/dal'
+import { verifySession } from '@/lib/auth/session'
 
 export async function createDebt(
   formData: FormData
 ): Promise<{ error: string } | void> {
-  const session = await getSession()
+  const session = await verifySession()
 
   const description = formData.get('description') as string | null
   const amountRaw = formData.get('amount') as string | null
@@ -22,9 +22,9 @@ export async function createDebt(
     return { error: 'El monto debe ser un número positivo.' }
   }
 
-  const supabase = await createServerClient()
+  const supabase = createServerClient()
   const { error } = await supabase.from('debts').insert({
-    user_id: session.user.id,
+    user_id: session.userId,
     description: description.toUpperCase(),
     amount,
     currency,
@@ -41,7 +41,7 @@ export async function updateDebt(
   id: string,
   formData: FormData
 ): Promise<{ error: string } | void> {
-  const session = await getSession()
+  const session = await verifySession()
 
   const description = formData.get('description') as string | null
   const amountRaw = formData.get('amount') as string | null
@@ -56,7 +56,7 @@ export async function updateDebt(
     return { error: 'El monto debe ser un número positivo.' }
   }
 
-  const supabase = await createServerClient()
+  const supabase = createServerClient()
   const { error } = await supabase
     .from('debts')
     .update({
@@ -65,7 +65,7 @@ export async function updateDebt(
       currency,
     })
     .eq('id', id)
-    .eq('user_id', session.user.id) // RLS + explicit app-layer guard
+    .eq('user_id', session.userId) // RLS + explicit app-layer guard
 
   if (error) {
     return { error: `Error al actualizar: ${error.message}` }
@@ -77,14 +77,14 @@ export async function updateDebt(
 export async function deleteDebt(
   id: string
 ): Promise<{ error: string } | void> {
-  const session = await getSession()
+  const session = await verifySession()
 
-  const supabase = await createServerClient()
+  const supabase = createServerClient()
   const { error } = await supabase
     .from('debts')
     .delete()
     .eq('id', id)
-    .eq('user_id', session.user.id) // RLS + explicit app-layer guard
+    .eq('user_id', session.userId) // RLS + explicit app-layer guard
 
   if (error) {
     return { error: `Error al eliminar: ${error.message}` }

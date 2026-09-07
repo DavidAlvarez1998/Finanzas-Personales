@@ -2,61 +2,74 @@
 
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
+import { createSession, destroySession } from '@/lib/auth/session'
+import { hashPassword, verifyPassword } from '@/lib/auth/password'
 
 export async function login(
   formData: FormData
 ): Promise<{ error: string } | void> {
-  const email = formData.get('email')
-  const password = formData.get('password')
+  const email = (formData.get('email') as string | null)?.toLowerCase().trim()
+  const password = formData.get('password') as string | null
 
-  if (typeof email !== 'string' || typeof password !== 'string') {
-    return { error: 'Email y contraseña son requeridos.' }
-  }
+  if (!email || !password) return { error: 'Email y contraseña son requeridos.' }
 
-  const supabase = await createServerClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const supabase = createServerClient()
+  const { data: user } = await supabase
+    .from('users')
+    .select('id, email, password_hash')
+    .eq('email', email)
+    .single()
 
-  if (error) {
-    return { error: 'Credenciales inválidas. Verificá tu email y contraseña.' }
-  }
+  if (!user) return { error: 'Credenciales inválidas.' }
 
+  const valid = await verifyPassword(password, user.password_hash)
+  if (!valid) return { error: 'Credenciales inválidas.' }
+
+  await createSession({ userId: user.id, email: user.email })
   redirect('/')
 }
 
 export async function register(
   formData: FormData
 ): Promise<{ error: string } | void> {
-  const email = formData.get('email')
-  const password = formData.get('password')
-  const confirmPassword = formData.get('confirmPassword')
+  const email = (formData.get('email') as string | null)?.toLowerCase().trim()
+  const password = formData.get('password') as string | null
+  const confirmPassword = formData.get('confirmPassword') as string | null
 
-  if (typeof email !== 'string' || typeof password !== 'string') {
-    return { error: 'Email y contraseña son requeridos.' }
+  if (!email || !password) return { error: 'Email y contraseña son requeridos.' }
+  if (password !== confirmPassword) return { error: 'Las contraseñas no coinciden.' }
+  if (password.length < 6) return { error: 'La contraseña debe tener al menos 6 caracteres.' }
+
+  const supabase = createServerClient()
+
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id')
+    .eq('email', email)
+    .single()
+
+  if (existing) return { error: 'El email ya está registrado.' }
+
+  const password_hash = await hashPassword(password)
+  const { data: user, error } = await supabase
+    .from('users')
+    .insert({ email, password_hash })
+    .select('id, email')
+    .single()
+
+  if (error || !user) {
+    const testRes = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/users?select=id&limit=1`,
+      { headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } }
+    )
+    return { error: `insert error: ${error?.message} | direct fetch: ${testRes.status} ${await testRes.text()}` }
   }
 
-  if (password !== confirmPassword) {
-    return { error: 'Las contraseñas no coinciden.' }
-  }
-
-  if (password.length < 6) {
-    return { error: 'La contraseña debe tener al menos 6 caracteres.' }
-  }
-
-  const supabase = await createServerClient()
-  const { error } = await supabase.auth.signUp({ email, password })
-
-  if (error) {
-    if (error.message.toLowerCase().includes('already')) {
-      return { error: 'El email ya está registrado.' }
-    }
-    return { error: error.message }
-  }
-
+  await createSession({ userId: user.id, email: user.email })
   redirect('/')
 }
 
 export async function logout(): Promise<void> {
-  const supabase = await createServerClient()
-  await supabase.auth.signOut()
+  await destroySession()
   redirect('/login')
 }
