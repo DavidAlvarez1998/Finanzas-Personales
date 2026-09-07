@@ -17,7 +17,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Control de Finanzas Personales",
   description: "Gestión personal de ingresos, egresos y deudas",
-  manifest: "/site.webmanifest",
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
