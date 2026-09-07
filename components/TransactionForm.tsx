@@ -110,8 +110,6 @@ export function TransactionForm({ onSave, onClose, editing }: Props) {
             <AmountInput
               value={amount}
               onChange={setAmount}
-              placeholder="0.00"
-              step={0.01}
               accent="sky"
               required
             />

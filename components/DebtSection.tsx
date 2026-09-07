@@ -140,8 +140,6 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
                   <AmountInput
                     value={amount}
                     onChange={setAmount}
-                    placeholder="0"
-                    step={1}
                     accent="amber"
                     required
                   />
