@@ -137,8 +137,8 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
 
       {/* Form modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0 bg-black/50 backdrop-blur-sm dark:bg-black/60">
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700/50 dark:bg-zinc-900">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0 bg-black/50 backdrop-blur-sm dark:bg-black/60" onClick={() => setShowForm(false)}>
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
             <h3 className="mb-5 text-lg font-bold text-zinc-950 dark:text-white">
               {editing ? 'Editar Deuda' : 'Nueva Deuda'}
             </h3>
@@ -198,8 +198,8 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
 
       {/* Delete confirmation */}
       {deletingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm dark:bg-black/60">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl w-full max-w-xs mx-4 dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm dark:bg-black/60" onClick={() => setDeletingId(null)}>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl w-full max-w-xs mx-4 dark:border-zinc-700 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
             <p className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">¿Eliminar esta deuda? Esta acción no se puede deshacer.</p>
             <div className="flex gap-3">
               <button
@@ -222,8 +222,8 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
 
       {/* Payment modal */}
       {payingDebtId && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-4 sm:pb-0 dark:bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-300 bg-white p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-4 sm:pb-0 dark:bg-black/60 backdrop-blur-sm" onClick={() => setPayingDebtId(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-300 bg-white p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
             <h3 className="mb-4 text-base font-bold text-zinc-950 dark:text-white">Registrar Pago</h3>
             <form
               onSubmit={e => {
