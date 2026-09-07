@@ -56,12 +56,14 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-sm">
       {/* Mode toggle */}
-      <div className="mb-6 flex rounded-xl border border-zinc-800 bg-zinc-900/50 p-1">
+      <div className="mb-6 flex rounded-xl border border-zinc-200 bg-zinc-100/50 p-1 dark:border-zinc-800 dark:bg-zinc-900/50">
         <button
           type="button"
           onClick={() => switchMode('login')}
           className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-            isLogin ? 'bg-zinc-700 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'
+            isLogin
+              ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
+              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
           }`}
         >
           Iniciar sesión
@@ -70,7 +72,9 @@ export function LoginForm() {
           type="button"
           onClick={() => switchMode('register')}
           className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-            !isLogin ? 'bg-zinc-700 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'
+            !isLogin
+              ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
+              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
           }`}
         >
           Registrarse
@@ -79,14 +83,14 @@ export function LoginForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="rounded-lg border border-red-800/60 bg-red-900/30 px-4 py-3 text-sm text-red-300">
+          <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800/60 dark:bg-red-900/30 dark:text-red-300">
             {error}
           </div>
         )}
 
         <div className="space-y-3">
           <div>
-            <label htmlFor="email" className="mb-1 block text-xs font-medium text-zinc-400">
+            <label htmlFor="email" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
               Email
             </label>
             <input
@@ -98,12 +102,12 @@ export function LoginForm() {
               placeholder="vos@ejemplo.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 transition-colors"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 transition-colors dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-white dark:placeholder-zinc-600"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1 block text-xs font-medium text-zinc-400">
+            <label htmlFor="password" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
               Contraseña
             </label>
             <div className="relative">
@@ -116,12 +120,12 @@ export function LoginForm() {
                 placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 pr-10 text-sm text-white placeholder-zinc-600 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 transition-colors"
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 pr-10 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 transition-colors dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-white dark:placeholder-zinc-600"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-700 transition-colors dark:hover:text-zinc-300"
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
               >
                 <EyeIcon open={showPassword} />
@@ -131,7 +135,7 @@ export function LoginForm() {
 
           {!isLogin && (
             <div>
-              <label htmlFor="confirmPassword" className="mb-1 block text-xs font-medium text-zinc-400">
+              <label htmlFor="confirmPassword" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
                 Confirmar contraseña
               </label>
               <div className="relative">
@@ -144,12 +148,12 @@ export function LoginForm() {
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 pr-10 text-sm text-white placeholder-zinc-600 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 transition-colors"
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 pr-10 text-sm text-zinc-950 placeholder-zinc-400 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 transition-colors dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-white dark:placeholder-zinc-600"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm(v => !v)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-700 transition-colors dark:hover:text-zinc-300"
                   aria-label={showConfirm ? 'Ocultar contraseña' : 'Ver contraseña'}
                 >
                   <EyeIcon open={showConfirm} />

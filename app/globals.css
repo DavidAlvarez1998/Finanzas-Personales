@@ -1,8 +1,37 @@
 @import "tailwindcss";
 
 :root {
+  --background: #f4f4f5;
+  --foreground: #09090b;
+  --color-bg: #f4f4f5;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f4f4f5;
+  --color-border: #d4d4d8;
+  --color-border-subtle: #e4e4e7;
+  --color-text: #09090b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #71717a;
+  --color-income: #059669;
+  --color-expense: #e11d48;
+  --color-primary: #0284c7;
+  --color-debt: #d97706;
+}
+
+.dark {
   --background: #09090b;
   --foreground: #fafafa;
+  --color-bg: #09090b;
+  --color-surface: #18181b;
+  --color-surface-raised: #27272a;
+  --color-border: #3f3f46;
+  --color-border-subtle: #27272a;
+  --color-text: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-income: #10b981;
+  --color-expense: #f43f5e;
+  --color-primary: #0ea5e9;
+  --color-debt: #f59e0b;
 }
 
 @theme inline {
@@ -28,6 +57,7 @@ body {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+/* TODO: light-mode scrollbar — keeping dark-only for v1 */
 ::-webkit-scrollbar-thumb {
   background: #3f3f46;
   border-radius: 3px;

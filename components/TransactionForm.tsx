@@ -45,9 +45,9 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-700/50 bg-zinc-900 p-6 shadow-2xl">
-        <h2 className={`mb-5 text-lg font-bold ${type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 dark:bg-black/60">
+      <div className="w-full max-w-md rounded-2xl border border-zinc-200/60 bg-white p-6 shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900">
+        <h2 className={`mb-5 text-lg font-bold ${type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
           {editing
             ? (type === 'income' ? 'Editar Ingreso' : 'Editar Egreso')
             : (type === 'income' ? 'Nuevo Ingreso' : 'Nuevo Egreso')}
@@ -55,7 +55,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
               Fecha
             </label>
             <input
@@ -63,12 +63,12 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
               value={date}
               onChange={e => setDate(e.target.value)}
               required
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-sky-500 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
               Descripción
             </label>
             <input
@@ -77,13 +77,13 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
               onChange={e => setDescription(e.target.value)}
               placeholder="Ej: Salario semanal"
               required
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-sky-500 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
             />
           </div>
 
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
                 Monto
               </label>
               <AmountInput
@@ -94,13 +94,13 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
               />
             </div>
             <div className="w-24">
-              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
                 Moneda
               </label>
               <select
                 value={currency}
                 onChange={e => setCurrency(e.target.value)}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
               >
                 {CURRENCIES.map(c => <option key={c}>{c}</option>)}
               </select>
@@ -111,7 +111,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-zinc-700 py-2 text-sm font-medium text-zinc-400 hover:bg-zinc-800 transition-colors"
+              className="flex-1 rounded-lg border border-zinc-300 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 transition-colors dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
             >
               Cancelar
             </button>

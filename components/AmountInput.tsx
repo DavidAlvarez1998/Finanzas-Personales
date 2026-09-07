@@ -9,8 +9,8 @@ interface Props {
 }
 
 const FOCUS: Record<NonNullable<Props['accent']>, string> = {
-  sky:   'focus-within:border-sky-500',
-  amber: 'focus-within:border-amber-500',
+  sky:   'focus-within:border-sky-600 dark:focus-within:border-sky-500',
+  amber: 'focus-within:border-amber-600 dark:focus-within:border-amber-500',
 }
 
 function toRaw(formatted: string): string {
@@ -42,7 +42,7 @@ export function AmountInput({
   }
 
   return (
-    <div className={`flex overflow-hidden rounded-lg border border-zinc-700 bg-zinc-800 transition-colors ${FOCUS[accent]}`}>
+    <div className={`flex overflow-hidden rounded-lg border border-zinc-300 bg-zinc-100 transition-colors dark:border-zinc-700 dark:bg-zinc-800 ${FOCUS[accent]}`}>
       <input
         type="text"
         inputMode="numeric"
@@ -50,15 +50,15 @@ export function AmountInput({
         onChange={handleChange}
         placeholder="0"
         required={required}
-        className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none"
+        className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:outline-none dark:text-white dark:placeholder-zinc-500"
       />
-      <div className="flex flex-col divide-y divide-zinc-700 border-l border-zinc-700">
+      <div className="flex flex-col divide-y divide-zinc-300 border-l border-zinc-300 dark:divide-zinc-700 dark:border-zinc-700">
         <button
           type="button"
           tabIndex={-1}
           onClick={() => adjust(1)}
           aria-label="Aumentar"
-          className="flex flex-1 items-center justify-center px-2.5 text-zinc-500 hover:bg-zinc-700 hover:text-white transition-colors"
+          className="flex flex-1 items-center justify-center px-2.5 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 transition-colors dark:hover:bg-zinc-700 dark:hover:text-white"
         >
           <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden>
             <path d="M1 6.5L5 2l4 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -69,7 +69,7 @@ export function AmountInput({
           tabIndex={-1}
           onClick={() => adjust(-1)}
           aria-label="Disminuir"
-          className="flex flex-1 items-center justify-center px-2.5 text-zinc-500 hover:bg-zinc-700 hover:text-white transition-colors"
+          className="flex flex-1 items-center justify-center px-2.5 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 transition-colors dark:hover:bg-zinc-700 dark:hover:text-white"
         >
           <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden>
             <path d="M1 1.5L5 6l4-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getSession } from "@/lib/auth/session";
 import { logout } from "@/app/actions/auth";
+import { Providers } from "@/components/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,23 +36,26 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-zinc-950">
-        {userEmail && (
-          <div className="flex items-center justify-end gap-3 px-4 py-2 bg-zinc-900 border-b border-zinc-800/60 text-xs text-zinc-500">
-            <span className="truncate max-w-[180px] inline-block">{userEmail}</span>
-            <form action={logout}>
-              <button
-                type="submit"
-                className="rounded px-2 py-1 hover:bg-zinc-800 hover:text-zinc-300 transition-colors"
-              >
-                Cerrar sesión
-              </button>
-            </form>
-          </div>
-        )}
-        {children}
+      <body className="min-h-full flex flex-col bg-zinc-100 dark:bg-zinc-950">
+        <Providers>
+          {userEmail && (
+            <div className="flex items-center justify-end gap-3 px-4 py-2 bg-white dark:bg-zinc-900 border-b border-zinc-200/60 dark:border-zinc-800/60 text-xs text-zinc-500">
+              <span className="truncate max-w-[180px] inline-block">{userEmail}</span>
+              <form action={logout}>
+                <button
+                  type="submit"
+                  className="rounded px-2 py-1 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
+                >
+                  Cerrar sesión
+                </button>
+              </form>
+            </div>
+          )}
+          {children}
+        </Providers>
       </body>
     </html>
   );
