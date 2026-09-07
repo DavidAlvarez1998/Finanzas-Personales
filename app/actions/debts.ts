@@ -92,3 +92,41 @@ export async function deleteDebt(
 
   revalidatePath('/')
 }
+
+export async function createDebtPayment(
+  debtId: string,
+  formData: FormData
+): Promise<{ error: string } | void> {
+  const session = await verifySession()
+
+  const amountRaw = formData.get('amount') as string | null
+  const note = (formData.get('note') as string | null) || null
+
+  if (!amountRaw) return { error: 'El monto es obligatorio.' }
+
+  const amount = parseFloat(amountRaw)
+  if (isNaN(amount) || amount <= 0) return { error: 'El monto debe ser un número positivo.' }
+
+  const supabase = createServerClient()
+
+  // Verify the debt belongs to the current user
+  const { data: debt } = await supabase
+    .from('debts')
+    .select('id')
+    .eq('id', debtId)
+    .eq('user_id', session.userId)
+    .single()
+
+  if (!debt) return { error: 'Deuda no encontrada.' }
+
+  const { error } = await supabase.from('debt_payments').insert({
+    debt_id: debtId,
+    amount,
+    note,
+    paid_at: new Date().toISOString().split('T')[0],
+  })
+
+  if (error) return { error: `Error al registrar pago: ${error.message}` }
+
+  revalidatePath('/')
+}

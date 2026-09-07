@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import type { Transaction } from '@/types'
 import { AmountInput } from './AmountInput'
+import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '@/lib/constants/categories'
 
 interface Props {
   onSave: (t: Omit<Transaction, 'id'>) => void
@@ -19,6 +20,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
   const [type, setType] = useState<'income' | 'expense'>(initialType)
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState('COP')
+  const [category, setCategory] = useState('')
 
   useEffect(() => {
     if (editing) {
@@ -27,6 +29,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
       setType(editing.income ? 'income' : 'expense')
       setAmount(String(editing.income ?? editing.expense ?? ''))
       setCurrency(editing.currency ?? 'COP')
+      setCategory(editing.category ?? '')
     }
   }, [editing])
 
@@ -40,6 +43,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
       income: type === 'income' ? num : null,
       expense: type === 'expense' ? num : null,
       currency,
+      category: category || null,
     })
     onClose()
   }
@@ -105,6 +109,22 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
                 {CURRENCIES.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+              Categoría <span className="normal-case text-zinc-600">(opcional)</span>
+            </label>
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+            >
+              <option value="">Sin categoría</option>
+              {(type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
 
           <div className="flex gap-3 pt-2">

@@ -1,25 +1,27 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import { SummaryCards } from '@/components/SummaryCards'
 import { TransactionTable } from '@/components/TransactionTable'
 import { TransactionForm } from '@/components/TransactionForm'
 import { DebtSection } from '@/components/DebtSection'
+import { ChartsSection } from '@/components/ChartsSection'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import {
   createTransaction,
   updateTransaction,
   deleteTransaction,
 } from '@/app/actions/transactions'
-import { createDebt, updateDebt, deleteDebt } from '@/app/actions/debts'
-import type { Transaction, Debt } from '@/types'
+import { createDebt, updateDebt, deleteDebt, createDebtPayment } from '@/app/actions/debts'
+import { logout } from '@/app/actions/auth'
+import type { Transaction, Debt, CurrencyGroup } from '@/types'
 
 interface Props {
   transactions: Transaction[]
   debts: Debt[]
 }
 
-type Tab = 'transactions' | 'debts'
+type Tab = 'transactions' | 'debts' | 'charts'
 
 export function DashboardShell({ transactions, debts }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
@@ -27,11 +29,18 @@ export function DashboardShell({ transactions, debts }: Props) {
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [initialType, setInitialType] = useState<'income' | 'expense'>('expense')
   const [actionError, setActionError] = useState<string | null>(null)
-  const [, startTransition] = useTransition()
+  const [isPending, startTransition] = useTransition()
 
-  const totalIncome = transactions.reduce((s, t) => s + (t.income ?? 0), 0)
-  const totalExpense = transactions.reduce((s, t) => s + (t.expense ?? 0), 0)
-  const balance = totalIncome - totalExpense
+  const currencyGroups = useMemo<CurrencyGroup[]>(() => Object.values(
+    transactions.reduce<Record<string, CurrencyGroup>>((acc, t) => {
+      const cur = t.currency ?? 'COP'
+      if (!acc[cur]) acc[cur] = { currency: cur, income: 0, expense: 0, balance: 0 }
+      acc[cur].income += t.income ?? 0
+      acc[cur].expense += t.expense ?? 0
+      acc[cur].balance = acc[cur].income - acc[cur].expense
+      return acc
+    }, {})
+  ), [transactions])
 
   function handleEdit(t: Transaction) {
     setEditing(t)
@@ -54,6 +63,7 @@ export function DashboardShell({ transactions, debts }: Props) {
     fd.set('type', t.income !== null ? 'income' : 'expense')
     fd.set('amount', String(t.income ?? t.expense ?? 0))
     fd.set('currency', t.currency ?? 'COP')
+    fd.set('category', t.category ?? '')
 
     setEditing(null)
     setShowForm(false)
@@ -103,6 +113,13 @@ export function DashboardShell({ transactions, debts }: Props) {
     })
   }
 
+  function handleDebtPayment(debtId: string, fd: FormData) {
+    startTransition(async () => {
+      const result = await createDebtPayment(debtId, fd)
+      if (result && 'error' in result) setActionError(result.error)
+    })
+  }
+
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-950 dark:bg-zinc-950 dark:text-white">
       {/* Header */}
@@ -116,6 +133,15 @@ export function DashboardShell({ transactions, debts }: Props) {
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto">
             <ThemeToggle />
+            <form action={logout}>
+              <button
+                type="submit"
+                aria-label="Cerrar sesión"
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-white"
+              >
+                Salir
+              </button>
+            </form>
             <button
               onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
               className="flex-1 sm:flex-none rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/30"
@@ -134,11 +160,7 @@ export function DashboardShell({ transactions, debts }: Props) {
 
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
         {/* Summary cards */}
-        <SummaryCards
-          totalIncome={totalIncome}
-          totalExpense={totalExpense}
-          balance={balance}
-        />
+        <SummaryCards groups={currencyGroups} />
 
         {/* Tabs */}
         <div>
@@ -168,22 +190,37 @@ export function DashboardShell({ transactions, debts }: Props) {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setTab('charts')}
+              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors ${
+                tab === 'charts'
+                  ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+              }`}
+            >
+              Graficos
+            </button>
           </div>
 
-          {tab === 'transactions' ? (
+          {tab === 'transactions' && (
             <TransactionTable
               transactions={transactions}
               onEdit={handleEdit}
               onDelete={handleDeleteTransaction}
+              isPending={isPending}
             />
-          ) : (
+          )}
+          {tab === 'debts' && (
             <DebtSection
               debts={debts}
               onAdd={handleDebtAdd}
               onUpdate={handleDebtUpdate}
               onDelete={handleDeleteDebt}
+              onPayment={handleDebtPayment}
+              isPending={isPending}
             />
           )}
+          {tab === 'charts' && <ChartsSection transactions={transactions} />}
         </div>
       </main>
 

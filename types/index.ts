@@ -6,6 +6,16 @@ export interface Transaction {
   income: number | null
   expense: number | null
   currency?: string
+  category?: string | null
+  created_at?: string
+}
+
+export interface DebtPayment {
+  id: string
+  debt_id: string
+  amount: number
+  paid_at: string
+  note?: string | null
   created_at?: string
 }
 
@@ -16,6 +26,9 @@ export interface Debt {
   amount: number
   currency: string
   created_at?: string
+  payments?: DebtPayment[]
+  total_paid?: number
+  remaining?: number
 }
 
 /** Legacy state shape — kept for backward compatibility during transition */
@@ -25,6 +38,13 @@ export interface FinanzasState {
 }
 
 export type TransactionType = 'income' | 'expense'
+
+export interface CurrencyGroup {
+  currency: string
+  income: number
+  expense: number
+  balance: number
+}
 
 export interface MonthSummary {
   month: string
