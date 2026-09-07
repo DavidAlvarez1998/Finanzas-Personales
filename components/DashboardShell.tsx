@@ -6,14 +6,12 @@ import { TransactionTable } from '@/components/TransactionTable'
 import { TransactionForm } from '@/components/TransactionForm'
 import { DebtSection } from '@/components/DebtSection'
 import { ChartsSection } from '@/components/ChartsSection'
-import { ThemeToggle } from '@/components/ThemeToggle'
 import {
   createTransaction,
   updateTransaction,
   deleteTransaction,
 } from '@/app/actions/transactions'
 import { createDebt, updateDebt, deleteDebt, createDebtPayment } from '@/app/actions/debts'
-import { logout } from '@/app/actions/auth'
 import type { Transaction, Debt, CurrencyGroup } from '@/types'
 
 interface Props {
@@ -132,16 +130,6 @@ export function DashboardShell({ transactions, debts }: Props) {
             <p className="text-xs text-zinc-500">Gestión personal de ingresos y egresos</p>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto">
-            <ThemeToggle />
-            <form action={logout}>
-              <button
-                type="submit"
-                aria-label="Cerrar sesión"
-                className="flex h-9 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-white"
-              >
-                Salir
-              </button>
-            </form>
             <button
               onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
               className="flex-1 sm:flex-none rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/30"
