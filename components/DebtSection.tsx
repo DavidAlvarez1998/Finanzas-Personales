@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { Debt } from '@/types'
+import { AmountInput } from './AmountInput'
 
 interface Props {
   debts: Debt[]
@@ -136,15 +137,13 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">Monto</label>
-                  <input
-                    type="number"
+                  <AmountInput
                     value={amount}
-                    onChange={e => setAmount(e.target.value)}
+                    onChange={setAmount}
                     placeholder="0"
-                    min="0"
-                    step="any"
+                    step={1}
+                    accent="amber"
                     required
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-amber-500 focus:outline-none"
                   />
                 </div>
                 <div className="w-24">

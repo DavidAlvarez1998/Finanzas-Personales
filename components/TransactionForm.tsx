@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { Transaction } from '@/types'
+import { AmountInput } from './AmountInput'
 
 interface Props {
   onSave: (t: Omit<Transaction, 'id'>) => void
@@ -106,15 +107,13 @@ export function TransactionForm({ onSave, onClose, editing }: Props) {
             <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
               Monto ($)
             </label>
-            <input
-              type="number"
+            <AmountInput
               value={amount}
-              onChange={e => setAmount(e.target.value)}
+              onChange={setAmount}
               placeholder="0.00"
-              min="0"
-              step="0.01"
+              step={0.01}
+              accent="sky"
               required
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-sky-500 focus:outline-none"
             />
           </div>
 
