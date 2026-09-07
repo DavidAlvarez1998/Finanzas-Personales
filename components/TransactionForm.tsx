@@ -8,14 +8,15 @@ interface Props {
   onSave: (t: Omit<Transaction, 'id'>) => void
   onClose: () => void
   editing?: Transaction | null
+  initialType?: 'income' | 'expense'
 }
 
 const CURRENCIES = ['COP', 'BRL', 'USD']
 
-export function TransactionForm({ onSave, onClose, editing }: Props) {
+export function TransactionForm({ onSave, onClose, editing, initialType = 'expense' }: Props) {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [description, setDescription] = useState('')
-  const [type, setType] = useState<'income' | 'expense'>('expense')
+  const [type, setType] = useState<'income' | 'expense'>(initialType)
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState('COP')
 

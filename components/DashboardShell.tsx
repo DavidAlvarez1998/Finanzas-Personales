@@ -24,6 +24,8 @@ export function DashboardShell({ transactions, debts }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
+  const [initialType, setInitialType] = useState<'income' | 'expense'>('expense')
+  const [actionError, setActionError] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
   const totalIncome = transactions.reduce((s, t) => s + (t.income ?? 0), 0)
@@ -52,28 +54,23 @@ export function DashboardShell({ transactions, debts }: Props) {
     fd.set('amount', String(t.income ?? t.expense ?? 0))
     fd.set('currency', t.currency ?? 'COP')
 
-    startTransition(async () => {
-      if (editing) {
-        await updateTransaction(editing.id, fd)
-      } else {
-        await createTransaction(fd)
-      }
-    })
-
     setEditing(null)
     setShowForm(false)
+    startTransition(async () => {
+      const result = editing
+        ? await updateTransaction(editing.id, fd)
+        : await createTransaction(fd)
+      if (result && 'error' in result) setActionError(result.error)
+    })
   }
 
   function handleDeleteTransaction(id: string) {
     startTransition(async () => {
-      await deleteTransaction(id)
+      const result = await deleteTransaction(id)
+      if (result && 'error' in result) setActionError(result.error)
     })
   }
 
-  /**
-   * DebtSection calls onAdd/onUpdate with the parsed fields.
-   * We reconstruct a FormData to pass to the Server Action.
-   */
   function handleDebtAdd(d: Omit<Debt, 'id'>) {
     const fd = new FormData()
     fd.set('description', d.description)
@@ -81,7 +78,8 @@ export function DashboardShell({ transactions, debts }: Props) {
     fd.set('currency', d.currency)
 
     startTransition(async () => {
-      await createDebt(fd)
+      const result = await createDebt(fd)
+      if (result && 'error' in result) setActionError(result.error)
     })
   }
 
@@ -92,13 +90,15 @@ export function DashboardShell({ transactions, debts }: Props) {
     fd.set('currency', d.currency)
 
     startTransition(async () => {
-      await updateDebt(d.id, fd)
+      const result = await updateDebt(d.id, fd)
+      if (result && 'error' in result) setActionError(result.error)
     })
   }
 
   function handleDeleteDebt(id: string) {
     startTransition(async () => {
-      await deleteDebt(id)
+      const result = await deleteDebt(id)
+      if (result && 'error' in result) setActionError(result.error)
     })
   }
 
@@ -113,12 +113,20 @@ export function DashboardShell({ transactions, debts }: Props) {
             </h1>
             <p className="text-xs text-zinc-500">Gestión personal de ingresos y egresos</p>
           </div>
-          <button
-            onClick={() => { setEditing(null); setShowForm(true) }}
-            className="w-full sm:w-auto rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 transition-colors shadow-lg shadow-sky-900/30"
-          >
-            + Nuevo Registro
-          </button>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <button
+              onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
+              className="flex-1 sm:flex-none rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/30"
+            >
+              + Ingreso
+            </button>
+            <button
+              onClick={() => { setEditing(null); setInitialType('expense'); setShowForm(true) }}
+              className="flex-1 sm:flex-none rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500 transition-colors shadow-lg shadow-rose-900/30"
+            >
+              + Egreso
+            </button>
+          </div>
         </div>
       </header>
 
@@ -177,12 +185,21 @@ export function DashboardShell({ transactions, debts }: Props) {
         </div>
       </main>
 
+      {/* Error toast */}
+      {actionError && (
+        <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-rose-700/50 bg-rose-950 px-5 py-3 text-sm text-rose-300 shadow-xl">
+          {actionError}
+          <button onClick={() => setActionError(null)} className="ml-4 text-rose-500 hover:text-rose-300">✕</button>
+        </div>
+      )}
+
       {/* Transaction form modal */}
       {showForm && (
         <TransactionForm
           onSave={handleTransactionSave}
           onClose={handleCloseForm}
           editing={editing}
+          initialType={initialType}
         />
       )}
     </div>
