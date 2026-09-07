@@ -28,9 +28,18 @@ export async function register(
 ): Promise<{ error: string } | void> {
   const email = formData.get('email')
   const password = formData.get('password')
+  const confirmPassword = formData.get('confirmPassword')
 
   if (typeof email !== 'string' || typeof password !== 'string') {
     return { error: 'Email y contraseña son requeridos.' }
+  }
+
+  if (password !== confirmPassword) {
+    return { error: 'Las contraseñas no coinciden.' }
+  }
+
+  if (password.length < 6) {
+    return { error: 'La contraseña debe tener al menos 6 caracteres.' }
   }
 
   const supabase = await createServerClient()
