@@ -105,7 +105,7 @@ export function DashboardShell({ transactions, debts }: Props) {
     <div className="min-h-screen bg-zinc-950 text-white">
       {/* Header */}
       <header className="border-b border-zinc-800/60 bg-zinc-900/80 backdrop-blur sticky top-0 z-10">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-lg font-bold tracking-tight text-white">
               Control de Finanzas
@@ -114,7 +114,7 @@ export function DashboardShell({ transactions, debts }: Props) {
           </div>
           <button
             onClick={() => { setEditing(null); setShowForm(true) }}
-            className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 transition-colors shadow-lg shadow-sky-900/30"
+            className="w-full sm:w-auto rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 transition-colors shadow-lg shadow-sky-900/30"
           >
             + Nuevo Registro
           </button>

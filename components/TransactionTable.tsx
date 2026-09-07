@@ -89,7 +89,8 @@ export function TransactionTable({ transactions, onEdit, onDelete }: Props) {
         </span>
       </div>
 
-      {/* Table */}
+      {/* Table — desktop only */}
+      <div className="hidden sm:block">
       <div className="overflow-x-auto rounded-xl border border-zinc-800">
         <table className="w-full text-sm">
           <thead>
@@ -159,11 +160,66 @@ export function TransactionTable({ transactions, onEdit, onDelete }: Props) {
           )}
         </table>
       </div>
+      </div>
+
+      {/* Mobile card list */}
+      <div className="block sm:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <p className="py-10 text-center text-sm text-zinc-600">
+            No hay registros para {MONTHS[filterMonth]} {filterYear}
+          </p>
+        ) : (
+          filtered.map(t => (
+            <div key={t.id} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-zinc-500">
+                    {new Date(t.date + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  </p>
+                  <p className="text-sm font-medium text-white break-words">{t.description}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  {t.income ? (
+                    <span className="font-mono text-sm font-bold text-emerald-400">{fmt(t.income)}</span>
+                  ) : (
+                    <span className="font-mono text-sm font-bold text-rose-400">{fmt(t.expense)}</span>
+                  )}
+                </div>
+              </div>
+              <div className="mt-2 flex justify-end gap-2 border-t border-zinc-800 pt-2">
+                <button
+                  onClick={() => onEdit(t)}
+                  className="rounded-md px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-700 hover:text-white transition-colors"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => confirmDelete(t.id)}
+                  className="rounded-md px-2 py-1 text-xs text-zinc-400 hover:bg-rose-900/50 hover:text-rose-400 transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+        {filtered.length > 0 && (
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-3">
+            <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              <span>Total del mes</span>
+              <div className="flex gap-4">
+                <span className="font-mono text-emerald-400">{fmt(monthIncome)}</span>
+                <span className="font-mono text-rose-400">{fmt(monthExpense)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Delete confirmation modal */}
       {deletingId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl w-80">
+          <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl w-full max-w-xs mx-4">
             <p className="mb-4 text-sm text-zinc-300">¿Eliminar este registro? Esta acción no se puede deshacer.</p>
             <div className="flex gap-3">
               <button

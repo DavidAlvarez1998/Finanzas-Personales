@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { createServerClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/auth/session";
 import { logout } from "@/app/actions/auth";
 
 const geistSans = Geist({
@@ -22,14 +22,8 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Best-effort auth check — layout renders for both / and /login.
   // If no session, user is null and we render nothing in the auth bar.
-  let userEmail: string | null = null
-  try {
-    const supabase = await createServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    userEmail = user?.email ?? null
-  } catch {
-    // Missing env vars during static rendering — silently skip
-  }
+  const session = await getSession()
+  const userEmail = session?.email ?? null
 
   return (
     <html
@@ -39,7 +33,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-zinc-950">
         {userEmail && (
           <div className="flex items-center justify-end gap-3 px-4 py-2 bg-zinc-900 border-b border-zinc-800/60 text-xs text-zinc-500">
-            <span>{userEmail}</span>
+            <span className="truncate max-w-[180px] inline-block">{userEmail}</span>
             <form action={logout}>
               <button
                 type="submit"

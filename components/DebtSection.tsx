@@ -84,10 +84,10 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
           {debts.map(d => (
             <div
               key={d.id}
-              className="flex items-center justify-between rounded-xl border border-amber-900/30 bg-amber-950/20 px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-y-2 rounded-xl border border-amber-900/30 bg-amber-950/20 px-4 py-3"
             >
-              <div>
-                <p className="text-sm font-semibold text-white">{d.description}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-white break-words">{d.description}</p>
                 <p className="text-xs text-zinc-500 mt-0.5">{d.currency}</p>
               </div>
               <div className="flex items-center gap-4">
@@ -116,7 +116,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
 
       {/* Form modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl border border-zinc-700/50 bg-zinc-900 p-6 shadow-2xl">
             <h3 className="mb-5 text-lg font-bold text-white">
               {editing ? 'Editar Deuda' : 'Nueva Deuda'}
@@ -181,7 +181,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
       {/* Delete confirmation */}
       {deletingId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl w-80">
+          <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl w-full max-w-xs mx-4">
             <p className="mb-4 text-sm text-zinc-300">¿Eliminar esta deuda? Esta acción no se puede deshacer.</p>
             <div className="flex gap-3">
               <button
