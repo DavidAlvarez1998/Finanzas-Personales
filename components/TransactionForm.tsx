@@ -10,11 +10,14 @@ interface Props {
   editing?: Transaction | null
 }
 
+const CURRENCIES = ['COP', 'BRL', 'USD']
+
 export function TransactionForm({ onSave, onClose, editing }: Props) {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [description, setDescription] = useState('')
   const [type, setType] = useState<'income' | 'expense'>('expense')
   const [amount, setAmount] = useState('')
+  const [currency, setCurrency] = useState('COP')
 
   useEffect(() => {
     if (editing) {
@@ -22,6 +25,7 @@ export function TransactionForm({ onSave, onClose, editing }: Props) {
       setDescription(editing.description)
       setType(editing.income ? 'income' : 'expense')
       setAmount(String(editing.income ?? editing.expense ?? ''))
+      setCurrency(editing.currency ?? 'COP')
     }
   }, [editing])
 
@@ -34,6 +38,7 @@ export function TransactionForm({ onSave, onClose, editing }: Props) {
       description: description.toUpperCase(),
       income: type === 'income' ? num : null,
       expense: type === 'expense' ? num : null,
+      currency,
     })
     onClose()
   }
@@ -103,16 +108,30 @@ export function TransactionForm({ onSave, onClose, editing }: Props) {
             </div>
           </div>
 
-          <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Monto ($)
-            </label>
-            <AmountInput
-              value={amount}
-              onChange={setAmount}
-              accent="sky"
-              required
-            />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+                Monto
+              </label>
+              <AmountInput
+                value={amount}
+                onChange={setAmount}
+                accent="sky"
+                required
+              />
+            </div>
+            <div className="w-24">
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+                Moneda
+              </label>
+              <select
+                value={currency}
+                onChange={e => setCurrency(e.target.value)}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none"
+              >
+                {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-2">

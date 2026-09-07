@@ -13,6 +13,7 @@ export async function createTransaction(
   const date = formData.get('date') as string | null
   const type = formData.get('type') as string | null
   const amountRaw = formData.get('amount') as string | null
+  const currency = (formData.get('currency') as string | null) ?? 'COP'
 
   if (!description || !date || !type || !amountRaw) {
     return { error: 'Todos los campos son obligatorios.' }
@@ -33,6 +34,7 @@ export async function createTransaction(
     description: description.toUpperCase(),
     income,
     expense,
+    currency,
   })
 
   if (error) {
@@ -52,6 +54,7 @@ export async function updateTransaction(
   const date = formData.get('date') as string | null
   const type = formData.get('type') as string | null
   const amountRaw = formData.get('amount') as string | null
+  const currency = (formData.get('currency') as string | null) ?? 'COP'
 
   if (!description || !date || !type || !amountRaw) {
     return { error: 'Todos los campos son obligatorios.' }
@@ -73,6 +76,7 @@ export async function updateTransaction(
       description: description.toUpperCase(),
       income,
       expense,
+      currency,
     })
     .eq('id', id)
     .eq('user_id', session.userId) // RLS + explicit app-layer guard

@@ -5,6 +5,7 @@ export interface Transaction {
   description: string
   income: number | null
   expense: number | null
+  currency?: string
   created_at?: string
 }
 

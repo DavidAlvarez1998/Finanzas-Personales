@@ -11,14 +11,14 @@ interface Props {
   onDelete: (id: string) => void
 }
 
-const CURRENCIES = ['USD', 'ARS', 'BRL', 'EUR']
+const CURRENCIES = ['COP', 'BRL', 'USD']
 
 export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Debt | null>(null)
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [currency, setCurrency] = useState('ARS')
+  const [currency, setCurrency] = useState('COP')
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   function openNew() {

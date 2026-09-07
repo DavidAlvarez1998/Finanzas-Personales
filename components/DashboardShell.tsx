@@ -50,6 +50,7 @@ export function DashboardShell({ transactions, debts }: Props) {
     fd.set('date', t.date)
     fd.set('type', t.income !== null ? 'income' : 'expense')
     fd.set('amount', String(t.income ?? t.expense ?? 0))
+    fd.set('currency', t.currency ?? 'COP')
 
     startTransition(async () => {
       if (editing) {
