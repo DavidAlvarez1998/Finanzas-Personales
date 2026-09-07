@@ -25,7 +25,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete }: Props) {
     setEditing(null)
     setDescription('')
     setAmount('')
-    setCurrency('ARS')
+    setCurrency('COP')
     setShowForm(true)
   }
 
