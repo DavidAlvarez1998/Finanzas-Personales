@@ -278,7 +278,8 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
 
         {/* Tabs */}
         <div>
-          <div className="mb-4 flex gap-1 rounded-xl border border-zinc-200 bg-zinc-100/50 p-1 w-fit dark:border-zinc-800 dark:bg-zinc-900/50">
+          <div className="mb-4 overflow-x-auto -mx-4 px-4 pb-1">
+          <div className="flex gap-1 rounded-xl border border-zinc-200 bg-zinc-100/50 p-1 w-max dark:border-zinc-800 dark:bg-zinc-900/50">
             <button
               onClick={() => setTab('transactions')}
               className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors ${
@@ -344,6 +345,7 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
             >
               Graficos
             </button>
+          </div>
           </div>
 
           {tab === 'transactions' && (
