@@ -6,6 +6,7 @@ import { activateUser, deactivateUser, setExpiry, clearExpiry } from '../_action
 
 interface Props {
   user: AdminUserRow
+  isSuperadmin?: boolean
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -29,7 +30,7 @@ function formatDate(iso: string | null): string {
   })
 }
 
-export function UserRow({ user }: Props) {
+export function UserRow({ user, isSuperadmin = false }: Props) {
   const [isPending, startTransition] = useTransition()
 
   function handleActivate() {
@@ -69,7 +70,7 @@ export function UserRow({ user }: Props) {
 
       <div className="flex flex-col gap-2 sm:items-end">
         <div className="flex gap-2 flex-wrap">
-          {(user.status === 'pending' || user.status === 'inactive') && (
+          {!isSuperadmin && (user.status === 'pending' || user.status === 'inactive') && (
             <button
               onClick={handleActivate}
               disabled={isPending}
@@ -78,7 +79,7 @@ export function UserRow({ user }: Props) {
               Activar
             </button>
           )}
-          {user.status === 'active' && (
+          {!isSuperadmin && user.status === 'active' && (
             <button
               onClick={handleDeactivate}
               disabled={isPending}

@@ -3,6 +3,7 @@ import { UserRow } from './_components/user-row'
 
 export default async function AdminPage() {
   const users = await getAllUsers()
+  const superadminEmail = process.env.SUPERADMIN_EMAIL ?? ''
 
   return (
     <div className="p-6">
@@ -10,7 +11,7 @@ export default async function AdminPage() {
       <div className="text-sm text-zinc-500 mb-4">{users.length} usuarios</div>
       <div className="space-y-2">
         {users.map(u => (
-          <UserRow key={u.id} user={u} />
+          <UserRow key={u.id} user={u} isSuperadmin={u.email === superadminEmail} />
         ))}
       </div>
     </div>
