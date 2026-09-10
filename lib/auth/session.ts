@@ -1,6 +1,9 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { createServerClient } from '@/lib/supabase/server'
+import { isExpired } from '@/lib/auth/user-status'
+import type { VerifiedSession } from '@/types'
 
 const COOKIE = 'session'
 
@@ -40,10 +43,31 @@ export async function getSession(): Promise<SessionPayload | null> {
   }
 }
 
-export async function verifySession(): Promise<SessionPayload> {
+export async function verifySession(): Promise<VerifiedSession> {
   const session = await getSession()
   if (!session) redirect('/login')
-  return session
+
+  const supabase = createServerClient()
+  const { data: user } = await supabase
+    .from('users')
+    .select('status, expires_at, email')
+    .eq('id', session.userId)
+    .single()
+
+  const isSuperadmin = session.email === process.env.SUPERADMIN_EMAIL
+
+  if (!isSuperadmin) {
+    if (!user || user.status !== 'active') redirect('/blocked')
+    if (isExpired(user.expires_at)) redirect('/blocked')
+  }
+
+  return {
+    userId: session.userId,
+    email: session.email,
+    status: user?.status ?? 'pending',
+    expires_at: user?.expires_at ?? null,
+    isSuperadmin,
+  } as VerifiedSession
 }
 
 export async function destroySession(): Promise<void> {

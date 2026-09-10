@@ -58,3 +58,21 @@ export interface MonthSummary {
 export type ActionResult<T = void> =
   | { ok: true; data: T }
   | { ok: false; error: string; fieldErrors?: Record<string, string> }
+
+export type UserStatus = 'pending' | 'active' | 'inactive'
+
+export interface VerifiedSession {
+  userId: string
+  email: string
+  status: UserStatus
+  expires_at: string | null
+  isSuperadmin: boolean
+}
+
+export interface AdminUserRow {
+  id: string
+  email: string
+  status: UserStatus
+  expires_at: string | null
+  created_at: string
+}

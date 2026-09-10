@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { createSession, destroySession } from '@/lib/auth/session'
 import { hashPassword, verifyPassword } from '@/lib/auth/password'
+import { isExpired } from '@/lib/auth/user-status'
 
 export async function login(
   formData: FormData
@@ -16,7 +17,7 @@ export async function login(
   const supabase = createServerClient()
   const { data: user } = await supabase
     .from('users')
-    .select('id, email, password_hash')
+    .select('id, email, password_hash, status, expires_at')
     .eq('email', email)
     .single()
 
@@ -24,6 +25,17 @@ export async function login(
 
   const valid = await verifyPassword(password, user.password_hash)
   if (!valid) return { error: 'Credenciales inválidas.' }
+
+  const isSuperadmin = user.email === process.env.SUPERADMIN_EMAIL
+
+  if (!isSuperadmin) {
+    if (user.status !== 'active') {
+      return { error: 'Tu cuenta está pendiente de activación o fue desactivada. Contactá al administrador.' }
+    }
+    if (isExpired(user.expires_at)) {
+      return { error: 'Tu suscripción venció. Contactá al administrador para renovarla.' }
+    }
+  }
 
   await createSession({ userId: user.id, email: user.email })
   redirect('/')
@@ -53,20 +65,15 @@ export async function register(
   const password_hash = await hashPassword(password)
   const { data: user, error } = await supabase
     .from('users')
-    .insert({ email, password_hash })
+    .insert({ email, password_hash, status: 'pending' })
     .select('id, email')
     .single()
 
   if (error || !user) {
-    const testRes = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/users?select=id&limit=1`,
-      { headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } }
-    )
-    return { error: `insert error: ${error?.message} | direct fetch: ${testRes.status} ${await testRes.text()}` }
+    return { error: error?.message ?? 'Error al crear la cuenta.' }
   }
 
-  await createSession({ userId: user.id, email: user.email })
-  redirect('/')
+  redirect('/pending')
 }
 
 export async function logout(): Promise<void> {
