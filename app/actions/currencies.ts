@@ -20,3 +20,17 @@ export async function updateUserCurrencies(
   if (error) return { error: error.message }
   revalidatePath('/')
 }
+
+export async function updateDisplayCurrency(
+  code: string | null
+): Promise<{ error: string } | void> {
+  if (code !== null && !VALID_CODES.has(code)) return { error: 'Moneda inválida' }
+  const { userId } = await verifySession()
+  const supabase = createServerClient()
+  const { error } = await supabase
+    .from('users')
+    .update({ display_currency: code })
+    .eq('id', userId)
+  if (error) return { error: error.message }
+  revalidatePath('/')
+}

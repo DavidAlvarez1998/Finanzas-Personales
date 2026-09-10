@@ -126,3 +126,16 @@ export interface SavingsGoal {
   /** (total_aportado / monto_objetivo) * 100, computed by DAL. May exceed 100. */
   progress_pct?: number
 }
+
+export interface FxRateResponse {
+  rate: number
+  from: string
+  to: string
+}
+
+export interface ConvertedTotals {
+  income: number
+  expense: number
+  balance: number
+  currency: string
+}

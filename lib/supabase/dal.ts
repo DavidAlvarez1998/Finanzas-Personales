@@ -75,6 +75,17 @@ export async function getUserCurrencies(): Promise<string[]> {
   return (data?.currencies as string[] | null) ?? []
 }
 
+export async function getDisplayCurrency(): Promise<string | null> {
+  const { userId } = await verifySession()
+  const supabase = createServerClient()
+  const { data } = await supabase
+    .from('users')
+    .select('display_currency')
+    .eq('id', userId)
+    .single()
+  return (data?.display_currency as string | null) ?? null
+}
+
 export async function getSavingsGoals(): Promise<SavingsGoal[]> {
   const { userId } = await verifySession()
   const supabase = createServerClient()

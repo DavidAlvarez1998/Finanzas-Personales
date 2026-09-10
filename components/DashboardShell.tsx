@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useTransition, useMemo, useEffect, useRef } from 'react'
 import { SummaryCards } from '@/components/SummaryCards'
 import { TransactionTable } from '@/components/TransactionTable'
 import { TransactionForm } from '@/components/TransactionForm'
@@ -31,6 +31,7 @@ import {
   updateGoalStatus,
 } from '@/app/actions/savings'
 import { CurrencyPicker } from '@/components/CurrencyPicker'
+import { fetchRate } from '@/lib/fx/frankfurter'
 import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus } from '@/types'
 
 interface Props {
@@ -39,11 +40,13 @@ interface Props {
   presupuestos: Presupuesto[]
   savingsGoals: SavingsGoal[]
   currencies: string[]
+  userEmail: string
+  displayCurrency: string | null
 }
 
 type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'charts'
 
-export function DashboardShell({ transactions, debts, presupuestos, savingsGoals, currencies }: Props) {
+export function DashboardShell({ transactions, debts, presupuestos, savingsGoals, currencies, userEmail, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
@@ -51,6 +54,12 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
   const [actionError, setActionError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [pickerOpen, setPickerOpen] = useState(false)
+
+  const [activeDisplayCurrency, setActiveDisplayCurrency] = useState<string | null>(initialDisplayCurrency)
+  const [rates, setRates] = useState<Map<string, number>>(new Map())
+  const [ratesLoading, setRatesLoading] = useState(false)
+  const [ratesError, setRatesError] = useState(false)
+  const fetchIdRef = useRef(0)
 
   const effectiveCurrencies = currencies.length > 0 ? currencies : ['COP', 'USD']
 
@@ -65,6 +74,43 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
     }, {})
   ), [transactions])
 
+  useEffect(() => {
+    if (!activeDisplayCurrency) {
+      setRatesLoading(false)
+      setRatesError(false)
+      return
+    }
+
+    const uniqueSources = [...new Set(currencyGroups.map(g => g.currency))]
+    const missing = uniqueSources.filter(src => {
+      const key = `${src}_${activeDisplayCurrency}`
+      return src !== activeDisplayCurrency && !rates.has(key)
+    })
+
+    if (missing.length === 0) return
+
+    const currentFetchId = ++fetchIdRef.current
+    setRatesLoading(true)
+    setRatesError(false)
+
+    Promise.all(
+      missing.map(src => fetchRate(src, activeDisplayCurrency))
+    ).then(results => {
+      if (fetchIdRef.current !== currentFetchId) return
+      const newRates = new Map(rates)
+      results.forEach(r => {
+        newRates.set(`${r.from}_${r.to}`, r.rate)
+      })
+      setRates(newRates)
+      setRatesLoading(false)
+    }).catch(() => {
+      if (fetchIdRef.current !== currentFetchId) return
+      setRatesError(true)
+      setRatesLoading(false)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDisplayCurrency, currencyGroups])
+
   function handleEdit(t: Transaction) {
     setEditing(t)
     setShowForm(true)
@@ -75,10 +121,6 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
     setEditing(null)
   }
 
-  /**
-   * TransactionForm calls onSave with the parsed fields.
-   * We reconstruct a FormData so the Server Action receives the standard shape.
-   */
   function handleTransactionSave(t: Omit<Transaction, 'id'>) {
     const fd = new FormData()
     fd.set('description', t.description)
@@ -253,13 +295,24 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
     <div className="min-h-screen bg-zinc-100 text-zinc-950 dark:bg-zinc-950 dark:text-white">
       {/* Header */}
       <header className="border-b border-zinc-200/60 bg-white/80 backdrop-blur sticky top-0 z-10 dark:border-zinc-800/60 dark:bg-zinc-900/80">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-zinc-950 dark:text-white">
-              Control de Finanzas
-            </h1>
-            <p className="text-xs text-zinc-500">Gestión personal de ingresos y egresos</p>
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left: gear + email */}
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={() => setPickerOpen(true)}
+              title="Configuración"
+              className="shrink-0 rounded-lg border border-zinc-300 p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+                <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .205 1.251l-1.18 2.044a1 1 0 0 1-1.186.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.205-1.251l1.18-2.044a1 1 0 0 1 1.186-.447l1.598.54A6.992 6.992 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
+              </svg>
+            </button>
+            {userEmail && (
+              <span className="truncate text-sm text-zinc-500 dark:text-zinc-400">{userEmail}</span>
+            )}
           </div>
+
+          {/* Right: action buttons */}
           <div className="flex w-full items-center gap-2 sm:w-auto">
             <button
               onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
@@ -273,22 +326,19 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
             >
               + Egreso
             </button>
-            <button
-              onClick={() => setPickerOpen(true)}
-              title="Configurar monedas"
-              className="rounded-lg border border-zinc-300 p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .205 1.251l-1.18 2.044a1 1 0 0 1-1.186.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.205-1.251l1.18-2.044a1 1 0 0 1 1.186-.447l1.598.54A6.992 6.992 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
-              </svg>
-            </button>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
         {/* Summary cards */}
-        <SummaryCards groups={currencyGroups} />
+        <SummaryCards
+          groups={currencyGroups}
+          displayCurrency={activeDisplayCurrency}
+          rates={rates}
+          ratesLoading={ratesLoading}
+          ratesError={ratesError}
+        />
 
         {/* Tabs */}
         <div>
@@ -430,11 +480,13 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
         />
       )}
 
-      {/* Currency picker modal */}
+      {/* Settings modal */}
       {pickerOpen && (
         <CurrencyPicker
           selected={effectiveCurrencies}
+          displayCurrency={activeDisplayCurrency}
           onClose={() => setPickerOpen(false)}
+          onDisplayCurrencyChange={setActiveDisplayCurrency}
         />
       )}
     </div>
