@@ -1,16 +1,18 @@
 import { Suspense } from 'react'
-import { getTransactions, getDebts } from '@/lib/supabase/dal'
+import { getTransactions, getDebts, getPresupuestos, getSavingsGoals } from '@/lib/supabase/dal'
 import { verifySession } from '@/lib/supabase/verify-session'
 import { DashboardShell } from '@/components/DashboardShell'
 
 async function Dashboard() {
   await verifySession()
-  const [transactions, debts] = await Promise.all([
+  const [transactions, debts, presupuestos, savingsGoals] = await Promise.all([
     getTransactions(),
     getDebts(),
+    getPresupuestos(),
+    getSavingsGoals(),
   ])
 
-  return <DashboardShell transactions={transactions} debts={debts} />
+  return <DashboardShell transactions={transactions} debts={debts} presupuestos={presupuestos} savingsGoals={savingsGoals} />
 }
 
 function DashboardSkeleton() {

@@ -76,3 +76,53 @@ export interface AdminUserRow {
   expires_at: string | null
   created_at: string
 }
+
+export interface PresupuestoItem {
+  id: string
+  presupuesto_id: string
+  nombre: string
+  monto: number
+  created_at?: string
+}
+
+export interface Presupuesto {
+  id: string
+  user_id?: string
+  nombre: string
+  total: number
+  currency: string
+  created_at?: string
+  items?: PresupuestoItem[]
+  /** Sum of items[].monto, computed in the DAL */
+  monto_asignado?: number
+  /** total - monto_asignado, computed in the DAL. Can be negative (over-budget) */
+  monto_libre?: number
+}
+
+export type SavingsGoalStatus = 'active' | 'completed' | 'paused'
+
+export interface SavingsContribution {
+  id: string
+  goal_id: string
+  monto: number
+  fecha: string
+  nota?: string | null
+  created_at?: string
+}
+
+export interface SavingsGoal {
+  id: string
+  user_id?: string
+  nombre: string
+  monto_objetivo: number
+  currency: string
+  status: SavingsGoalStatus
+  created_at?: string
+  contributions?: SavingsContribution[]
+  /** Sum of contributions.monto, computed by DAL */
+  total_aportado?: number
+  /** max(0, monto_objetivo - total_aportado), computed by DAL */
+  remaining?: number
+  /** (total_aportado / monto_objetivo) * 100, computed by DAL. May exceed 100. */
+  progress_pct?: number
+}

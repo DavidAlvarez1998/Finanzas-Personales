@@ -5,12 +5,13 @@ interface Props {
   onChange: (v: string) => void
   min?: number
   required?: boolean
-  accent?: 'sky' | 'amber'
+  accent?: 'sky' | 'amber' | 'violet'
 }
 
 const FOCUS: Record<NonNullable<Props['accent']>, string> = {
-  sky:   'focus-within:border-sky-600 dark:focus-within:border-sky-500',
-  amber: 'focus-within:border-amber-600 dark:focus-within:border-amber-500',
+  sky:    'focus-within:border-sky-600 dark:focus-within:border-sky-500',
+  amber:  'focus-within:border-amber-600 dark:focus-within:border-amber-500',
+  violet: 'focus-within:border-violet-600 dark:focus-within:border-violet-500',
 }
 
 function toRaw(formatted: string): string {
