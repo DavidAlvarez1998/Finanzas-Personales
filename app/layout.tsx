@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
 import { logout } from "@/app/actions/auth";
 import { Providers } from "@/components/Providers";
+import { AdminNavLink } from "@/components/AdminNavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { createServerClient } from "@/lib/supabase/server";
 import { daysUntilExpiry } from "@/lib/auth/user-status";
@@ -63,14 +63,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           {userEmail && (
             <div className="flex items-center justify-end gap-1 px-4 py-1 bg-white dark:bg-zinc-900 border-b border-zinc-200/60 dark:border-zinc-800/60">
               <span className="mr-auto truncate max-w-[200px] text-xs text-zinc-400 dark:text-zinc-500">{userEmail}</span>
-              {isSuperadmin && (
-                <Link
-                  href="/admin"
-                  className="rounded px-2 py-1 text-xs text-violet-400 hover:bg-violet-500/10 hover:text-violet-300 transition-colors"
-                >
-                  Admin
-                </Link>
-              )}
+              {isSuperadmin && <AdminNavLink />}
               <ThemeToggle />
               <form action={logout}>
                 <button
