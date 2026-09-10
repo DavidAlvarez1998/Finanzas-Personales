@@ -75,7 +75,7 @@ export function DisplayCurrencySection({ initialValue, onSave, isSaving }: Props
                   selected === c.code ? 'bg-sky-50 dark:bg-sky-950/20' : ''
                 }`}
               >
-                <span className="text-xl leading-none">{c.flag}</span>
+                <span className="shrink-0 w-8 text-center text-[10px] font-bold text-zinc-500 dark:text-zinc-400">{c.code.slice(0, 2)}</span>
                 <div className="flex-1 min-w-0">
                   <span className="font-semibold text-zinc-950 dark:text-white text-sm">{c.code}</span>
                   <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">{c.name}</span>
