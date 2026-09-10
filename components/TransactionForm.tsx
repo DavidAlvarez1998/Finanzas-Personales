@@ -10,11 +10,10 @@ interface Props {
   onClose: () => void
   editing?: Transaction | null
   initialType?: 'income' | 'expense'
+  currencies: string[]
 }
 
-const CURRENCIES = ['COP', 'BRL', 'USD']
-
-export function TransactionForm({ onSave, onClose, editing, initialType = 'expense' }: Props) {
+export function TransactionForm({ onSave, onClose, editing, initialType = 'expense', currencies }: Props) {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [description, setDescription] = useState('')
   const [type, setType] = useState<'income' | 'expense'>(initialType)
@@ -97,7 +96,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
                 required
               />
             </div>
-            <div className="w-20">
+            <div className="w-24">
               <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
                 Moneda
               </label>
@@ -106,7 +105,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
                 onChange={e => setCurrency(e.target.value)}
                 className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
               >
-                {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                {currencies.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
           </div>

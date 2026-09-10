@@ -11,7 +11,7 @@ export async function createDebt(
 
   const description = formData.get('description') as string | null
   const amountRaw = formData.get('amount') as string | null
-  const currency = (formData.get('currency') as string | null) ?? 'ARS'
+  const currency = (formData.get('currency') as string | null) ?? 'COP'
 
   if (!description || !amountRaw) {
     return { error: 'Descripción y monto son obligatorios.' }
@@ -45,7 +45,7 @@ export async function updateDebt(
 
   const description = formData.get('description') as string | null
   const amountRaw = formData.get('amount') as string | null
-  const currency = (formData.get('currency') as string | null) ?? 'ARS'
+  const currency = (formData.get('currency') as string | null) ?? 'COP'
 
   if (!description || !amountRaw) {
     return { error: 'Descripción y monto son obligatorios.' }

@@ -30,6 +30,7 @@ import {
   deleteContribution,
   updateGoalStatus,
 } from '@/app/actions/savings'
+import { CurrencyPicker } from '@/components/CurrencyPicker'
 import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus } from '@/types'
 
 interface Props {
@@ -37,17 +38,21 @@ interface Props {
   debts: Debt[]
   presupuestos: Presupuesto[]
   savingsGoals: SavingsGoal[]
+  currencies: string[]
 }
 
 type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'charts'
 
-export function DashboardShell({ transactions, debts, presupuestos, savingsGoals }: Props) {
+export function DashboardShell({ transactions, debts, presupuestos, savingsGoals, currencies }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [initialType, setInitialType] = useState<'income' | 'expense'>('expense')
   const [actionError, setActionError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  const effectiveCurrencies = currencies.length > 0 ? currencies : ['COP', 'USD']
 
   const currencyGroups = useMemo<CurrencyGroup[]>(() => Object.values(
     transactions.reduce<Record<string, CurrencyGroup>>((acc, t) => {
@@ -268,6 +273,15 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
             >
               + Egreso
             </button>
+            <button
+              onClick={() => setPickerOpen(true)}
+              title="Configurar monedas"
+              className="rounded-lg border border-zinc-300 p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+                <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .205 1.251l-1.18 2.044a1 1 0 0 1-1.186.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.205-1.251l1.18-2.044a1 1 0 0 1 1.186-.447l1.598.54A6.992 6.992 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
         </div>
       </header>
@@ -364,6 +378,7 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
               onDelete={handleDeleteDebt}
               onPayment={handleDebtPayment}
               isPending={isPending}
+              currencies={effectiveCurrencies}
             />
           )}
           {tab === 'presupuestos' && (
@@ -376,6 +391,7 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
               onUpdateItem={handlePresupuestoItemUpdate}
               onDeleteItem={handlePresupuestoItemDelete}
               isPending={isPending}
+              currencies={effectiveCurrencies}
             />
           )}
           {tab === 'savings' && (
@@ -388,6 +404,7 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
               onDeleteContribution={handleContributionDelete}
               onUpdateStatus={handleGoalStatus}
               isPending={isPending}
+              currencies={effectiveCurrencies}
             />
           )}
           {tab === 'charts' && <ChartsSection transactions={transactions} />}
@@ -409,6 +426,15 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
           onClose={handleCloseForm}
           editing={editing}
           initialType={initialType}
+          currencies={effectiveCurrencies}
+        />
+      )}
+
+      {/* Currency picker modal */}
+      {pickerOpen && (
+        <CurrencyPicker
+          selected={effectiveCurrencies}
+          onClose={() => setPickerOpen(false)}
         />
       )}
     </div>

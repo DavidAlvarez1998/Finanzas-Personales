@@ -13,9 +13,8 @@ interface Props {
   onUpdateItem: (itemId: string, item: { nombre: string; monto: number }) => void
   onDeleteItem: (itemId: string) => void
   isPending: boolean
+  currencies: string[]
 }
-
-const CURRENCIES = ['COP', 'USD', 'EUR']
 
 export function PresupuestosSection({
   presupuestos,
@@ -26,6 +25,7 @@ export function PresupuestosSection({
   onUpdateItem,
   onDeleteItem,
   isPending,
+  currencies,
 }: Props) {
   // Presupuesto form modal state
   const [showForm, setShowForm] = useState(false)
@@ -262,7 +262,7 @@ export function PresupuestosSection({
                     required
                   />
                 </div>
-                <div className="w-20">
+                <div className="w-24">
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
                     Moneda
                   </label>
@@ -271,7 +271,7 @@ export function PresupuestosSection({
                     onChange={e => setCurrency(e.target.value)}
                     className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   >
-                    {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                    {currencies.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
               </div>

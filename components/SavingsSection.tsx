@@ -13,6 +13,7 @@ interface Props {
   onDeleteContribution: (id: string) => void
   onUpdateStatus: (id: string, status: SavingsGoalStatus) => void
   isPending: boolean
+  currencies: string[]
 }
 
 function ProgressBar({ pct, status }: { pct: number; status: SavingsGoalStatus }) {
@@ -41,8 +42,6 @@ function formatCurrency(amount: number, currency: string) {
   return `${currency} ${amount.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
 }
 
-const CURRENCIES = ['COP', 'ARS', 'USD', 'EUR']
-
 export function SavingsSection({
   goals,
   onAdd,
@@ -52,6 +51,7 @@ export function SavingsSection({
   onDeleteContribution,
   onUpdateStatus,
   isPending,
+  currencies,
 }: Props) {
   // Goal form state
   const [showForm, setShowForm] = useState(false)
@@ -370,7 +370,7 @@ export function SavingsSection({
                   disabled={isPending}
                   className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 focus:border-violet-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-violet-500 disabled:opacity-50"
                 >
-                  {CURRENCIES.map(c => (
+                  {currencies.map(c => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>

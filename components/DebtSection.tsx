@@ -11,11 +11,10 @@ interface Props {
   onDelete: (id: string) => void
   onPayment: (debtId: string, fd: FormData) => void
   isPending: boolean
+  currencies: string[]
 }
 
-const CURRENCIES = ['COP', 'BRL', 'USD']
-
-export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPending }: Props) {
+export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPending, currencies }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Debt | null>(null)
   const [description, setDescription] = useState('')
@@ -164,14 +163,14 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                     required
                   />
                 </div>
-                <div className="w-20">
+                <div className="w-24">
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Moneda</label>
                   <select
                     value={currency}
                     onChange={e => setCurrency(e.target.value)}
                     className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   >
-                    {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                    {currencies.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
               </div>
