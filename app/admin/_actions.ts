@@ -22,10 +22,12 @@ export async function setExpiry(userId: string, formData: FormData): Promise<voi
   if (!date) return
   await setUserExpiry(userId, new Date(date))
   revalidatePath('/admin')
+  revalidatePath('/', 'layout')
 }
 
 export async function clearExpiry(userId: string): Promise<void> {
   await requireAdmin()
   await setUserExpiry(userId, null)
   revalidatePath('/admin')
+  revalidatePath('/', 'layout')
 }
