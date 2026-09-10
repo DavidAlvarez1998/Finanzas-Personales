@@ -8,7 +8,8 @@ import { AdminNavLink } from "@/components/AdminNavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { createServerClient } from "@/lib/supabase/server";
 import { daysUntilExpiry } from "@/lib/auth/user-status";
-import { ExpiryBanner } from "@/components/expiry-banner";
+import { ExpiryBanner } from "@/components/expiry-banner"
+import { SettingsButton } from "@/components/SettingsButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,6 +70,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <Providers>
           {userEmail && (
             <div className="flex items-center justify-end gap-1 px-4 py-1 bg-white dark:bg-zinc-900 border-b border-zinc-200/60 dark:border-zinc-800/60">
+              <SettingsButton />
               <span className="mr-auto truncate max-w-[200px] text-xs text-zinc-400 dark:text-zinc-500">{userEmail}</span>
               {isSuperadmin && <AdminNavLink />}
               <ThemeToggle />

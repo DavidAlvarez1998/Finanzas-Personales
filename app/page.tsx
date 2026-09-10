@@ -4,7 +4,7 @@ import { verifySession } from '@/lib/supabase/verify-session'
 import { DashboardShell } from '@/components/DashboardShell'
 
 async function Dashboard() {
-  const session = await verifySession()
+  await verifySession()
   const [transactions, debts, presupuestos, savingsGoals, currencies, displayCurrency] = await Promise.all([
     getTransactions(),
     getDebts(),
@@ -21,7 +21,6 @@ async function Dashboard() {
       presupuestos={presupuestos}
       savingsGoals={savingsGoals}
       currencies={currencies}
-      userEmail={session.email}
       displayCurrency={displayCurrency}
     />
   )

@@ -40,13 +40,12 @@ interface Props {
   presupuestos: Presupuesto[]
   savingsGoals: SavingsGoal[]
   currencies: string[]
-  userEmail: string
   displayCurrency: string | null
 }
 
 type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'charts'
 
-export function DashboardShell({ transactions, debts, presupuestos, savingsGoals, currencies, userEmail, displayCurrency: initialDisplayCurrency }: Props) {
+export function DashboardShell({ transactions, debts, presupuestos, savingsGoals, currencies, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
@@ -60,6 +59,12 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
   const [ratesLoading, setRatesLoading] = useState(false)
   const [ratesError, setRatesError] = useState(false)
   const fetchIdRef = useRef(0)
+
+  useEffect(() => {
+    function handleOpenSettings() { setPickerOpen(true) }
+    window.addEventListener('open-settings', handleOpenSettings)
+    return () => window.removeEventListener('open-settings', handleOpenSettings)
+  }, [])
 
   const effectiveCurrencies = currencies.length > 0 ? currencies : ['COP', 'USD']
 
@@ -295,38 +300,19 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
     <div className="min-h-screen bg-zinc-100 text-zinc-950 dark:bg-zinc-950 dark:text-white">
       {/* Header */}
       <header className="border-b border-zinc-200/60 bg-white/80 backdrop-blur sticky top-0 z-10 dark:border-zinc-800/60 dark:bg-zinc-900/80">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Left: gear + email */}
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              onClick={() => setPickerOpen(true)}
-              title="Configuración"
-              className="shrink-0 rounded-lg border border-zinc-300 p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .205 1.251l-1.18 2.044a1 1 0 0 1-1.186.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.205-1.251l1.18-2.044a1 1 0 0 1 1.186-.447l1.598.54A6.992 6.992 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
-              </svg>
-            </button>
-            {userEmail && (
-              <span className="truncate text-sm text-zinc-500 dark:text-zinc-400">{userEmail}</span>
-            )}
-          </div>
-
-          {/* Right: action buttons */}
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <button
-              onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
-              className="flex-1 sm:flex-none rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/30"
-            >
-              + Ingreso
-            </button>
-            <button
-              onClick={() => { setEditing(null); setInitialType('expense'); setShowForm(true) }}
-              className="flex-1 sm:flex-none rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500 transition-colors shadow-lg shadow-rose-900/30"
-            >
-              + Egreso
-            </button>
-          </div>
+        <div className="mx-auto flex max-w-5xl items-center justify-end gap-2 px-4 py-3">
+          <button
+            onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/30"
+          >
+            + Ingreso
+          </button>
+          <button
+            onClick={() => { setEditing(null); setInitialType('expense'); setShowForm(true) }}
+            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500 transition-colors shadow-lg shadow-rose-900/30"
+          >
+            + Egreso
+          </button>
         </div>
       </header>
 
