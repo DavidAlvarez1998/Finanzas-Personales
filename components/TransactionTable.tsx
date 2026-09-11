@@ -49,21 +49,27 @@ function fmtTime(dateStr: string): string | null {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-function exportToCSV(rows: Transaction[], month: string, year: number) {
-  const BOM = '﻿'
-  const header = 'Fecha,Descripción,Monto,Divisa'
-  const lines = rows.map(t => {
+async function exportToXLSX(rows: Transaction[], month: string, year: number) {
+  const { utils, write } = await import('xlsx')
+  const data = rows.map(t => {
     const time = fmtTime(t.date)
-    const dateLabel = fmtDate(t.date) + (time ? ` ${time}` : '')
-    const monto = t.income ? t.income : t.expense ? -t.expense : 0
-    return [dateLabel, `"${t.description}"`, monto, t.currency ?? 'COP'].join(',')
+    return {
+      Fecha: fmtDate(t.date) + (time ? ` ${time}` : ''),
+      Descripción: t.description,
+      Ingreso: t.income ?? '',
+      Egreso: t.expense ?? '',
+      Divisa: t.currency ?? 'COP',
+    }
   })
-  const csv = BOM + [header, ...lines].join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const ws = utils.json_to_sheet(data)
+  const wb = utils.book_new()
+  utils.book_append_sheet(wb, ws, 'Registros')
+  const buf = write(wb, { type: 'array', bookType: 'xlsx' })
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `registros-${year}-${String(MONTHS.indexOf(month) + 1).padStart(2, '0')}.csv`
+  a.download = `registros-${year}-${String(MONTHS.indexOf(month) + 1).padStart(2, '0')}.xlsx`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -149,10 +155,10 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
         />
 
         <button
-          onClick={() => exportToCSV(filtered, MONTHS[filterMonth], filterYear)}
+          onClick={() => exportToXLSX(filtered, MONTHS[filterMonth], filterYear)}
           className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 transition-colors dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-white"
         >
-          Exportar CSV
+          Exportar Excel
         </button>
 
         <button
