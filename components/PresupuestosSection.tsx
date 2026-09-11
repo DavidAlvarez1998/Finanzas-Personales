@@ -35,7 +35,7 @@ export function PresupuestosSection({
   const [editing, setEditing] = useState<Presupuesto | null>(null)
   const [nombre, setNombre] = useState('')
   const [total, setTotal] = useState('')
-  const [currency, setCurrency] = useState('COP')
+  const [currency, setCurrency] = useState(() => currencies[0] ?? 'COP')
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // Item modal state
@@ -49,7 +49,7 @@ export function PresupuestosSection({
     setEditing(null)
     setNombre('')
     setTotal('')
-    setCurrency('COP')
+    setCurrency(currencies[0] ?? 'COP')
     setShowForm(true)
   }
 

@@ -22,7 +22,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
   const [editing, setEditing] = useState<Debt | null>(null)
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [currency, setCurrency] = useState('COP')
+  const [currency, setCurrency] = useState(() => currencies[0] ?? 'COP')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [payingDebtId, setPayingDebtId] = useState<string | null>(null)
   const [payAmount, setPayAmount] = useState('')
@@ -32,7 +32,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
     setEditing(null)
     setDescription('')
     setAmount('')
-    setCurrency('COP')
+    setCurrency(currencies[0] ?? 'COP')
     setShowForm(true)
   }
 

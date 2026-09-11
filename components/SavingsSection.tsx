@@ -61,7 +61,7 @@ export function SavingsSection({
   const [editing, setEditing] = useState<SavingsGoal | null>(null)
   const [nombre, setNombre] = useState('')
   const [montoObjetivo, setMontoObjetivo] = useState('')
-  const [currency, setCurrency] = useState('COP')
+  const [currency, setCurrency] = useState(() => currencies[0] ?? 'COP')
 
   // Goal delete confirm
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -84,7 +84,7 @@ export function SavingsSection({
     setEditing(null)
     setNombre('')
     setMontoObjetivo('')
-    setCurrency('COP')
+    setCurrency(currencies[0] ?? 'COP')
     setShowForm(true)
   }
 
