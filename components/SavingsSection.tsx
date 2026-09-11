@@ -362,7 +362,7 @@ export function SavingsSection({
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Moneda
+                  Divisa
                 </label>
                 <select
                   value={currency}

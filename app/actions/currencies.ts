@@ -24,7 +24,7 @@ export async function updateUserCurrencies(
 export async function updateDisplayCurrency(
   code: string | null
 ): Promise<{ error: string } | void> {
-  if (code !== null && !VALID_CODES.has(code)) return { error: 'Moneda inválida' }
+  if (code !== null && !VALID_CODES.has(code)) return { error: 'Divisa inválida' }
   const { userId } = await verifySession()
   const supabase = createServerClient()
   const { error } = await supabase

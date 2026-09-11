@@ -26,7 +26,7 @@ export function DisplayCurrencySection({ initialValue, onSave, isSaving }: Props
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <p className="px-5 py-3 text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200/60 dark:border-zinc-800 shrink-0">
-        Elegí una moneda para ver los totales del dashboard convertidos al tipo de cambio actual.
+        Elegí una divisa para ver los totales del dashboard convertidos al tipo de cambio actual.
       </p>
 
       <div className="px-5 py-3 border-b border-zinc-200/60 dark:border-zinc-800 shrink-0">
@@ -34,7 +34,7 @@ export function DisplayCurrencySection({ initialValue, onSave, isSaving }: Props
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar moneda..."
+          placeholder="Buscar divisa..."
           className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
         />
       </div>
@@ -52,7 +52,7 @@ export function DisplayCurrencySection({ initialValue, onSave, isSaving }: Props
               <span className="text-xl leading-none">🚫</span>
               <div className="flex-1 min-w-0">
                 <span className="font-semibold text-zinc-950 dark:text-white text-sm">Sin conversión</span>
-                <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">Mostrar en monedas originales</span>
+                <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">Mostrar en divisas originales</span>
               </div>
               <span
                 className={`ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition-colors ${
@@ -103,7 +103,7 @@ export function DisplayCurrencySection({ initialValue, onSave, isSaving }: Props
           disabled={!hasChanged || isSaving}
           className="w-full rounded-lg bg-sky-600 py-2 text-sm font-semibold text-white hover:bg-sky-500 transition-colors disabled:opacity-40"
         >
-          {isSaving ? 'Guardando...' : 'Aplicar moneda'}
+          {isSaving ? 'Guardando...' : 'Aplicar divisa'}
         </button>
       </div>
     </div>

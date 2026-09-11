@@ -43,7 +43,7 @@ export function ChartsSection({ transactions }: Props) {
       {/* Currency selector — only show if multiple currencies exist */}
       {currencies.length > 1 && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500">Moneda:</span>
+          <span className="text-xs text-zinc-500">Divisa:</span>
           {currencies.map(c => (
             <button
               key={c}

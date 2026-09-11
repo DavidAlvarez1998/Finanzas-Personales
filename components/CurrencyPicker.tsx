@@ -105,7 +105,7 @@ export function CurrencyPicker({ selected, displayCurrency, onClose, onDisplayCu
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Buscar moneda..."
+                placeholder="Buscar divisa..."
                 className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
               />
             </div>

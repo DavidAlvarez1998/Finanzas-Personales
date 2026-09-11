@@ -264,7 +264,7 @@ export function PresupuestosSection({
                 </div>
                 <div className="w-24">
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
-                    Moneda
+                    Divisa
                   </label>
                   <select
                     value={currency}

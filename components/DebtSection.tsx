@@ -164,7 +164,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                   />
                 </div>
                 <div className="w-24">
-                  <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Moneda</label>
+                  <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Divisa</label>
                   <select
                     value={currency}
                     onChange={e => setCurrency(e.target.value)}

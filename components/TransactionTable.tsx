@@ -29,7 +29,7 @@ function parseMonth(dateStr: string) {
 
 function exportToCSV(rows: Transaction[], month: string, year: number) {
   const BOM = '﻿'
-  const header = 'Fecha,Descripción,Ingresos,Egresos,Moneda'
+  const header = 'Fecha,Descripción,Ingresos,Egresos,Divisa'
   const lines = rows.map(t =>
     [t.date, `"${t.description}"`, t.income ?? '', t.expense ?? '', t.currency ?? 'COP'].join(',')
   )
