@@ -20,7 +20,7 @@ const PAGE_SIZE = 10
 
 function fmt(n: number | null) {
   if (n == null || n === 0) return ''
-  return `$${Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`
+  return `$${n.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
 }
 
 function fmtSigned(income: number | null, expense: number | null) {
@@ -39,14 +39,12 @@ function parseMonth(dateStr: string) {
 }
 
 function fmtDate(dateStr: string) {
-  const d = parseDate(dateStr)
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+  return parseDate(dateStr).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 function fmtTime(dateStr: string): string | null {
   if (!dateStr.includes('T')) return null
-  const d = parseDate(dateStr)
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return parseDate(dateStr).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
 }
 
 async function exportToXLSX(rows: Transaction[], month: string, year: number) {
