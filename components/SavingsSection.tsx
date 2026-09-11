@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { AmountInput } from '@/components/AmountInput'
 import { Select } from '@/components/ui/Select'
-import { currencyLabel } from '@/lib/constants/currencies'
+import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
 import { fmtNumber } from '@/lib/format'
 import type { SavingsGoal, SavingsGoalStatus, SavingsContribution } from '@/types'
 
@@ -370,7 +370,7 @@ export function SavingsSection({
                 <Select
                   value={currency}
                   onChange={setCurrency}
-                  options={currencies.map(c => ({ value: c, label: currencyLabel(c) }))}
+                  options={currencies.map(c => ({ value: c, label: currencyLabel(c), icon: currencyFlagUrl(c) }))}
                   accent="violet"
                   disabled={isPending}
                 />

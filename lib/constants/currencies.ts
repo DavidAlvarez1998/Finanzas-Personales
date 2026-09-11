@@ -34,3 +34,7 @@ WORLD_CURRENCIES.forEach(c => { FLAG_MAP[c.code] = c.flag })
 export function currencyLabel(code: string): string {
   return code
 }
+
+export function currencyFlagUrl(code: string): string {
+  return `https://flagcdn.com/20x15/${code.slice(0, 2).toLowerCase()}.png`
+}

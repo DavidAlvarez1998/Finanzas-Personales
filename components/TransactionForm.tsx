@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import type { Transaction } from '@/types'
 import { AmountInput } from './AmountInput'
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '@/lib/constants/categories'
-import { currencyLabel } from '@/lib/constants/currencies'
+import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
 import { Select } from '@/components/ui/Select'
 
 interface Props {
@@ -128,7 +128,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
               <Select
                 value={currency}
                 onChange={setCurrency}
-                options={currencies.map(c => ({ value: c, label: currencyLabel(c) }))}
+                options={currencies.map(c => ({ value: c, label: currencyLabel(c), icon: currencyFlagUrl(c) }))}
                 accent="sky"
               />
             </div>

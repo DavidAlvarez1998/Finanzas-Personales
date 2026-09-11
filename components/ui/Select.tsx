@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 export interface SelectOption {
   value: string
   label: string
+  icon?: string
 }
 
 interface Props {
@@ -121,6 +122,9 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
           ${open ? `${ACCENT[accent]} ring-2` : ''}
           disabled:opacity-50 disabled:cursor-not-allowed`}
       >
+        {selected?.icon && (
+          <img src={selected.icon} alt="" width={20} height={15} className="shrink-0 rounded-sm object-cover" aria-hidden />
+        )}
         <span className="truncate text-left">{selected?.label ?? value}</span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -153,12 +157,13 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
                     hover:bg-zinc-50 dark:hover:bg-zinc-800/70
                     ${isActive ? `font-semibold ${ACCENT_ITEM[accent]} bg-zinc-50 dark:bg-zinc-800/50` : 'text-zinc-700 dark:text-zinc-300'}`}
                 >
-                  {isActive && (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5 shrink-0" aria-hidden>
-                      <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                  <span className={isActive ? '' : 'ml-[1.375rem]'}>{opt.label}</span>
+                  {opt.icon
+                    ? <img src={opt.icon} alt="" width={20} height={15} className="shrink-0 rounded-sm object-cover" aria-hidden />
+                    : isActive
+                      ? <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5 shrink-0" aria-hidden><path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" /></svg>
+                      : <span className="w-[1.375rem]" />
+                  }
+                  <span>{opt.label}</span>
                 </button>
               </li>
             )
