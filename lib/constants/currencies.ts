@@ -32,6 +32,5 @@ export const WORLD_CURRENCIES: Currency[] = [
 WORLD_CURRENCIES.forEach(c => { FLAG_MAP[c.code] = c.flag })
 
 export function currencyLabel(code: string): string {
-  const flag = FLAG_MAP[code]
-  return flag ? `${flag} ${code}` : code
+  return code
 }
