@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import type { Transaction } from '@/types'
+import { Select } from '@/components/ui/Select'
 
 interface Props {
   transactions: Transaction[]
@@ -100,25 +101,18 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         {!showAll && (
           <>
-            <select
-              value={filterMonth}
-              onChange={e => setFilterMonth(Number(e.target.value))}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-950 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-            >
-              {MONTHS.map((m, i) => (
-                <option key={m} value={i}>{m}</option>
-              ))}
-            </select>
-
-            <select
-              value={filterYear}
-              onChange={e => setFilterYear(Number(e.target.value))}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-950 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-            >
-              {years.map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+            <Select
+              value={String(filterMonth)}
+              onChange={v => setFilterMonth(Number(v))}
+              options={MONTHS.map((m, i) => ({ value: String(i), label: m }))}
+              accent="sky"
+            />
+            <Select
+              value={String(filterYear)}
+              onChange={v => setFilterYear(Number(v))}
+              options={years.map(y => ({ value: String(y), label: String(y) }))}
+              accent="sky"
+            />
           </>
         )}
 

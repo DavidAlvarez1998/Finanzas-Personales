@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { AmountInput } from '@/components/AmountInput'
+import { Select } from '@/components/ui/Select'
 import type { SavingsGoal, SavingsGoalStatus, SavingsContribution } from '@/types'
 
 interface Props {
@@ -364,16 +365,13 @@ export function SavingsSection({
                 <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                   Divisa
                 </label>
-                <select
+                <Select
                   value={currency}
-                  onChange={e => setCurrency(e.target.value)}
+                  onChange={setCurrency}
+                  options={currencies.map(c => ({ value: c, label: c }))}
+                  accent="violet"
                   disabled={isPending}
-                  className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 focus:border-violet-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-violet-500 disabled:opacity-50"
-                >
-                  {currencies.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+                />
               </div>
               <div className="flex gap-2 pt-2">
                 <button
