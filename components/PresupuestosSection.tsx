@@ -5,6 +5,7 @@ import type { Presupuesto, PresupuestoItem } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel } from '@/lib/constants/currencies'
+import { fmtNumber } from '@/lib/format'
 
 interface Props {
   presupuestos: Presupuesto[]
@@ -160,17 +161,17 @@ export function PresupuestosSection({
                 {/* Summary chips */}
                 <div className="flex flex-wrap gap-2 mb-3 text-xs">
                   <span className="rounded-full border border-sky-300/60 bg-white px-2.5 py-1 font-medium text-zinc-700 dark:border-sky-800/40 dark:bg-zinc-900 dark:text-zinc-300">
-                    Total: <span className="font-mono font-bold">{p.currency} {p.total.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span>
+                    Total: <span className="font-mono font-bold">{p.currency} {fmtNumber(p.total)}</span>
                   </span>
                   <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
-                    Asignado: <span className="font-mono font-bold">{asignado.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span>
+                    Asignado: <span className="font-mono font-bold">{fmtNumber(asignado)}</span>
                   </span>
                   <span className={`rounded-full border px-2.5 py-1 font-medium ${
                     libreIsNegative
                       ? 'border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-800/40 dark:bg-rose-950/30 dark:text-rose-400'
                       : 'border-emerald-300/60 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-950/30 dark:text-emerald-400'
                   }`}>
-                    Libre: <span className="font-mono font-bold">{libre.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span>
+                    Libre: <span className="font-mono font-bold">{fmtNumber(libre)}</span>
                   </span>
                 </div>
 
@@ -187,7 +188,7 @@ export function PresupuestosSection({
                         </div>
                         <div className="flex shrink-0 items-center gap-3">
                           <span className="font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                            {item.monto.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+                            {fmtNumber(item.monto)}
                           </span>
                           <div className="flex gap-1">
                             <button
@@ -232,9 +233,10 @@ export function PresupuestosSection({
           onClick={() => setShowForm(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white p-4 sm:p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700/50 dark:bg-zinc-900"
+            className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900"
             onClick={e => e.stopPropagation()}
           >
+            <div className="max-h-[90svh] overflow-y-auto p-4 sm:p-6">
             <h3 className="mb-5 text-lg font-bold text-zinc-950 dark:text-white">
               {editing ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}
             </h3>
@@ -293,6 +295,7 @@ export function PresupuestosSection({
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

@@ -58,7 +58,8 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 pb-4 sm:pb-0 dark:bg-black/60" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl border border-zinc-200/60 bg-white p-4 sm:p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-md rounded-2xl border border-zinc-200/60 bg-white shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+        <div className="max-h-[90svh] overflow-y-auto p-4 sm:p-6">
         <h2 className={`mb-5 text-lg font-bold ${type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
           {editing
             ? (type === 'income' ? 'Editar Ingreso' : 'Editar Egreso')
@@ -153,6 +154,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )

@@ -5,6 +5,7 @@ import type { Debt } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel } from '@/lib/constants/currencies'
+import { fmtNumber } from '@/lib/format'
 
 interface Props {
   debts: Debt[]
@@ -98,15 +99,15 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                 <p className="text-xs text-zinc-500 mt-0.5">{d.currency}</p>
                 {d.remaining != null && (
                   <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-zinc-500">
-                    <span>Original: <span className="font-mono">${d.amount.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span></span>
-                    <span>Abonado: <span className="font-mono text-emerald-600 dark:text-emerald-400">${(d.total_paid ?? 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span></span>
-                    <span>Restante: <span className="font-mono text-amber-600 dark:text-amber-400">${(d.remaining ?? d.amount).toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span></span>
+                    <span>Original: <span className="font-mono">${fmtNumber(d.amount)}</span></span>
+                    <span>Abonado: <span className="font-mono text-emerald-600 dark:text-emerald-400">${fmtNumber(d.total_paid ?? 0)}</span></span>
+                    <span>Restante: <span className="font-mono text-amber-600 dark:text-amber-400">${fmtNumber(d.remaining ?? d.amount)}</span></span>
                   </div>
                 )}
               </div>
               <div className="flex items-center gap-4">
                 <span className="font-mono text-base font-bold text-amber-400">
-                  {d.amount.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+                  {fmtNumber(d.amount)}
                 </span>
                 <div className="flex gap-1">
                   <button
@@ -139,7 +140,8 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0 bg-black/50 backdrop-blur-sm dark:bg-black/60" onClick={() => setShowForm(false)}>
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white p-4 sm:p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+            <div className="max-h-[90svh] overflow-y-auto p-4 sm:p-6">
             <h3 className="mb-5 text-lg font-bold text-zinc-950 dark:text-white">
               {editing ? 'Editar Deuda' : 'Nueva Deuda'}
             </h3>
@@ -192,6 +194,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}
