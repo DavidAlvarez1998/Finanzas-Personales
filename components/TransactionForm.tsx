@@ -19,16 +19,16 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
   const [description, setDescription] = useState('')
   const [type, setType] = useState<'income' | 'expense'>(initialType)
   const [amount, setAmount] = useState('')
-  const [currency, setCurrency] = useState('COP')
+  const [currency, setCurrency] = useState(() => currencies[0] ?? 'COP')
   const [category, setCategory] = useState('')
 
   useEffect(() => {
     if (editing) {
-      setDate(editing.date)
+      setDate(editing.date.split('T')[0])
       setDescription(editing.description)
       setType(editing.income ? 'income' : 'expense')
       setAmount(String(editing.income ?? editing.expense ?? ''))
-      setCurrency(editing.currency ?? 'COP')
+      setCurrency(editing.currency ?? currencies[0] ?? 'COP')
       setCategory(editing.category ?? '')
     }
   }, [editing])
@@ -37,8 +37,15 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
     e.preventDefault()
     const num = parseFloat(amount)
     if (!date || !description || isNaN(num) || num <= 0) return
+    const now = new Date()
+    const hh = String(now.getHours()).padStart(2, '0')
+    const mm = String(now.getMinutes()).padStart(2, '0')
+    const ss = String(now.getSeconds()).padStart(2, '0')
+    const originalTime = editing?.date.includes('T') ? editing.date.split('T')[1].slice(0, 8) : null
+    const datetime = `${date}T${originalTime ?? `${hh}:${mm}:${ss}`}`
+
     onSave({
-      date,
+      date: datetime,
       description: description.toUpperCase(),
       income: type === 'income' ? num : null,
       expense: type === 'expense' ? num : null,
@@ -68,6 +75,21 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
               onChange={e => setDate(e.target.value)}
               required
               className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+              Categoría <span className="normal-case text-zinc-600">(opcional)</span>
+            </label>
+            <Select
+              value={category}
+              onChange={setCategory}
+              options={[
+                { value: '', label: 'Sin categoría' },
+                ...(type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(c => ({ value: c, label: c })),
+              ]}
+              accent="sky"
             />
           </div>
 
@@ -108,21 +130,6 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
                 accent="sky"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Categoría <span className="normal-case text-zinc-600">(opcional)</span>
-            </label>
-            <Select
-              value={category}
-              onChange={setCategory}
-              options={[
-                { value: '', label: 'Sin categoría' },
-                ...(type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(c => ({ value: c, label: c })),
-              ]}
-              accent="sky"
-            />
           </div>
 
           <div className="flex gap-3 pt-2">

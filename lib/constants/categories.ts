@@ -1,8 +1,7 @@
 export const INCOME_CATEGORIES = [
-  'Salario', 'Freelance', 'Inversión', 'Regalo', 'Otro',
+  'Salario', 'Inversión', 'Regalo', 'Alquiler', 'Bono', 'Otro',
 ]
 
 export const EXPENSE_CATEGORIES = [
-  'Comida', 'Transporte', 'Vivienda', 'Salud',
-  'Entretenimiento', 'Educación', 'Ropa', 'Servicios', 'Otro',
+  'Comida', 'Transporte', 'Ropa', 'Salud', 'Servicios', 'Entretenimiento', 'Otro',
 ]

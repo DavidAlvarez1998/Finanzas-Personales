@@ -23,17 +23,32 @@ function fmt(n: number | null) {
   return `$${n.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
 }
 
+function parseDate(dateStr: string): Date {
+  return dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr + 'T00:00:00')
+}
+
 function parseMonth(dateStr: string) {
-  const d = new Date(dateStr + 'T00:00:00')
+  const d = parseDate(dateStr)
   return { month: d.getMonth(), year: d.getFullYear() }
+}
+
+function fmtDate(dateStr: string) {
+  return parseDate(dateStr).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function fmtTime(dateStr: string): string | null {
+  if (!dateStr.includes('T')) return null
+  return parseDate(dateStr).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
 }
 
 function exportToCSV(rows: Transaction[], month: string, year: number) {
   const BOM = '﻿'
   const header = 'Fecha,Descripción,Ingresos,Egresos,Divisa'
-  const lines = rows.map(t =>
-    [t.date, `"${t.description}"`, t.income ?? '', t.expense ?? '', t.currency ?? 'COP'].join(',')
-  )
+  const lines = rows.map(t => {
+    const time = fmtTime(t.date)
+    const dateLabel = fmtDate(t.date) + (time ? ` ${time}` : '')
+    return [dateLabel, `"${t.description}"`, t.income ?? '', t.expense ?? '', t.currency ?? 'COP'].join(',')
+  })
   const csv = BOM + [header, ...lines].join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -169,8 +184,11 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
             ) : (
               paginated.map(t => (
                 <tr key={t.id} className="bg-transparent hover:bg-zinc-100 transition-colors dark:bg-zinc-900/40 dark:hover:bg-zinc-800/40">
-                  <td className="px-4 py-3 text-zinc-600 whitespace-nowrap dark:text-zinc-400">
-                    {new Date(t.date + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  <td className="px-4 py-3 whitespace-nowrap dark:text-zinc-400">
+                    <span className="text-zinc-600 dark:text-zinc-400">{fmtDate(t.date)}</span>
+                    {fmtTime(t.date) && (
+                      <span className="ml-1.5 text-[10px] text-zinc-400 dark:text-zinc-600">{fmtTime(t.date)}</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-zinc-950 font-medium dark:text-white">{t.description}</td>
                   <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-500">{t.category || '—'}</td>
@@ -236,7 +254,7 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-zinc-500">
-                    {new Date(t.date + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    {fmtDate(t.date)}{fmtTime(t.date) && <span className="ml-1 text-zinc-400">{fmtTime(t.date)}</span>}
                   </p>
                   <p className="text-sm font-medium text-zinc-950 break-words dark:text-white">{t.description}</p>
                   {t.category && <span className="inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800">{t.category}</span>}
