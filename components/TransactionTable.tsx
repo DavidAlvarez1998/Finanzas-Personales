@@ -239,14 +239,10 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                 <td colSpan={3} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                   {showAll ? 'Total general' : 'Total del mes'}
                 </td>
-                <td className={`px-4 py-3 text-right font-mono font-bold ${
-                  monthIncome - monthExpense >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                }`}>
-                  {(() => {
-                    const net = monthIncome - monthExpense
-                    const abs = fmt(Math.abs(net))
-                    return net >= 0 ? `+${abs}` : `-${abs}`
-                  })()}
+                <td className="px-4 py-3 text-right font-mono font-bold">
+                  {monthIncome > 0 && <span className="text-emerald-400">+{fmt(monthIncome)}</span>}
+                  {monthIncome > 0 && monthExpense > 0 && <span className="text-zinc-500 mx-1.5">·</span>}
+                  {monthExpense > 0 && <span className="text-rose-400">-{fmt(monthExpense)}</span>}
                 </td>
                 <td />
               </tr>
@@ -306,12 +302,10 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
             <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-zinc-500">
               <span>{showAll ? 'Total general' : 'Total del mes'}</span>
-              <span className={`font-mono ${monthIncome - monthExpense >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {(() => {
-                  const net = monthIncome - monthExpense
-                  const abs = fmt(Math.abs(net))
-                  return net >= 0 ? `+${abs}` : `-${abs}`
-                })()}
+              <span className="font-mono">
+                {monthIncome > 0 && <span className="text-emerald-400">+{fmt(monthIncome)}</span>}
+                {monthIncome > 0 && monthExpense > 0 && <span className="text-zinc-500 mx-1">·</span>}
+                {monthExpense > 0 && <span className="text-rose-400">-{fmt(monthExpense)}</span>}
               </span>
             </div>
           </div>
