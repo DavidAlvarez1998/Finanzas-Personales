@@ -4,6 +4,8 @@ export interface Currency {
   name: string
 }
 
+const FLAG_MAP: Record<string, string> = {}
+
 export const WORLD_CURRENCIES: Currency[] = [
   { code: 'ARS', flag: '🇦🇷', name: 'Peso argentino' },
   { code: 'BOB', flag: '🇧🇴', name: 'Boliviano' },
@@ -26,3 +28,10 @@ export const WORLD_CURRENCIES: Currency[] = [
   { code: 'UYU', flag: '🇺🇾', name: 'Peso uruguayo' },
   { code: 'VES', flag: '🇻🇪', name: 'Bolívar venezolano' },
 ]
+
+WORLD_CURRENCIES.forEach(c => { FLAG_MAP[c.code] = c.flag })
+
+export function currencyLabel(code: string): string {
+  const flag = FLAG_MAP[code]
+  return flag ? `${flag} ${code}` : code
+}

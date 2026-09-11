@@ -20,7 +20,13 @@ const PAGE_SIZE = 10
 
 function fmt(n: number | null) {
   if (n == null || n === 0) return ''
-  return `$${n.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
+  return `$${Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`
+}
+
+function fmtSigned(income: number | null, expense: number | null) {
+  if (income) return { label: `+${fmt(income)}`, positive: true }
+  if (expense) return { label: `-${fmt(expense)}`, positive: false }
+  return { label: '—', positive: null }
 }
 
 function parseDate(dateStr: string): Date {
@@ -33,21 +39,24 @@ function parseMonth(dateStr: string) {
 }
 
 function fmtDate(dateStr: string) {
-  return parseDate(dateStr).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const d = parseDate(dateStr)
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
 }
 
 function fmtTime(dateStr: string): string | null {
   if (!dateStr.includes('T')) return null
-  return parseDate(dateStr).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+  const d = parseDate(dateStr)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 function exportToCSV(rows: Transaction[], month: string, year: number) {
   const BOM = '﻿'
-  const header = 'Fecha,Descripción,Ingresos,Egresos,Divisa'
+  const header = 'Fecha,Descripción,Monto,Divisa'
   const lines = rows.map(t => {
     const time = fmtTime(t.date)
     const dateLabel = fmtDate(t.date) + (time ? ` ${time}` : '')
-    return [dateLabel, `"${t.description}"`, t.income ?? '', t.expense ?? '', t.currency ?? 'COP'].join(',')
+    const monto = t.income ? t.income : t.expense ? -t.expense : 0
+    return [dateLabel, `"${t.description}"`, monto, t.currency ?? 'COP'].join(',')
   })
   const csv = BOM + [header, ...lines].join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -167,15 +176,14 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Fecha</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Descripción</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Categoría</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-emerald-500">Ingresos</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rose-500">Egresos</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Monto</th>
               <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-600">
+                <td colSpan={5} className="px-4 py-10 text-center text-sm text-zinc-600">
                   {searchQuery
                     ? 'No hay registros que coincidan con la búsqueda'
                     : `No hay registros para ${MONTHS[filterMonth]} ${filterYear}`}
@@ -192,11 +200,10 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                   </td>
                   <td className="px-4 py-3 text-zinc-950 font-medium dark:text-white">{t.description}</td>
                   <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-500">{t.category || '—'}</td>
-                  <td className="px-4 py-3 text-right font-mono text-emerald-400">
-                    {fmt(t.income)}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono text-rose-400">
-                    {fmt(t.expense)}
+                  <td className={`px-4 py-3 text-right font-mono font-medium ${
+                    t.income ? 'text-emerald-400' : 'text-rose-400'
+                  }`}>
+                    {(() => { const s = fmtSigned(t.income, t.expense); return s.label })()}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-center gap-2">
@@ -226,11 +233,14 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                 <td colSpan={3} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                   {showAll ? 'Total general' : 'Total del mes'}
                 </td>
-                <td className="px-4 py-3 text-right font-mono font-bold text-emerald-400">
-                  {fmt(monthIncome)}
-                </td>
-                <td className="px-4 py-3 text-right font-mono font-bold text-rose-400">
-                  {fmt(monthExpense)}
+                <td className={`px-4 py-3 text-right font-mono font-bold ${
+                  monthIncome - monthExpense >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                }`}>
+                  {(() => {
+                    const net = monthIncome - monthExpense
+                    const abs = fmt(Math.abs(net))
+                    return net >= 0 ? `+${abs}` : `-${abs}`
+                  })()}
                 </td>
                 <td />
               </tr>
@@ -290,10 +300,13 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
             <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-zinc-500">
               <span>{showAll ? 'Total general' : 'Total del mes'}</span>
-              <div className="flex gap-4">
-                <span className="font-mono text-emerald-400">{fmt(monthIncome)}</span>
-                <span className="font-mono text-rose-400">{fmt(monthExpense)}</span>
-              </div>
+              <span className={`font-mono ${monthIncome - monthExpense >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {(() => {
+                  const net = monthIncome - monthExpense
+                  const abs = fmt(Math.abs(net))
+                  return net >= 0 ? `+${abs}` : `-${abs}`
+                })()}
+              </span>
             </div>
           </div>
         )}

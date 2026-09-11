@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useId } from 'react'
+import { createPortal } from 'react-dom'
 
 export interface SelectOption {
   value: string
@@ -28,9 +29,17 @@ const ACCENT_ITEM = {
   violet: 'text-violet-600 dark:text-violet-400',
 }
 
+interface DropdownPos {
+  top?: number
+  bottom?: number
+  left: number
+  width: number
+}
+
 export function Select({ value, onChange, options, disabled, accent = 'sky', className = '' }: Props) {
   const [open, setOpen] = useState(false)
   const [above, setAbove] = useState(false)
+  const [dropdownPos, setDropdownPos] = useState<DropdownPos>({ left: 0, width: 0 })
   const ref = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const id = useId()
@@ -45,11 +54,14 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false)
     }
+    function handleScroll() { setOpen(false) }
     document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('scroll', handleScroll, true)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('scroll', handleScroll, true)
     }
   }, [open])
 
@@ -58,7 +70,14 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
     if (!open && ref.current) {
       const rect = ref.current.getBoundingClientRect()
       const spaceBelow = window.innerHeight - rect.bottom
-      setAbove(spaceBelow < 200)
+      const openAbove = spaceBelow < 200
+      setAbove(openAbove)
+      setDropdownPos({
+        top: openAbove ? undefined : rect.bottom + 4,
+        bottom: openAbove ? window.innerHeight - rect.top + 4 : undefined,
+        left: Math.min(rect.left, window.innerWidth - Math.max(rect.width, 160) - 8),
+        width: rect.width,
+      })
     }
     setOpen(prev => !prev)
   }
@@ -66,6 +85,15 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
   function handleSelect(val: string) {
     onChange(val)
     setOpen(false)
+  }
+
+  const dropdownStyle: React.CSSProperties = {
+    position: 'fixed',
+    left: dropdownPos.left,
+    minWidth: dropdownPos.width,
+    ...(above
+      ? { bottom: dropdownPos.bottom }
+      : { top: dropdownPos.top }),
   }
 
   return (
@@ -98,16 +126,14 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
         </svg>
       </button>
 
-      {/* Dropdown */}
-      {open && (
+      {/* Dropdown — rendered via portal so overflow:auto on modal doesn't clip it */}
+      {open && typeof document !== 'undefined' && createPortal(
         <ul
           ref={listRef}
           role="listbox"
           aria-labelledby={id}
-          className={`absolute z-50 min-w-full overflow-y-auto rounded-xl border border-zinc-200/80 bg-white py-1 shadow-xl
-            dark:border-zinc-700/80 dark:bg-zinc-900
-            ${above ? 'bottom-full mb-1' : 'top-full mt-1'}
-            max-h-52`}
+          style={dropdownStyle}
+          className="z-[9999] max-h-52 overflow-y-auto rounded-xl border border-zinc-200/80 bg-white py-1 shadow-xl dark:border-zinc-700/80 dark:bg-zinc-900"
         >
           {options.map(opt => {
             const isActive = opt.value === value
@@ -130,7 +156,8 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
               </li>
             )
           })}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   )

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { Debt } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
+import { currencyLabel } from '@/lib/constants/currencies'
 
 interface Props {
   debts: Debt[]
@@ -169,7 +170,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                   <Select
                     value={currency}
                     onChange={setCurrency}
-                    options={currencies.map(c => ({ value: c, label: c }))}
+                    options={currencies.map(c => ({ value: c, label: currencyLabel(c) }))}
                     accent="amber"
                   />
                 </div>

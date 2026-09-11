@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { Presupuesto, PresupuestoItem } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
+import { currencyLabel } from '@/lib/constants/currencies'
 
 interface Props {
   presupuestos: Presupuesto[]
@@ -270,7 +271,7 @@ export function PresupuestosSection({
                   <Select
                     value={currency}
                     onChange={setCurrency}
-                    options={currencies.map(c => ({ value: c, label: c }))}
+                    options={currencies.map(c => ({ value: c, label: currencyLabel(c) }))}
                     accent="sky"
                   />
                 </div>

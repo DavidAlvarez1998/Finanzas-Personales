@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { AmountInput } from '@/components/AmountInput'
 import { Select } from '@/components/ui/Select'
+import { currencyLabel } from '@/lib/constants/currencies'
 import type { SavingsGoal, SavingsGoalStatus, SavingsContribution } from '@/types'
 
 interface Props {
@@ -329,8 +330,8 @@ export function SavingsSection({
 
       {/* Goal create/edit modal */}
       {showForm && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={closeForm}>
+          <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6" onClick={e => e.stopPropagation()}>
             <h3 className="mb-4 text-base font-semibold text-zinc-950 dark:text-white">
               {editing ? 'Editar Meta' : 'Nueva Meta de Ahorro'}
             </h3>
@@ -368,7 +369,7 @@ export function SavingsSection({
                 <Select
                   value={currency}
                   onChange={setCurrency}
-                  options={currencies.map(c => ({ value: c, label: c }))}
+                  options={currencies.map(c => ({ value: c, label: currencyLabel(c) }))}
                   accent="violet"
                   disabled={isPending}
                 />
@@ -397,8 +398,8 @@ export function SavingsSection({
 
       {/* Goal delete confirm modal */}
       {deletingId && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6 text-center">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setDeletingId(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6 text-center" onClick={e => e.stopPropagation()}>
             <p className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
               ¿Eliminar esta meta y todos sus aportes? Esta acción no se puede deshacer.
             </p>
@@ -424,8 +425,8 @@ export function SavingsSection({
 
       {/* Contribution modal */}
       {contributingGoalId && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={closeContribForm}>
+          <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6" onClick={e => e.stopPropagation()}>
             <h3 className="mb-4 text-base font-semibold text-zinc-950 dark:text-white">
               Registrar Aporte
             </h3>
@@ -492,8 +493,8 @@ export function SavingsSection({
 
       {/* Contribution delete confirm modal */}
       {deletingContribId && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6 text-center">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setDeletingContribId(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6 text-center" onClick={e => e.stopPropagation()}>
             <p className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
               ¿Eliminar este aporte? El estado de la meta no cambiará automáticamente.
             </p>

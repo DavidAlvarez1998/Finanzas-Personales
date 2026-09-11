@@ -11,11 +11,10 @@ interface SummaryCardsProps {
 }
 
 function fmt(n: number, currency?: string | null) {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: currency ?? 'COP',
-    maximumFractionDigits: 0,
-  }).format(n)
+  const rounded = Math.round(n)
+  const formatted = Math.abs(rounded).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  const sign = rounded < 0 ? '-' : ''
+  return `${sign}${currency ?? 'COP'} ${formatted}`
 }
 
 const EMPTY_GROUP: CurrencyGroup = { currency: 'COP', income: 0, expense: 0, balance: 0 }
