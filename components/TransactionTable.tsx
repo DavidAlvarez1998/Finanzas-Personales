@@ -73,17 +73,22 @@ async function exportToXLSX(rows: Transaction[], month: string, year: number) {
 }
 
 export function TransactionTable({ transactions, onEdit, onDelete, isPending }: Props) {
-  const now = new Date()
-  const [filterMonth, setFilterMonth] = useState(now.getMonth())
-  const [filterYear, setFilterYear] = useState(now.getFullYear())
+  const [filterMonth, setFilterMonth] = useState(0)
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(0)
   const [showAll, setShowAll] = useState(false)
 
+  useEffect(() => {
+    const now = new Date()
+    setFilterMonth(now.getMonth())
+    setFilterYear(now.getFullYear())
+  }, [])
+
   const years = useMemo(() => {
     const set = new Set(transactions.map(t => parseMonth(t.date).year))
-    set.add(now.getFullYear())
+    set.add(new Date().getFullYear())
     return Array.from(set).sort((a, b) => b - a)
   }, [transactions])
 
