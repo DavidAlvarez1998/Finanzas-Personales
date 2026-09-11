@@ -32,14 +32,15 @@ const ACCENT_ITEM = {
 interface DropdownPos {
   top?: number
   bottom?: number
-  left: number
+  left?: number
+  right?: number
   width: number
 }
 
 export function Select({ value, onChange, options, disabled, accent = 'sky', className = '' }: Props) {
   const [open, setOpen] = useState(false)
   const [above, setAbove] = useState(false)
-  const [dropdownPos, setDropdownPos] = useState<DropdownPos>({ left: 0, width: 0 })
+  const [dropdownPos, setDropdownPos] = useState<DropdownPos>({ left: 0, right: undefined, width: 0 })
   const ref = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const id = useId()
@@ -72,10 +73,13 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
       const spaceBelow = window.innerHeight - rect.bottom
       const openAbove = spaceBelow < 200
       setAbove(openAbove)
+      const spaceRight = window.innerWidth - rect.right
+      const alignRight = spaceRight < 160
       setDropdownPos({
         top: openAbove ? undefined : rect.bottom + 4,
         bottom: openAbove ? window.innerHeight - rect.top + 4 : undefined,
-        left: Math.min(rect.left, window.innerWidth - Math.max(rect.width, 160) - 8),
+        left: alignRight ? undefined : rect.left,
+        right: alignRight ? window.innerWidth - rect.right : undefined,
         width: rect.width,
       })
     }
@@ -89,8 +93,11 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
 
   const dropdownStyle: React.CSSProperties = {
     position: 'fixed',
-    left: dropdownPos.left,
-    minWidth: dropdownPos.width,
+    ...(dropdownPos.right !== undefined
+      ? { right: dropdownPos.right }
+      : { left: dropdownPos.left }),
+    minWidth: Math.max(dropdownPos.width, 160),
+    maxWidth: 'min(320px, calc(100vw - 16px))',
     ...(above
       ? { bottom: dropdownPos.bottom }
       : { top: dropdownPos.top }),

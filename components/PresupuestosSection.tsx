@@ -236,7 +236,7 @@ export function PresupuestosSection({
             className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900"
             onClick={e => e.stopPropagation()}
           >
-            <div className="max-h-[90svh] overflow-y-auto p-4 sm:p-6">
+            <div className="max-h-[90svh] overflow-y-auto p-4 sm:p-6 [scrollbar-gutter:stable]">
             <h3 className="mb-5 text-lg font-bold text-zinc-950 dark:text-white">
               {editing ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}
             </h3>
@@ -307,7 +307,7 @@ export function PresupuestosSection({
           onClick={() => { setItemModalFor(null); setEditingItem(null) }}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white p-4 sm:p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700/50 dark:bg-zinc-900"
+            className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white p-4 sm:p-6 shadow-2xl max-h-[90svh] overflow-y-auto [scrollbar-gutter:stable] dark:border-zinc-700/50 dark:bg-zinc-900"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="mb-5 text-lg font-bold text-zinc-950 dark:text-white">
