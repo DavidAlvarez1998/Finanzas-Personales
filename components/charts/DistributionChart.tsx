@@ -1,6 +1,7 @@
 'use client'
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { fmtNumber } from '@/lib/format'
 
 interface Props {
   income: number
@@ -10,7 +11,7 @@ interface Props {
 }
 
 function fmt(n: number) {
-  return `$${n.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
+  return `$${fmtNumber(n)}`
 }
 
 export function DistributionChart({ income, expense, incomeColor, expenseColor }: Props) {

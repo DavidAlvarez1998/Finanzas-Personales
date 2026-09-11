@@ -1,5 +1,7 @@
 'use client'
 
+import { fmtNumber } from '@/lib/format'
+
 interface Props {
   value: string
   onChange: (v: string) => void
@@ -21,7 +23,7 @@ function toRaw(formatted: string): string {
 function format(raw: string): string {
   const n = parseInt(toRaw(raw) || '0', 10)
   if (isNaN(n) || n === 0) return ''
-  return n.toLocaleString('es-AR', { maximumFractionDigits: 0 })
+  return fmtNumber(n)
 }
 
 export function AmountInput({

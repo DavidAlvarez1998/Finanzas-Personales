@@ -5,6 +5,7 @@ import {
   Legend, ResponsiveContainer,
 } from 'recharts'
 import type { MonthData } from '@/lib/aggregations'
+import { fmtNumber } from '@/lib/format'
 
 interface Props {
   data: MonthData[]
@@ -13,7 +14,7 @@ interface Props {
 }
 
 function fmt(n: number) {
-  return `$${n.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
+  return `$${fmtNumber(n)}`
 }
 
 export function MonthlyTrendChart({ data, incomeColor, expenseColor }: Props) {
