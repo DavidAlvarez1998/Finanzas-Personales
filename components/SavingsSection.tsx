@@ -332,7 +332,7 @@ export function SavingsSection({
       {/* Goal create/edit modal */}
       {showForm && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={closeForm}>
-          <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6" onClick={e => e.stopPropagation()}>
             <h3 className="mb-4 text-base font-semibold text-zinc-950 dark:text-white">
               {editing ? 'Editar Meta' : 'Nueva Meta de Ahorro'}
             </h3>
@@ -427,7 +427,7 @@ export function SavingsSection({
       {/* Contribution modal */}
       {contributingGoalId && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={closeContribForm}>
-          <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6" onClick={e => e.stopPropagation()}>
             <h3 className="mb-4 text-base font-semibold text-zinc-950 dark:text-white">
               Registrar Aporte
             </h3>

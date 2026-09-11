@@ -140,7 +140,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0 bg-black/50 backdrop-blur-sm dark:bg-black/60" onClick={() => setShowForm(false)}>
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200/60 bg-white shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-zinc-200/60 bg-white shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
             <div className="max-h-[90svh] overflow-y-auto p-4 sm:p-6 [scrollbar-gutter:stable]">
             <h3 className="mb-5 text-lg font-bold text-zinc-950 dark:text-white">
               {editing ? 'Editar Deuda' : 'Nueva Deuda'}
@@ -157,8 +157,8 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                   className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                 />
               </div>
-              <div className="flex gap-2">
-                <div className="flex-1">
+              <div className="grid grid-cols-[minmax(0,1fr)_80px] gap-2">
+                <div>
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Monto</label>
                   <AmountInput
                     value={amount}
@@ -167,7 +167,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                     required
                   />
                 </div>
-                <div className="w-24">
+                <div>
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Divisa</label>
                   <Select
                     value={currency}
