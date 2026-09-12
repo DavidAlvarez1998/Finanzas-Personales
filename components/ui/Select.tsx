@@ -56,7 +56,10 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false)
     }
-    function handleScroll() { setOpen(false) }
+    function handleScroll(e: Event) {
+      if (listRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
     document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('keydown', handleKeyDown)
     window.addEventListener('scroll', handleScroll, true)
