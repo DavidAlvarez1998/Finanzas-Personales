@@ -51,7 +51,9 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
   useEffect(() => {
     if (!open) return
     function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (ref.current?.contains(target) || listRef.current?.contains(target)) return
+      setOpen(false)
     }
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false)
