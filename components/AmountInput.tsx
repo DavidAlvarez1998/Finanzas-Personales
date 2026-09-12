@@ -88,8 +88,11 @@ export function AmountInput({
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const sanitized = sanitizeInput(e.target.value, decimals)
-    setDisplay(sanitized)
-    onChange(displayToRaw(sanitized))
+    const raw = displayToRaw(sanitized)
+    const trailingComma = sanitized.endsWith(',')
+    const formatted = raw !== '' ? rawToDisplay(raw, decimals) : ''
+    setDisplay(trailingComma && !formatted.includes(',') ? `${formatted},` : formatted)
+    onChange(raw)
   }
 
   return (
