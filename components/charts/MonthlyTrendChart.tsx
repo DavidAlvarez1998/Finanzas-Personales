@@ -5,16 +5,12 @@ import {
   Legend, ResponsiveContainer,
 } from 'recharts'
 import type { MonthData } from '@/lib/aggregations'
-import { fmtNumber } from '@/lib/format'
+import { formatAmount } from '@/lib/format'
 
 interface Props {
   data: MonthData[]
   incomeColor: string
   expenseColor: string
-}
-
-function fmt(n: number) {
-  return `$${fmtNumber(n)}`
 }
 
 export function MonthlyTrendChart({ data, incomeColor, expenseColor }: Props) {
@@ -34,7 +30,7 @@ export function MonthlyTrendChart({ data, incomeColor, expenseColor }: Props) {
           <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="currentColor" strokeOpacity={0.3} />
           <YAxis tickFormatter={n => `$${(n/1000).toFixed(0)}k`} tick={{ fontSize: 11 }} stroke="currentColor" strokeOpacity={0.3} width={52} />
           <Tooltip
-            formatter={(value: number, name: string) => [fmt(value), name === 'income' ? 'Ingresos' : 'Egresos']}
+            formatter={(value: number, name: string) => [formatAmount(value), name === 'income' ? 'Ingresos' : 'Egresos']}
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
           />
           <Legend formatter={name => name === 'income' ? 'Ingresos' : 'Egresos'} />

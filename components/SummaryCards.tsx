@@ -1,6 +1,7 @@
 'use client'
 
 import type { CurrencyGroup } from '@/types'
+import { formatAmount } from '@/lib/format'
 
 interface SummaryCardsProps {
   groups: CurrencyGroup[]
@@ -8,14 +9,6 @@ interface SummaryCardsProps {
   rates?: Map<string, number>
   ratesLoading?: boolean
   ratesError?: boolean
-}
-
-function fmt(n: number, currency?: string | null) {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: currency ?? 'COP',
-    maximumFractionDigits: 0,
-  }).format(n)
 }
 
 const EMPTY_GROUP: CurrencyGroup = { currency: 'COP', income: 0, expense: 0, balance: 0 }
@@ -58,13 +51,13 @@ export function SummaryCards({
               <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700/70 mb-1 dark:text-emerald-400/70">
                 Ingresos · {g.currency}
               </p>
-              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{fmt(g.income, g.currency)}</p>
+              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{formatAmount(g.income)}</p>
             </div>
             <div className="rounded-xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-800/40 dark:bg-rose-950/30">
               <p className="text-xs font-semibold uppercase tracking-widest text-rose-700/70 mb-1 dark:text-rose-400/70">
                 Egresos · {g.currency}
               </p>
-              <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{fmt(g.expense, g.currency)}</p>
+              <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{formatAmount(g.expense)}</p>
             </div>
             <div className={`rounded-xl border p-5 ${
               g.balance >= 0
@@ -77,7 +70,7 @@ export function SummaryCards({
                 Saldo · {g.currency}
               </p>
               <p className={`text-2xl font-bold ${g.balance >= 0 ? 'text-sky-700 dark:text-sky-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                {fmt(g.balance, g.currency)}
+                {formatAmount(g.balance)}
               </p>
             </div>
           </div>
@@ -104,13 +97,13 @@ export function SummaryCards({
         <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700/70 mb-1 dark:text-emerald-400/70">
           Ingresos · {displayCurrency}
         </p>
-        <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{fmt(totalIncome, displayCurrency)}</p>
+        <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{formatAmount(totalIncome)}</p>
       </div>
       <div className="rounded-xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-800/40 dark:bg-rose-950/30">
         <p className="text-xs font-semibold uppercase tracking-widest text-rose-700/70 mb-1 dark:text-rose-400/70">
           Egresos · {displayCurrency}
         </p>
-        <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{fmt(totalExpense, displayCurrency)}</p>
+        <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{formatAmount(totalExpense)}</p>
       </div>
       <div className={`rounded-xl border p-5 ${
         totalBalance >= 0
@@ -123,7 +116,7 @@ export function SummaryCards({
           Saldo · {displayCurrency}
         </p>
         <p className={`text-2xl font-bold ${totalBalance >= 0 ? 'text-sky-700 dark:text-sky-400' : 'text-amber-700 dark:text-amber-400'}`}>
-          {fmt(totalBalance, displayCurrency)}
+          {formatAmount(totalBalance)}
         </p>
       </div>
     </div>

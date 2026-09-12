@@ -5,7 +5,7 @@ import type { Debt } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
-import { fmtNumber } from '@/lib/format'
+import { formatAmount } from '@/lib/format'
 
 interface Props {
   debts: Debt[]
@@ -99,15 +99,15 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                 <p className="text-xs text-zinc-500 mt-0.5">{d.currency}</p>
                 {d.remaining != null && (
                   <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-zinc-500">
-                    <span>Original: <span className="font-mono">${fmtNumber(d.amount)}</span></span>
-                    <span>Abonado: <span className="font-mono text-emerald-600 dark:text-emerald-400">${fmtNumber(d.total_paid ?? 0)}</span></span>
-                    <span>Restante: <span className="font-mono text-amber-600 dark:text-amber-400">${fmtNumber(d.remaining ?? d.amount)}</span></span>
+                    <span>Original: <span className="font-mono">${formatAmount(d.amount)}</span></span>
+                    <span>Abonado: <span className="font-mono text-emerald-600 dark:text-emerald-400">${formatAmount(d.total_paid ?? 0)}</span></span>
+                    <span>Restante: <span className="font-mono text-amber-600 dark:text-amber-400">${formatAmount(d.remaining ?? d.amount)}</span></span>
                   </div>
                 )}
               </div>
               <div className="flex items-center gap-4">
                 <span className="font-mono text-base font-bold text-amber-400">
-                  {fmtNumber(d.amount)}
+                  {formatAmount(d.amount)}
                 </span>
                 <div className="flex gap-1">
                   <button
@@ -163,6 +163,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                   <AmountInput
                     value={amount}
                     onChange={setAmount}
+                    decimals={2}
                     accent="amber"
                     required
                   />
@@ -241,7 +242,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
             >
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">Monto</label>
-                <AmountInput value={payAmount} onChange={setPayAmount} accent="amber" required />
+                <AmountInput value={payAmount} onChange={setPayAmount} decimals={2} accent="amber" required />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">Nota <span className="normal-case text-zinc-400">(opcional)</span></label>

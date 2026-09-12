@@ -5,7 +5,7 @@ import type { Presupuesto, PresupuestoItem } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
-import { fmtNumber } from '@/lib/format'
+import { formatAmount } from '@/lib/format'
 
 interface Props {
   presupuestos: Presupuesto[]
@@ -161,17 +161,17 @@ export function PresupuestosSection({
                 {/* Summary chips */}
                 <div className="flex flex-wrap gap-2 mb-3 text-xs">
                   <span className="rounded-full border border-sky-300/60 bg-white px-2.5 py-1 font-medium text-zinc-700 dark:border-sky-800/40 dark:bg-zinc-900 dark:text-zinc-300">
-                    Total: <span className="font-mono font-bold">{p.currency} {fmtNumber(p.total)}</span>
+                    Total: <span className="font-mono font-bold">{p.currency} {formatAmount(p.total)}</span>
                   </span>
                   <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
-                    Asignado: <span className="font-mono font-bold">{fmtNumber(asignado)}</span>
+                    Asignado: <span className="font-mono font-bold">{formatAmount(asignado)}</span>
                   </span>
                   <span className={`rounded-full border px-2.5 py-1 font-medium ${
                     libreIsNegative
                       ? 'border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-800/40 dark:bg-rose-950/30 dark:text-rose-400'
                       : 'border-emerald-300/60 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-950/30 dark:text-emerald-400'
                   }`}>
-                    Libre: <span className="font-mono font-bold">{fmtNumber(libre)}</span>
+                    Libre: <span className="font-mono font-bold">{formatAmount(libre)}</span>
                   </span>
                 </div>
 
@@ -188,7 +188,7 @@ export function PresupuestosSection({
                         </div>
                         <div className="flex shrink-0 items-center gap-3">
                           <span className="font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                            {fmtNumber(item.monto)}
+                            {formatAmount(item.monto)}
                           </span>
                           <div className="flex gap-1">
                             <button
@@ -262,6 +262,7 @@ export function PresupuestosSection({
                   <AmountInput
                     value={total}
                     onChange={setTotal}
+                    decimals={2}
                     accent="sky"
                     required
                   />
@@ -334,6 +335,7 @@ export function PresupuestosSection({
                 <AmountInput
                   value={itemMonto}
                   onChange={setItemMonto}
+                  decimals={2}
                   accent="sky"
                   required
                 />

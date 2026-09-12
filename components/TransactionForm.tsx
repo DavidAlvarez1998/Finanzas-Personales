@@ -117,6 +117,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
               <AmountInput
                 value={amount}
                 onChange={setAmount}
+                decimals={2}
                 accent="sky"
                 required
               />

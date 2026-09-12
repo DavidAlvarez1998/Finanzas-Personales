@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { AmountInput } from '@/components/AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
-import { fmtNumber } from '@/lib/format'
+import { formatAmount } from '@/lib/format'
 import type { SavingsGoal, SavingsGoalStatus, SavingsContribution } from '@/types'
 
 interface Props {
@@ -42,7 +42,7 @@ function ProgressBar({ pct, status }: { pct: number; status: SavingsGoalStatus }
 }
 
 function formatCurrency(amount: number, currency: string) {
-  return `${currency} ${fmtNumber(amount)}`
+  return `${currency} ${formatAmount(amount)}`
 }
 
 export function SavingsSection({
@@ -358,6 +358,7 @@ export function SavingsSection({
                 <AmountInput
                   value={montoObjetivo}
                   onChange={setMontoObjetivo}
+                  decimals={2}
                   min={1}
                   required
                   accent="violet"
@@ -439,6 +440,7 @@ export function SavingsSection({
                 <AmountInput
                   value={contribMonto}
                   onChange={setContribMonto}
+                  decimals={2}
                   min={1}
                   required
                   accent="violet"

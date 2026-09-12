@@ -1,10 +1,9 @@
 'use client'
 
-import { fmtNumber } from '@/lib/format'
-
 interface Props {
   value: string
   onChange: (v: string) => void
+  decimals?: number
   min?: number
   required?: boolean
   accent?: 'sky' | 'amber' | 'violet'
@@ -16,31 +15,58 @@ const FOCUS: Record<NonNullable<Props['accent']>, string> = {
   violet: 'focus-within:border-violet-600 dark:focus-within:border-violet-500',
 }
 
-function toRaw(formatted: string): string {
-  return formatted.replace(/\./g, '').replace(/[^\d]/g, '')
+// Accepts raw user input. Strips thousands dots, keeps digits and at most
+// one comma, trims fractional part to `decimals` digits.
+function sanitizeInput(input: string, decimals: number): string {
+  const noThousands = input.replace(/\./g, '')
+  const cleaned = noThousands.replace(/[^\d,]/g, '')
+  const firstComma = cleaned.indexOf(',')
+  if (decimals === 0 || firstComma === -1) {
+    return cleaned.replace(/,/g, '')
+  }
+  const intPart = cleaned.slice(0, firstComma)
+  const fracPart = cleaned.slice(firstComma + 1).replace(/,/g, '').slice(0, decimals)
+  return fracPart.length > 0 ? `${intPart},${fracPart}` : `${intPart},`
 }
 
-function format(raw: string): string {
-  const n = parseInt(toRaw(raw) || '0', 10)
-  if (isNaN(n) || n === 0) return ''
-  return fmtNumber(n)
+// Convert sanitized display string ("1234,56") into dot-separated raw
+// string safe for parseFloat(). NEVER emits a comma-separated string.
+function displayToRaw(display: string): string {
+  if (display === '' || display === ',') return ''
+  const [i, f] = display.split(',')
+  if (f == null || f === '') return i
+  return `${i}.${f}`
+}
+
+// Convert dot-separated raw back to es-AR display shape.
+// Preserves in-progress fractional typing (no trailing zeros while typing).
+function rawToDisplay(raw: string, decimals: number): string {
+  if (raw === '' || raw === '.') return ''
+  const [intStr, fracStr] = raw.split('.')
+  const intNum = parseInt(intStr || '0', 10)
+  if (!Number.isFinite(intNum)) return ''
+  const intFormatted = new Intl.NumberFormat('es-AR').format(intNum)
+  if (fracStr == null) return intFormatted
+  return `${intFormatted},${fracStr.slice(0, decimals)}`
 }
 
 export function AmountInput({
   value,
   onChange,
+  decimals = 2,
   min = 0,
   required,
   accent = 'sky',
 }: Props) {
   function adjust(delta: number) {
-    const current = parseInt(toRaw(value) || '0', 10)
+    const current = parseFloat(value || '0')
     const next = Math.max(min, current + delta)
-    onChange(String(next))
+    onChange(decimals === 0 ? String(Math.trunc(next)) : next.toFixed(decimals))
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = toRaw(e.target.value)
+    const display = sanitizeInput(e.target.value, decimals)
+    const raw = displayToRaw(display)
     onChange(raw)
   }
 
@@ -48,10 +74,10 @@ export function AmountInput({
     <div className={`flex overflow-hidden rounded-lg border border-zinc-300 bg-zinc-100 transition-colors dark:border-zinc-700 dark:bg-zinc-800 ${FOCUS[accent]}`}>
       <input
         type="text"
-        inputMode="numeric"
-        value={format(value)}
+        inputMode="decimal"
+        value={rawToDisplay(value, decimals)}
         onChange={handleChange}
-        placeholder="0"
+        placeholder={decimals > 0 ? '0,00' : '0'}
         required={required}
         className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:outline-none dark:text-white dark:placeholder-zinc-500"
       />

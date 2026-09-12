@@ -1,17 +1,13 @@
 'use client'
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import { fmtNumber } from '@/lib/format'
+import { formatAmount } from '@/lib/format'
 
 interface Props {
   income: number
   expense: number
   incomeColor: string
   expenseColor: string
-}
-
-function fmt(n: number) {
-  return `$${fmtNumber(n)}`
 }
 
 export function DistributionChart({ income, expense, incomeColor, expenseColor }: Props) {
@@ -46,7 +42,7 @@ export function DistributionChart({ income, expense, incomeColor, expenseColor }
             <Cell fill={incomeColor} />
             <Cell fill={expenseColor} />
           </Pie>
-          <Tooltip formatter={(value: number) => fmt(value)} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+          <Tooltip formatter={(value: number) => formatAmount(value)} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
         </PieChart>
       </ResponsiveContainer>
     </div>

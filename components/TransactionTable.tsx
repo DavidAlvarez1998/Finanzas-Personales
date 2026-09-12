@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import type { Transaction } from '@/types'
 import { Select } from '@/components/ui/Select'
+import { formatAmount } from '@/lib/format'
 
 interface Props {
   transactions: Transaction[]
@@ -18,14 +19,9 @@ const MONTHS = [
 
 const PAGE_SIZE = 10
 
-function fmt(n: number | null) {
-  if (n == null || n === 0) return ''
-  return `$${n.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
-}
-
 function fmtSigned(income: number | null, expense: number | null) {
-  if (income) return { label: `+${fmt(income)}`, positive: true }
-  if (expense) return { label: `-${fmt(expense)}`, positive: false }
+  if (income) return { label: `+${formatAmount(income)}`, positive: true }
+  if (expense) return { label: `-${formatAmount(expense)}`, positive: false }
   return { label: '—', positive: null }
 }
 
@@ -243,9 +239,9 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                   {showAll ? 'Total general' : 'Total del mes'}
                 </td>
                 <td className="px-4 py-3 text-right font-mono font-bold">
-                  {monthIncome > 0 && <span className="text-emerald-400">+{fmt(monthIncome)}</span>}
+                  {monthIncome > 0 && <span className="text-emerald-400">+{formatAmount(monthIncome)}</span>}
                   {monthIncome > 0 && monthExpense > 0 && <span className="text-zinc-500 mx-1.5">·</span>}
-                  {monthExpense > 0 && <span className="text-rose-400">-{fmt(monthExpense)}</span>}
+                  {monthExpense > 0 && <span className="text-rose-400">-{formatAmount(monthExpense)}</span>}
                 </td>
                 <td />
               </tr>
@@ -276,9 +272,9 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                 </div>
                 <div className="shrink-0 text-right">
                   {t.income ? (
-                    <span className="font-mono text-sm font-bold text-emerald-400">{fmt(t.income)}</span>
+                    <span className="font-mono text-sm font-bold text-emerald-400">{formatAmount(t.income)}</span>
                   ) : (
-                    <span className="font-mono text-sm font-bold text-rose-400">{fmt(t.expense)}</span>
+                    <span className="font-mono text-sm font-bold text-rose-400">{formatAmount(t.expense ?? 0)}</span>
                   )}
                 </div>
               </div>
@@ -306,9 +302,9 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
             <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-zinc-500">
               <span>{showAll ? 'Total general' : 'Total del mes'}</span>
               <span className="font-mono">
-                {monthIncome > 0 && <span className="text-emerald-400">+{fmt(monthIncome)}</span>}
+                {monthIncome > 0 && <span className="text-emerald-400">+{formatAmount(monthIncome)}</span>}
                 {monthIncome > 0 && monthExpense > 0 && <span className="text-zinc-500 mx-1">·</span>}
-                {monthExpense > 0 && <span className="text-rose-400">-{fmt(monthExpense)}</span>}
+                {monthExpense > 0 && <span className="text-rose-400">-{formatAmount(monthExpense)}</span>}
               </span>
             </div>
           </div>
