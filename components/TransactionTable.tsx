@@ -107,8 +107,17 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
 
   const paginated = showAll ? filtered : filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
-  const monthIncome = filtered.reduce((s, t) => s + (t.income ?? 0), 0)
-  const monthExpense = filtered.reduce((s, t) => s + (t.expense ?? 0), 0)
+  const currencyTotals = useMemo(() => {
+    const map = new Map<string, { income: number; expense: number }>()
+    for (const t of filtered) {
+      const c = t.currency ?? 'COP'
+      const entry = map.get(c) ?? { income: 0, expense: 0 }
+      entry.income += t.income ?? 0
+      entry.expense += t.expense ?? 0
+      map.set(c, entry)
+    }
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
+  }, [filtered])
 
   function confirmDelete(id: string) {
     setDeletingId(id)
@@ -239,9 +248,16 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                   {showAll ? 'Total general' : 'Total del mes'}
                 </td>
                 <td className="px-4 py-3 text-right font-mono font-bold">
-                  {monthIncome > 0 && <span className="text-emerald-400">+{formatAmount(monthIncome)}</span>}
-                  {monthIncome > 0 && monthExpense > 0 && <span className="text-zinc-500 mx-1.5">·</span>}
-                  {monthExpense > 0 && <span className="text-rose-400">-{formatAmount(monthExpense)}</span>}
+                  <div className="flex flex-col items-end gap-0.5">
+                    {currencyTotals.map(([currency, { income, expense }]) => (
+                      <div key={currency} className="flex items-center gap-1.5 text-sm">
+                        <span className="text-xs font-normal text-zinc-500">{currency}</span>
+                        {income > 0 && <span className="text-emerald-400">+{formatAmount(income)}</span>}
+                        {income > 0 && expense > 0 && <span className="text-zinc-500">·</span>}
+                        {expense > 0 && <span className="text-rose-400">-{formatAmount(expense)}</span>}
+                      </div>
+                    ))}
+                  </div>
                 </td>
                 <td />
               </tr>
@@ -301,11 +317,16 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
             <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-zinc-500">
               <span>{showAll ? 'Total general' : 'Total del mes'}</span>
-              <span className="font-mono">
-                {monthIncome > 0 && <span className="text-emerald-400">+{formatAmount(monthIncome)}</span>}
-                {monthIncome > 0 && monthExpense > 0 && <span className="text-zinc-500 mx-1">·</span>}
-                {monthExpense > 0 && <span className="text-rose-400">-{formatAmount(monthExpense)}</span>}
-              </span>
+              <div className="flex flex-col items-end gap-0.5 font-mono">
+                {currencyTotals.map(([currency, { income, expense }]) => (
+                  <div key={currency} className="flex items-center gap-1.5 text-sm">
+                    <span className="text-xs font-normal text-zinc-500">{currency}</span>
+                    {income > 0 && <span className="text-emerald-400">+{formatAmount(income)}</span>}
+                    {income > 0 && expense > 0 && <span className="text-zinc-500">·</span>}
+                    {expense > 0 && <span className="text-rose-400">-{formatAmount(expense)}</span>}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

@@ -1,0 +1,2 @@
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS display_currency TEXT DEFAULT NULL;
