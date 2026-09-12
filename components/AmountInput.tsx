@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+
 interface Props {
   value: string
   onChange: (v: string) => void
@@ -15,11 +17,20 @@ const FOCUS: Record<NonNullable<Props['accent']>, string> = {
   violet: 'focus-within:border-violet-600 dark:focus-within:border-violet-500',
 }
 
-// Accepts raw user input. Strips thousands dots, keeps digits and at most
-// one comma, trims fractional part to `decimals` digits.
+// Accepts raw user input. Accepts ',' or '.' as decimal separator (normalizes to ',').
+// Strips thousands dots, keeps digits and at most one comma, trims fractional part.
 function sanitizeInput(input: string, decimals: number): string {
-  const noThousands = input.replace(/\./g, '')
-  const cleaned = noThousands.replace(/[^\d,]/g, '')
+  // If no comma but there's a dot, treat the last dot as decimal separator
+  let normalized = input
+  const hasComma = input.includes(',')
+  if (!hasComma && input.includes('.')) {
+    const lastDot = input.lastIndexOf('.')
+    normalized = input.slice(0, lastDot).replace(/\./g, '') + ',' + input.slice(lastDot + 1)
+  } else {
+    normalized = input.replace(/\./g, '')
+  }
+
+  const cleaned = normalized.replace(/[^\d,]/g, '')
   const firstComma = cleaned.indexOf(',')
   if (decimals === 0 || firstComma === -1) {
     return cleaned.replace(/,/g, '')
@@ -58,16 +69,27 @@ export function AmountInput({
   required,
   accent = 'sky',
 }: Props) {
+  const [display, setDisplay] = useState(() => rawToDisplay(value, decimals))
+
+  // Sync display when value changes externally (adjust buttons, form reset)
+  useEffect(() => {
+    if (displayToRaw(display) !== value) {
+      setDisplay(rawToDisplay(value, decimals))
+    }
+  }, [value])
+
   function adjust(delta: number) {
     const current = parseFloat(value || '0')
     const next = Math.max(min, current + delta)
-    onChange(decimals === 0 ? String(Math.trunc(next)) : next.toFixed(decimals))
+    const newRaw = decimals === 0 ? String(Math.trunc(next)) : next.toFixed(decimals)
+    setDisplay(rawToDisplay(newRaw, decimals))
+    onChange(newRaw)
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const display = sanitizeInput(e.target.value, decimals)
-    const raw = displayToRaw(display)
-    onChange(raw)
+    const sanitized = sanitizeInput(e.target.value, decimals)
+    setDisplay(sanitized)
+    onChange(displayToRaw(sanitized))
   }
 
   return (
@@ -75,7 +97,7 @@ export function AmountInput({
       <input
         type="text"
         inputMode="decimal"
-        value={rawToDisplay(value, decimals)}
+        value={display}
         onChange={handleChange}
         placeholder={decimals > 0 ? '0,00' : '0'}
         required={required}
