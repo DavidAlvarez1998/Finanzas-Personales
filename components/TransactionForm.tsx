@@ -16,7 +16,13 @@ interface Props {
 }
 
 export function TransactionForm({ onSave, onClose, editing, initialType = 'expense', currencies }: Props) {
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(() => {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const d = String(now.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  })
   const [description, setDescription] = useState('')
   const [type, setType] = useState<'income' | 'expense'>(initialType)
   const [amount, setAmount] = useState('')
@@ -37,13 +43,18 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const num = parseFloat(amount)
-    if (!date || !description || isNaN(num) || num <= 0) return
+    if (!date || isNaN(num) || num <= 0) return
     const now = new Date()
     const hh = String(now.getHours()).padStart(2, '0')
     const mm = String(now.getMinutes()).padStart(2, '0')
     const ss = String(now.getSeconds()).padStart(2, '0')
+    const offset = -now.getTimezoneOffset()
+    const sign = offset >= 0 ? '+' : '-'
+    const oh = String(Math.floor(Math.abs(offset) / 60)).padStart(2, '0')
+    const om = String(Math.abs(offset) % 60).padStart(2, '0')
+    const tz = `${sign}${oh}:${om}`
     const originalTime = editing?.date.includes('T') ? editing.date.split('T')[1].slice(0, 8) : null
-    const datetime = `${date}T${originalTime ?? `${hh}:${mm}:${ss}`}`
+    const datetime = `${date}T${originalTime ?? `${hh}:${mm}:${ss}${tz}`}`
 
     onSave({
       date: datetime,
@@ -81,8 +92,8 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Categoría <span className="normal-case text-zinc-600">(opcional)</span>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+              Categoría
             </label>
             <Select
               value={category}
@@ -104,7 +115,6 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Ej: Salario semanal"
-              required
               className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
             />
           </div>

@@ -125,10 +125,10 @@ export function Select({ value, onChange, options, disabled, accent = 'sky', cla
           ${open ? `${ACCENT[accent]} ring-2` : ''}
           disabled:opacity-50 disabled:cursor-not-allowed`}
       >
-        {selected?.icon && (
-          <img src={selected.icon} alt="" width={20} height={15} className="shrink-0 rounded-sm object-cover" aria-hidden />
-        )}
-        <span className="truncate text-left">{selected?.label ?? value}</span>
+        {selected?.icon
+          ? <img src={selected.icon} alt={selected.label} width={20} height={15} className="shrink-0 rounded-sm object-cover" />
+          : <span className="truncate text-left">{selected?.label ?? value}</span>
+        }
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 16 16"
