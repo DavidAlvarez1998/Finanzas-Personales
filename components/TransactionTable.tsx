@@ -276,17 +276,27 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                 </td>
                 <td className="px-4 py-3 text-right font-mono font-bold">
                   <div className="flex flex-col items-end gap-0.5">
-                    {currencyTotals.map(([currency, { income, expense }]) => (
-                      <div key={currency} className="flex items-center gap-1.5 text-sm">
-                        {income > 0 && <span className="text-emerald-400">+{formatAmount(income)}</span>}
-                        {income > 0 && expense > 0 && <span className="text-zinc-500">·</span>}
-                        {expense > 0 && <span className="text-rose-400">-{formatAmount(expense)}</span>}
-                        <span className="flex items-center gap-1 text-xs font-normal text-zinc-500">
-                          <CurrencyFlag code={currency} />
-                          <span>{currency}</span>
-                        </span>
-                      </div>
-                    ))}
+                    {currencyTotals.map(([currency, { income, expense }]) => {
+                      const balance = income - expense
+                      const bothExist = income > 0 && expense > 0
+                      return (
+                        <div key={currency} className="flex items-center gap-1.5 text-sm">
+                          {income > 0 && <span className="text-emerald-400">+{formatAmount(income)}</span>}
+                          {bothExist && <span className="text-zinc-500">·</span>}
+                          {expense > 0 && <span className="text-rose-400">-{formatAmount(expense)}</span>}
+                          {bothExist && <span className="text-zinc-500">·</span>}
+                          {bothExist && (
+                            <span className={balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                              {balance >= 0 ? '+' : ''}{formatAmount(balance)}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1 text-xs font-normal text-zinc-500">
+                            <CurrencyFlag code={currency} />
+                            <span>{currency}</span>
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
                 </td>
                 <td />
@@ -357,17 +367,27 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
             <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-zinc-500">
               <span>{showAll ? 'Total general' : 'Total del mes'}</span>
               <div className="flex flex-col items-end gap-0.5 font-mono">
-                {currencyTotals.map(([currency, { income, expense }]) => (
-                  <div key={currency} className="flex items-center gap-1.5 text-sm">
-                    <span className="flex items-center gap-1 text-xs font-normal text-zinc-500">
-                      <CurrencyFlag code={currency} />
-                      <span>{currency}</span>
-                    </span>
-                    {income > 0 && <span className="text-emerald-400">+{formatAmount(income)}</span>}
-                    {income > 0 && expense > 0 && <span className="text-zinc-500">·</span>}
-                    {expense > 0 && <span className="text-rose-400">-{formatAmount(expense)}</span>}
-                  </div>
-                ))}
+                {currencyTotals.map(([currency, { income, expense }]) => {
+                  const balance = income - expense
+                  const bothExist = income > 0 && expense > 0
+                  return (
+                    <div key={currency} className="flex items-center gap-1.5 text-sm">
+                      {income > 0 && <span className="text-emerald-400">+{formatAmount(income)}</span>}
+                      {bothExist && <span className="text-zinc-500">·</span>}
+                      {expense > 0 && <span className="text-rose-400">-{formatAmount(expense)}</span>}
+                      {bothExist && <span className="text-zinc-500">·</span>}
+                      {bothExist && (
+                        <span className={balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                          {balance >= 0 ? '+' : ''}{formatAmount(balance)}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1 text-xs font-normal text-zinc-500">
+                        <CurrencyFlag code={currency} />
+                        <span>{currency}</span>
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
