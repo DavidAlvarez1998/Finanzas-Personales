@@ -278,13 +278,13 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                   <div className="flex flex-col items-end gap-0.5">
                     {currencyTotals.map(([currency, { income, expense }]) => (
                       <div key={currency} className="flex items-center gap-1.5 text-sm">
+                        {income > 0 && <span className="text-emerald-400">+{formatAmount(income)}</span>}
+                        {income > 0 && expense > 0 && <span className="text-zinc-500">·</span>}
+                        {expense > 0 && <span className="text-rose-400">-{formatAmount(expense)}</span>}
                         <span className="flex items-center gap-1 text-xs font-normal text-zinc-500">
                           <CurrencyFlag code={currency} />
                           <span>{currency}</span>
                         </span>
-                        {income > 0 && <span className="text-emerald-400">+{formatAmount(income)}</span>}
-                        {income > 0 && expense > 0 && <span className="text-zinc-500">·</span>}
-                        {expense > 0 && <span className="text-rose-400">-{formatAmount(expense)}</span>}
                       </div>
                     ))}
                   </div>
