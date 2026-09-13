@@ -4,6 +4,15 @@ import { useState, useMemo, useEffect } from 'react'
 import type { Transaction } from '@/types'
 import { Select } from '@/components/ui/Select'
 import { formatAmount } from '@/lib/format'
+import { WORLD_CURRENCIES } from '@/lib/constants/currencies'
+
+const CURRENCY_FLAG: Record<string, string> = Object.fromEntries(
+  WORLD_CURRENCIES.map(c => [c.code, c.flag])
+)
+
+function getCurrencyFlag(code: string) {
+  return CURRENCY_FLAG[code] ?? '💱'
+}
 
 interface Props {
   transactions: Transaction[]
@@ -217,7 +226,13 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                   <td className={`px-4 py-3 text-right font-mono font-medium ${
                     t.income ? 'text-emerald-400' : 'text-rose-400'
                   }`}>
-                    {(() => { const s = fmtSigned(t.income, t.expense); return s.label })()}
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className="flex items-center gap-0.5 font-sans text-xs font-normal text-zinc-500">
+                        <span>{getCurrencyFlag(t.currency ?? 'COP')}</span>
+                        <span>{t.currency ?? 'COP'}</span>
+                      </span>
+                      <span>{(() => { const s = fmtSigned(t.income, t.expense); return s.label })()}</span>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-center gap-2">
@@ -287,11 +302,14 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                   {t.category && <span className="inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800">{t.category}</span>}
                 </div>
                 <div className="shrink-0 text-right">
-                  {t.income ? (
-                    <span className="font-mono text-sm font-bold text-emerald-400">{formatAmount(t.income)}</span>
-                  ) : (
-                    <span className="font-mono text-sm font-bold text-rose-400">{formatAmount(t.expense ?? 0)}</span>
-                  )}
+                  <div className="flex items-center justify-end gap-1">
+                    <span className="text-base leading-none">{getCurrencyFlag(t.currency ?? 'COP')}</span>
+                    {t.income ? (
+                      <span className="font-mono text-sm font-bold text-emerald-400">{formatAmount(t.income)}</span>
+                    ) : (
+                      <span className="font-mono text-sm font-bold text-rose-400">{formatAmount(t.expense ?? 0)}</span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="mt-2 flex justify-end gap-2 border-t border-zinc-200 pt-2 dark:border-zinc-800">
