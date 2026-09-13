@@ -4,14 +4,16 @@ import { useState, useMemo, useEffect } from 'react'
 import type { Transaction } from '@/types'
 import { Select } from '@/components/ui/Select'
 import { formatAmount } from '@/lib/format'
-import { WORLD_CURRENCIES } from '@/lib/constants/currencies'
-
-const CURRENCY_FLAG: Record<string, string> = Object.fromEntries(
-  WORLD_CURRENCIES.map(c => [c.code, c.flag])
-)
-
-function getCurrencyFlag(code: string) {
-  return CURRENCY_FLAG[code] ?? '💱'
+function CurrencyFlag({ code, className }: { code: string; className?: string }) {
+  return (
+    <img
+      src={`https://flagcdn.com/20x15/${code.slice(0, 2).toLowerCase()}.png`}
+      alt={code}
+      width={16}
+      height={12}
+      className={`shrink-0 rounded-sm object-cover ${className ?? ''}`}
+    />
+  )
 }
 
 interface Props {
@@ -227,8 +229,8 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                     t.income ? 'text-emerald-400' : 'text-rose-400'
                   }`}>
                     <div className="flex items-center justify-end gap-1.5">
-                      <span className="flex items-center gap-0.5 font-sans text-xs font-normal text-zinc-500">
-                        <span>{getCurrencyFlag(t.currency ?? 'COP')}</span>
+                      <span className="flex items-center gap-1 font-sans text-xs font-normal text-zinc-500">
+                        <CurrencyFlag code={t.currency ?? 'COP'} />
                         <span>{t.currency ?? 'COP'}</span>
                       </span>
                       <span>{(() => { const s = fmtSigned(t.income, t.expense); return s.label })()}</span>
@@ -303,7 +305,7 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <span className="text-base leading-none">{getCurrencyFlag(t.currency ?? 'COP')}</span>
+                    <CurrencyFlag code={t.currency ?? 'COP'} />
                     {t.income ? (
                       <span className="font-mono text-sm font-bold text-emerald-400">{formatAmount(t.income)}</span>
                     ) : (
