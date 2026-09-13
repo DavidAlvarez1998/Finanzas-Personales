@@ -225,15 +225,17 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                   </td>
                   <td className="px-4 py-3 text-zinc-950 font-medium dark:text-white">{t.description}</td>
                   <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-500">{t.category || '—'}</td>
-                  <td className={`px-4 py-3 text-right font-mono font-medium ${
+                  <td className={`px-4 py-3 font-mono font-medium ${
                     t.income ? 'text-emerald-400' : 'text-rose-400'
                   }`}>
-                    <div className="flex items-center justify-end gap-1.5">
-                      <span className="flex items-center gap-1 font-sans text-xs font-normal text-zinc-500">
+                    <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+                      <span className="text-right font-mono tabular-nums">
+                        {(() => { const s = fmtSigned(t.income, t.expense); return s.label })()}
+                      </span>
+                      <span className="flex items-center gap-1 font-sans text-xs font-normal text-zinc-500 w-14">
                         <CurrencyFlag code={t.currency ?? 'COP'} />
                         <span>{t.currency ?? 'COP'}</span>
                       </span>
-                      <span>{(() => { const s = fmtSigned(t.income, t.expense); return s.label })()}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -304,13 +306,11 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
                   {t.category && <span className="inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800">{t.category}</span>}
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span className={`font-mono text-sm font-bold tabular-nums ${t.income ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {t.income ? `+${formatAmount(t.income)}` : `-${formatAmount(t.expense ?? 0)}`}
+                    </span>
                     <CurrencyFlag code={t.currency ?? 'COP'} />
-                    {t.income ? (
-                      <span className="font-mono text-sm font-bold text-emerald-400">{formatAmount(t.income)}</span>
-                    ) : (
-                      <span className="font-mono text-sm font-bold text-rose-400">{formatAmount(t.expense ?? 0)}</span>
-                    )}
                   </div>
                 </div>
               </div>
