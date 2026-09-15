@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface Props {
   value: string
@@ -40,11 +40,12 @@ function sanitizeInput(input: string, decimals: number): string {
   return fracPart.length > 0 ? `${intPart},${fracPart}` : `${intPart},`
 }
 
-// Convert sanitized display string ("1234,56") into dot-separated raw
-// string safe for parseFloat(). NEVER emits a comma-separated string.
+// Convert display string ("1.234,56" or "1234,56") into dot-separated raw
+// string safe for parseFloat(). Strips thousands-separator dots first.
 function displayToRaw(display: string): string {
   if (display === '' || display === ',') return ''
-  const [i, f] = display.split(',')
+  const stripped = display.replace(/\./g, '')
+  const [i, f] = stripped.split(',')
   if (f == null || f === '') return i
   return `${i}.${f}`
 }
@@ -70,10 +71,11 @@ export function AmountInput({
   accent = 'sky',
 }: Props) {
   const [display, setDisplay] = useState(() => rawToDisplay(value, decimals))
+  const focused = useRef(false)
 
   // Sync display when value changes externally (adjust buttons, form reset)
   useEffect(() => {
-    if (displayToRaw(display) !== value) {
+    if (!focused.current && displayToRaw(display) !== value) {
       setDisplay(rawToDisplay(value, decimals))
     }
   }, [value])
@@ -86,12 +88,24 @@ export function AmountInput({
     onChange(newRaw)
   }
 
+  function handleFocus() {
+    focused.current = true
+    // Strip thousands-separator dots so typing doesn't confuse them with decimal dots
+    setDisplay(d => d.replace(/\./g, ''))
+  }
+
+  function handleBlur() {
+    focused.current = false
+    // Format with thousands separators once the user leaves the field
+    const raw = displayToRaw(display)
+    if (raw !== '') setDisplay(rawToDisplay(raw, decimals))
+  }
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const sanitized = sanitizeInput(e.target.value, decimals)
     const raw = displayToRaw(sanitized)
-    const trailingComma = sanitized.endsWith(',')
-    const formatted = raw !== '' ? rawToDisplay(raw, decimals) : ''
-    setDisplay(trailingComma && !formatted.includes(',') ? `${formatted},` : formatted)
+    // While typing, show sanitized value without thousands dots to avoid parsing confusion
+    setDisplay(sanitized)
     onChange(raw)
   }
 
@@ -102,6 +116,8 @@ export function AmountInput({
         inputMode="decimal"
         value={display}
         onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         placeholder={decimals > 0 ? '0,00' : '0'}
         required={required}
         className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:outline-none dark:text-white dark:placeholder-zinc-500"
