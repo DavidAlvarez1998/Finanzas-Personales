@@ -92,11 +92,14 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
           {debts.map(d => (
             <div
               key={d.id}
-              className="flex flex-wrap items-center justify-between gap-y-2 rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 dark:border-amber-900/30 dark:bg-amber-950/20"
+              className="flex flex-col gap-2 rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 dark:border-amber-900/30 dark:bg-amber-950/20 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-zinc-950 break-words dark:text-white">{d.description}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">{d.currency}</p>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-zinc-950 dark:text-white">{d.description}</p>
+                <span className="mt-0.5 inline-flex items-center gap-1">
+                  <img src={currencyFlagUrl(d.currency)} alt={d.currency} className="h-3.5 w-3.5 rounded-sm object-cover" />
+                  <span className="text-xs text-zinc-500">{d.currency}</span>
+                </span>
                 {d.remaining != null && (
                   <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-zinc-500">
                     <span>Original: <span className="font-mono">${formatAmount(d.amount)}</span></span>
@@ -105,7 +108,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between gap-4 sm:justify-end">
                 <span className="font-mono text-base font-bold text-amber-400">
                   {formatAmount(d.amount)}
                 </span>
