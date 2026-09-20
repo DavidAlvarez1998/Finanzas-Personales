@@ -364,14 +364,14 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
         )}
         {filtered.length > 0 && (
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
-            <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <div className="flex flex-wrap items-start justify-between gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
               <span>{showAll ? 'Total general' : 'Total del mes'}</span>
-              <div className="flex flex-col items-end gap-0.5 font-mono">
+              <div className="flex min-w-0 flex-col items-end gap-0.5 font-mono">
                 {currencyTotals.map(([currency, { income, expense }]) => {
                   const balance = income - expense
                   const bothExist = income > 0 && expense > 0
                   return (
-                    <div key={currency} className="flex items-center gap-1.5 text-sm">
+                    <div key={currency} className="flex flex-wrap items-center justify-end gap-x-1.5 gap-y-0.5 text-sm">
                       {income > 0 && <span className="text-emerald-400">+{formatAmount(income)}</span>}
                       {bothExist && <span className="text-zinc-500">·</span>}
                       {expense > 0 && <span className="text-rose-400">-{formatAmount(expense)}</span>}

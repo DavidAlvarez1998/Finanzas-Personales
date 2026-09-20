@@ -5,7 +5,7 @@ import type { Debt } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
-import { formatAmount } from '@/lib/format'
+import { formatAmount, formatDateTime } from '@/lib/format'
 
 interface Props {
   debts: Debt[]
@@ -27,6 +27,11 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
   const [payingDebtId, setPayingDebtId] = useState<string | null>(null)
   const [payAmount, setPayAmount] = useState('')
   const [payNote, setPayNote] = useState('')
+  const [expandedDebtId, setExpandedDebtId] = useState<string | null>(null)
+
+  function toggleExpand(debtId: string) {
+    setExpandedDebtId(prev => (prev === debtId ? null : debtId))
+  }
 
   function openNew() {
     setEditing(null)
@@ -89,54 +94,111 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
         </div>
       ) : (
         <div className="space-y-2">
-          {debts.map(d => (
-            <div
-              key={d.id}
-              className="flex flex-col gap-2 rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 dark:border-amber-900/30 dark:bg-amber-950/20 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-zinc-950 dark:text-white">{d.description}</p>
-                <span className="mt-0.5 inline-flex items-center gap-1">
-                  <img src={currencyFlagUrl(d.currency)} alt={d.currency} className="h-3.5 w-3.5 rounded-sm object-cover" />
-                  <span className="text-xs text-zinc-500">{d.currency}</span>
-                </span>
-                {d.remaining != null && (
-                  <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-zinc-500">
-                    <span>Original: <span className="font-mono">${formatAmount(d.amount)}</span></span>
-                    <span>Abonado: <span className="font-mono text-emerald-600 dark:text-emerald-400">${formatAmount(d.total_paid ?? 0)}</span></span>
-                    <span>Restante: <span className="font-mono text-amber-600 dark:text-amber-400">${formatAmount(d.remaining ?? d.amount)}</span></span>
+          {debts.map(d => {
+            const isExpanded = expandedDebtId === d.id
+            return (
+              <div
+                key={d.id}
+                className="rounded-xl border border-amber-300/60 bg-amber-50 dark:border-amber-900/30 dark:bg-amber-950/20 overflow-hidden"
+              >
+                {/* Card header — clickable to expand */}
+                <div
+                  className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between cursor-pointer"
+                  onClick={() => toggleExpand(d.id)}
+                  role="button"
+                  aria-expanded={isExpanded}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-zinc-950 dark:text-white">{d.description}</p>
+                    <span className="mt-0.5 inline-flex items-center gap-1">
+                      <img src={currencyFlagUrl(d.currency)} alt={d.currency} className="h-3.5 w-3.5 rounded-sm object-cover" />
+                      <span className="text-xs text-zinc-500">{d.currency}</span>
+                    </span>
+                    {d.remaining != null && (
+                      <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-zinc-500">
+                        <span>Original: <span className="font-mono">${formatAmount(d.amount)}</span></span>
+                        <span>Abonado: <span className="font-mono text-emerald-600 dark:text-emerald-400">${formatAmount(d.total_paid ?? 0)}</span></span>
+                        <span>Restante: <span className="font-mono text-amber-600 dark:text-amber-400">${formatAmount(d.remaining ?? d.amount)}</span></span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:flex-nowrap sm:justify-end">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-base font-bold text-amber-400">
+                        {formatAmount(d.amount)}
+                      </span>
+                      <svg
+                        className={`h-4 w-4 text-zinc-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        aria-hidden
+                      >
+                        <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={e => { e.stopPropagation(); openEdit(d) }}
+                        disabled={isPending}
+                        className={`rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 transition-colors dark:hover:bg-zinc-700 dark:hover:text-white ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); setPayingDebtId(d.id); setPayAmount(''); setPayNote('') }}
+                        className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-emerald-100 hover:text-emerald-700 transition-colors dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400"
+                      >
+                        + Abonar
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); setDeletingId(d.id) }}
+                        disabled={isPending}
+                        className={`rounded px-2 py-1 text-xs text-zinc-500 hover:bg-rose-100/80 hover:text-rose-600 transition-colors dark:hover:bg-rose-900/50 dark:hover:text-rose-400 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Collapsible payment panel */}
+                {isExpanded && (
+                  <div className="border-t border-amber-200/60 dark:border-amber-900/20 px-4 py-3 space-y-2">
+                    {(d.payments?.length ?? 0) === 0 ? (
+                      <p className="text-xs text-zinc-400">Sin abonos registrados.</p>
+                    ) : (
+                      [...d.payments!]
+                        .sort((a, b) => {
+                          const ta = a.created_at ? new Date(a.created_at).getTime() : 0
+                          const tb = b.created_at ? new Date(b.created_at).getTime() : 0
+                          return tb - ta
+                        })
+                        .map(p => (
+                          <div
+                            key={p.id}
+                            className="flex items-center justify-between rounded-lg bg-white/60 dark:bg-zinc-900/40 px-3 py-2 text-xs"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="text-zinc-500 dark:text-zinc-400 tabular-nums shrink-0">
+                                Registrado el {p.created_at ? formatDateTime(p.created_at) : p.paid_at}
+                              </span>
+                              <span className="font-medium text-amber-800 dark:text-amber-300 tabular-nums">
+                                ${formatAmount(p.amount)} {d.currency}
+                              </span>
+                              {p.note && (
+                                <span className="text-zinc-500 dark:text-zinc-400 italic truncate">
+                                  {p.note}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                    )}
                   </div>
                 )}
               </div>
-              <div className="flex items-center justify-between gap-4 sm:justify-end">
-                <span className="font-mono text-base font-bold text-amber-400">
-                  {formatAmount(d.amount)}
-                </span>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => openEdit(d)}
-                    disabled={isPending}
-                    className={`rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 transition-colors dark:hover:bg-zinc-700 dark:hover:text-white ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => { setPayingDebtId(d.id); setPayAmount(''); setPayNote('') }}
-                    className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-emerald-100 hover:text-emerald-700 transition-colors dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400"
-                  >
-                    + Abonar
-                  </button>
-                  <button
-                    onClick={() => setDeletingId(d.id)}
-                    disabled={isPending}
-                    className={`rounded px-2 py-1 text-xs text-zinc-500 hover:bg-rose-100/80 hover:text-rose-600 transition-colors dark:hover:bg-rose-900/50 dark:hover:text-rose-400 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

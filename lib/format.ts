@@ -10,3 +10,12 @@ export function formatAmount(value: number, opts: FormatAmountOptions = {}): str
     maximumFractionDigits: decimals,
   }).format(value)
 }
+
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(d)
+}

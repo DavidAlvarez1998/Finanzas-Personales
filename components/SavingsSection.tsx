@@ -196,8 +196,8 @@ export function SavingsSection({
               role="button"
               aria-expanded={isExpanded}
             >
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-violet-900 dark:text-violet-200">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <span className="min-w-0 truncate font-semibold text-violet-900 dark:text-violet-200">
                   {goal.nombre}
                 </span>
                 {goal.status === 'completed' && (
@@ -232,7 +232,7 @@ export function SavingsSection({
             </div>
 
             {/* Stats row */}
-            <div className="flex items-center justify-between px-4 py-2 text-xs text-zinc-500 dark:text-zinc-400">
+            <div className="flex flex-col gap-0.5 px-4 py-2 text-xs text-zinc-500 dark:text-zinc-400 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
               <span>
                 {formatCurrency(total, goal.currency)} / {formatCurrency(goal.monto_objetivo, goal.currency)}
                 {' '}

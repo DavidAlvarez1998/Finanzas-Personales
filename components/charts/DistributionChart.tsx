@@ -34,7 +34,7 @@ export function DistributionChart({ income, expense, incomeColor, expenseColor }
             cx="50%"
             cy="50%"
             innerRadius={60}
-            outerRadius={90}
+            outerRadius={70}
             dataKey="value"
             label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
             labelLine={false}
