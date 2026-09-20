@@ -101,7 +101,7 @@ export async function register(
     return { error: error?.message ?? 'Error al crear la cuenta.' }
   }
 
-  redirect('/pending')
+  redirect(`/pending?email=${encodeURIComponent(email)}`)
 }
 
 export async function logout(): Promise<void> {
