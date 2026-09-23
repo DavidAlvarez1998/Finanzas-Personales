@@ -3,8 +3,35 @@ import { getTransactions, getDebts, getPresupuestos, getSavingsGoals, getUserCur
 import { verifySession } from '@/lib/supabase/verify-session'
 import { DashboardShell } from '@/components/DashboardShell'
 
+const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
+
 async function Dashboard() {
-  await verifySession()
+  const { userId } = await verifySession()
+
+  if (OFFLINE_ENABLED) {
+    // In offline mode, DashboardShell reads transactions from Dexie via useLiveQuery.
+    // Other sections (debts, presupuestos, savings) are still server-fetched in PR1.
+    const [debts, presupuestos, savingsGoals, currencies, displayCurrency] = await Promise.all([
+      getDebts(),
+      getPresupuestos(),
+      getSavingsGoals(),
+      getUserCurrencies(),
+      getDisplayCurrency(),
+    ])
+
+    return (
+      <DashboardShell
+        userId={userId}
+        transactions={null}
+        debts={debts}
+        presupuestos={presupuestos}
+        savingsGoals={savingsGoals}
+        currencies={currencies}
+        displayCurrency={displayCurrency}
+      />
+    )
+  }
+
   const [transactions, debts, presupuestos, savingsGoals, currencies, displayCurrency] = await Promise.all([
     getTransactions(),
     getDebts(),
@@ -16,6 +43,7 @@ async function Dashboard() {
 
   return (
     <DashboardShell
+      userId={userId}
       transactions={transactions}
       debts={debts}
       presupuestos={presupuestos}

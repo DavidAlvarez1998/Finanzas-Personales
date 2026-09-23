@@ -3,12 +3,14 @@
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
 import { verifySession } from '@/lib/auth/session'
+import type { Transaction } from '@/types'
 
 export async function createTransaction(
   formData: FormData
-): Promise<{ error: string } | void> {
+): Promise<{ error: string } | { row: Transaction } | void> {
   const session = await verifySession()
 
+  const id = formData.get('id') as string | null  // optional client-supplied UUID
   const description = formData.get('description') as string | null
   const date = formData.get('date') as string | null
   const type = formData.get('type') as string | null
@@ -29,7 +31,8 @@ export async function createTransaction(
   const expense = type === 'expense' ? amount : null
 
   const supabase = createServerClient()
-  const { error } = await supabase.from('transactions').insert({
+
+  const insertData: Record<string, unknown> = {
     user_id: session.userId,
     date,
     description: description.toUpperCase(),
@@ -37,19 +40,31 @@ export async function createTransaction(
     expense,
     currency,
     category,
-  })
+  }
+
+  // Accept client-supplied UUID — server upserts by PK
+  if (id) {
+    insertData.id = id
+  }
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .insert(insertData)
+    .select('*')
+    .single()
 
   if (error) {
     return { error: `Error al guardar: ${error.message}` }
   }
 
   revalidatePath('/')
+  return { row: data as Transaction }
 }
 
 export async function updateTransaction(
   id: string,
   formData: FormData
-): Promise<{ error: string } | void> {
+): Promise<{ error: string } | { row: Transaction } | void> {
   const session = await verifySession()
 
   const description = formData.get('description') as string | null
@@ -72,7 +87,7 @@ export async function updateTransaction(
   const expense = type === 'expense' ? amount : null
 
   const supabase = createServerClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('transactions')
     .update({
       date,
@@ -84,12 +99,15 @@ export async function updateTransaction(
     })
     .eq('id', id)
     .eq('user_id', session.userId) // RLS + explicit app-layer guard
+    .select('*')
+    .single()
 
   if (error) {
     return { error: `Error al actualizar: ${error.message}` }
   }
 
   revalidatePath('/')
+  return { row: data as Transaction }
 }
 
 export async function deleteTransaction(

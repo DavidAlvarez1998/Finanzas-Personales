@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useMemo, useEffect, useRef } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { SummaryCards } from '@/components/SummaryCards'
 import { TransactionTable } from '@/components/TransactionTable'
 import { TransactionForm } from '@/components/TransactionForm'
@@ -33,9 +34,16 @@ import {
 import { CurrencyPicker } from '@/components/CurrencyPicker'
 import { fetchRate } from '@/lib/fx/frankfurter'
 import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus } from '@/types'
+import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
+import { writeOp } from '@/lib/db/write-adapter'
+import { getTransactions as getTransactionsDexie } from '@/lib/db/dal-offline'
+
+const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
 
 interface Props {
-  transactions: Transaction[]
+  userId: string
+  /** null means offline mode — transactions will come from Dexie via useLiveQuery */
+  transactions: Transaction[] | null
   debts: Debt[]
   presupuestos: Presupuesto[]
   savingsGoals: SavingsGoal[]
@@ -45,7 +53,7 @@ interface Props {
 
 type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'charts'
 
-export function DashboardShell({ transactions, debts, presupuestos, savingsGoals, currencies, displayCurrency: initialDisplayCurrency }: Props) {
+export function DashboardShell({ userId, transactions: serverTransactions, debts, presupuestos, savingsGoals, currencies, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
@@ -53,6 +61,23 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
   const [actionError, setActionError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const { online } = useNetworkStatus()
+
+  // Always call useLiveQuery — when offline mode is disabled the result is ignored.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const dexieTransactions = useLiveQuery(
+    () => (OFFLINE_ENABLED ? getTransactionsDexie(userId) : Promise.resolve(undefined)),
+    [userId]
+  )
+
+  // Resolve which transaction list to use
+  const transactions: Transaction[] =
+    OFFLINE_ENABLED
+      ? (dexieTransactions ?? [])
+      : (serverTransactions ?? [])
+
+  // Show skeleton while Dexie hasn't returned yet in offline mode
+  const isHydrating = OFFLINE_ENABLED && dexieTransactions === undefined
 
   const [activeDisplayCurrency, setActiveDisplayCurrency] = useState<string | null>(initialDisplayCurrency)
   const [rates, setRates] = useState<Map<string, number>>(new Map())
@@ -127,6 +152,39 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
   }
 
   function handleTransactionSave(t: Omit<Transaction, 'id'>) {
+    setEditing(null)
+    setShowForm(false)
+
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const type = t.income !== null ? 'income' : 'expense'
+        if (editing) {
+          const result = await writeOp('transaction.update', {
+            id: editing.id,
+            description: t.description,
+            date: t.date,
+            type,
+            amount: String(t.income ?? t.expense ?? 0),
+            currency: t.currency ?? 'COP',
+            category: t.category ?? '',
+          })
+          if (!result.ok) setActionError(result.error)
+        } else {
+          const result = await writeOp('transaction.create', {
+            user_id: userId,
+            description: t.description.toUpperCase(),
+            date: t.date,
+            income: type === 'income' ? (t.income ?? 0) : null,
+            expense: type === 'expense' ? (t.expense ?? 0) : null,
+            currency: t.currency ?? 'COP',
+            category: t.category ?? null,
+          })
+          if (!result.ok) setActionError(result.error)
+        }
+      })
+      return
+    }
+
     const fd = new FormData()
     fd.set('description', t.description)
     fd.set('date', t.date)
@@ -135,8 +193,6 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
     fd.set('currency', t.currency ?? 'COP')
     fd.set('category', t.category ?? '')
 
-    setEditing(null)
-    setShowForm(false)
     startTransition(async () => {
       const result = editing
         ? await updateTransaction(editing.id, fd)
@@ -146,6 +202,13 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
   }
 
   function handleDeleteTransaction(id: string) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('transaction.delete', { id })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
     startTransition(async () => {
       const result = await deleteTransaction(id)
       if (result && 'error' in result) setActionError(result.error)
@@ -296,8 +359,24 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
     })
   }
 
+  if (isHydrating) {
+    return (
+      <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center">
+        <div className="text-zinc-400 dark:text-zinc-500 text-sm animate-pulse">Cargando datos...</div>
+      </div>
+    )
+  }
+
+  const showOfflineFirstBoot = OFFLINE_ENABLED && !online && transactions.length === 0
+
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-950 dark:bg-zinc-950 dark:text-white">
+      {/* Offline status banner */}
+      {OFFLINE_ENABLED && !online && (
+        <div className="w-full bg-amber-600 text-white text-xs font-medium px-4 py-1.5 text-center">
+          Sin conexion — los cambios se guardaran localmente y se sincronizaran al reconectar
+        </div>
+      )}
       {/* Header */}
       <header className="border-b border-zinc-200/60 bg-white/80 backdrop-blur sticky top-0 z-10 dark:border-zinc-800/60 dark:bg-zinc-900/80">
         <div className="mx-auto flex max-w-5xl items-center justify-end gap-2 px-4 py-3">
@@ -399,12 +478,21 @@ export function DashboardShell({ transactions, debts, presupuestos, savingsGoals
           </div>
 
           {tab === 'transactions' && (
-            <TransactionTable
-              transactions={transactions}
-              onEdit={handleEdit}
-              onDelete={handleDeleteTransaction}
-              isPending={isPending}
-            />
+            <>
+              {showOfflineFirstBoot ? (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-700/50 dark:bg-amber-950/30 px-5 py-6 text-center text-sm text-amber-700 dark:text-amber-300">
+                  <p className="font-semibold mb-1">Sin datos locales</p>
+                  <p>Conectate una vez para cargar tus datos. Despues podras usarlos sin conexion.</p>
+                </div>
+              ) : (
+                <TransactionTable
+                  transactions={transactions}
+                  onEdit={handleEdit}
+                  onDelete={handleDeleteTransaction}
+                  isPending={isPending}
+                />
+              )}
+            </>
           )}
           {tab === 'debts' && (
             <DebtSection
