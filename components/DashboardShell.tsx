@@ -33,10 +33,12 @@ import {
 } from '@/app/actions/savings'
 import { updateUserCurrencies, updateDisplayCurrency } from '@/app/actions/currencies'
 import { CurrencyPicker } from '@/components/CurrencyPicker'
-import { fetchRate } from '@/lib/fx/frankfurter'
+import { fetchRateWithCache } from '@/lib/fx/frankfurter'
 import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus } from '@/types'
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
 import { writeOp } from '@/lib/db/write-adapter'
+import { SyncStatusBadge } from '@/components/SyncStatusBadge'
+import { OfflineBanner } from '@/components/OfflineBanner'
 import {
   getTransactions as getTransactionsDexie,
   getDebts as getDebtsDexie,
@@ -154,6 +156,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }, [dexieDisplayCurrency])
 
   const [rates, setRates] = useState<Map<string, number>>(new Map())
+  const [staleRates, setStaleRates] = useState<Set<string>>(new Set())
   const [ratesLoading, setRatesLoading] = useState(false)
   const [ratesError, setRatesError] = useState(false)
   const fetchIdRef = useRef(0)
@@ -197,14 +200,27 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     setRatesError(false)
 
     Promise.all(
-      missing.map(src => fetchRate(src, activeDisplayCurrency))
+      missing.map(src =>
+        fetchRateWithCache(src, activeDisplayCurrency).then(r => ({
+          pair: `${src}_${activeDisplayCurrency}`,
+          rate: r.rate,
+          stale: r.stale,
+        }))
+      )
     ).then(results => {
       if (fetchIdRef.current !== currentFetchId) return
       const newRates = new Map(rates)
+      const newStale = new Set(staleRates)
       results.forEach(r => {
-        newRates.set(`${r.from}_${r.to}`, r.rate)
+        newRates.set(r.pair, r.rate)
+        if (r.stale) {
+          newStale.add(r.pair)
+        } else {
+          newStale.delete(r.pair)
+        }
       })
       setRates(newRates)
+      setStaleRates(newStale)
       setRatesLoading(false)
     }).catch(() => {
       if (fetchIdRef.current !== currentFetchId) return
@@ -662,14 +678,11 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-950 dark:bg-zinc-950 dark:text-white">
       {/* Offline status banner */}
-      {OFFLINE_ENABLED && !online && (
-        <div className="w-full bg-amber-600 text-white text-xs font-medium px-4 py-1.5 text-center">
-          Sin conexion — los cambios se guardaran localmente y se sincronizaran al reconectar
-        </div>
-      )}
+      {OFFLINE_ENABLED && <OfflineBanner />}
       {/* Header */}
       <header className="border-b border-zinc-200/60 bg-white/80 backdrop-blur sticky top-0 z-10 dark:border-zinc-800/60 dark:bg-zinc-900/80">
         <div className="mx-auto flex max-w-5xl items-center justify-end gap-2 px-4 py-3">
+          {OFFLINE_ENABLED && <SyncStatusBadge />}
           <button
             onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
             className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/30"
@@ -691,6 +704,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           groups={currencyGroups}
           displayCurrency={activeDisplayCurrency}
           rates={rates}
+          staleRates={staleRates}
           ratesLoading={ratesLoading}
           ratesError={ratesError}
         />

@@ -7,6 +7,7 @@ interface SummaryCardsProps {
   groups: CurrencyGroup[]
   displayCurrency?: string | null
   rates?: Map<string, number>
+  staleRates?: Set<string>
   ratesLoading?: boolean
   ratesError?: boolean
 }
@@ -17,6 +18,7 @@ export function SummaryCards({
   groups,
   displayCurrency,
   rates,
+  staleRates,
   ratesLoading,
   ratesError,
 }: SummaryCardsProps) {
@@ -82,42 +84,51 @@ export function SummaryCards({
   // Happy path — convert and consolidate
   let totalIncome = 0
   let totalExpense = 0
+  let hasStaleRate = false
   for (const g of display) {
     const key = `${g.currency}_${displayCurrency}`
     const rate = rates.get(key) ?? (g.currency === displayCurrency ? 1 : null)
     if (rate == null) continue
     totalIncome += g.income * rate
     totalExpense += g.expense * rate
+    if (staleRates?.has(key)) hasStaleRate = true
   }
   const totalBalance = totalIncome - totalExpense
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 dark:border-emerald-800/40 dark:bg-emerald-950/30">
-        <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700/70 mb-1 dark:text-emerald-400/70">
-          Ingresos · {displayCurrency}
+    <div className="space-y-1">
+      {hasStaleRate && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 px-1">
+          ⚠ tasa desactualizada — usando el último valor guardado
         </p>
-        <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{formatAmount(totalIncome)}</p>
-      </div>
-      <div className="rounded-xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-800/40 dark:bg-rose-950/30">
-        <p className="text-xs font-semibold uppercase tracking-widest text-rose-700/70 mb-1 dark:text-rose-400/70">
-          Egresos · {displayCurrency}
-        </p>
-        <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{formatAmount(totalExpense)}</p>
-      </div>
-      <div className={`rounded-xl border p-5 ${
-        totalBalance >= 0
-          ? 'border-sky-300 bg-sky-50 dark:border-sky-800/40 dark:bg-sky-950/30'
-          : 'border-amber-300 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-950/30'
-      }`}>
-        <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${
-          totalBalance >= 0 ? 'text-sky-700/70 dark:text-sky-400/70' : 'text-amber-700/70 dark:text-amber-400/70'
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 dark:border-emerald-800/40 dark:bg-emerald-950/30">
+          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700/70 mb-1 dark:text-emerald-400/70">
+            Ingresos · {displayCurrency}
+          </p>
+          <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{formatAmount(totalIncome)}</p>
+        </div>
+        <div className="rounded-xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-800/40 dark:bg-rose-950/30">
+          <p className="text-xs font-semibold uppercase tracking-widest text-rose-700/70 mb-1 dark:text-rose-400/70">
+            Egresos · {displayCurrency}
+          </p>
+          <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{formatAmount(totalExpense)}</p>
+        </div>
+        <div className={`rounded-xl border p-5 ${
+          totalBalance >= 0
+            ? 'border-sky-300 bg-sky-50 dark:border-sky-800/40 dark:bg-sky-950/30'
+            : 'border-amber-300 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-950/30'
         }`}>
-          Saldo · {displayCurrency}
-        </p>
-        <p className={`text-2xl font-bold ${totalBalance >= 0 ? 'text-sky-700 dark:text-sky-400' : 'text-amber-700 dark:text-amber-400'}`}>
-          {formatAmount(totalBalance)}
-        </p>
+          <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${
+            totalBalance >= 0 ? 'text-sky-700/70 dark:text-sky-400/70' : 'text-amber-700/70 dark:text-amber-400/70'
+          }`}>
+            Saldo · {displayCurrency}
+          </p>
+          <p className={`text-2xl font-bold ${totalBalance >= 0 ? 'text-sky-700 dark:text-sky-400' : 'text-amber-700 dark:text-amber-400'}`}>
+            {formatAmount(totalBalance)}
+          </p>
+        </div>
       </div>
     </div>
   )
