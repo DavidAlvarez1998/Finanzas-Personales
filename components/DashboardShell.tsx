@@ -31,29 +31,37 @@ import {
   deleteContribution,
   updateGoalStatus,
 } from '@/app/actions/savings'
+import { updateUserCurrencies, updateDisplayCurrency } from '@/app/actions/currencies'
 import { CurrencyPicker } from '@/components/CurrencyPicker'
 import { fetchRate } from '@/lib/fx/frankfurter'
 import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus } from '@/types'
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
 import { writeOp } from '@/lib/db/write-adapter'
-import { getTransactions as getTransactionsDexie } from '@/lib/db/dal-offline'
+import {
+  getTransactions as getTransactionsDexie,
+  getDebts as getDebtsDexie,
+  getPresupuestos as getPresupuestosDexie,
+  getSavingsGoals as getSavingsGoalsDexie,
+  getUserCurrencies as getUserCurrenciesDexie,
+  getDisplayCurrency as getDisplayCurrencyDexie,
+} from '@/lib/db/dal-offline'
 
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
 
 interface Props {
   userId: string
-  /** null means offline mode — transactions will come from Dexie via useLiveQuery */
+  /** null means offline mode — data will come from Dexie via useLiveQuery */
   transactions: Transaction[] | null
-  debts: Debt[]
-  presupuestos: Presupuesto[]
-  savingsGoals: SavingsGoal[]
-  currencies: string[]
+  debts: Debt[] | null
+  presupuestos: Presupuesto[] | null
+  savingsGoals: SavingsGoal[] | null
+  currencies: string[] | null
   displayCurrency: string | null
 }
 
 type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'charts'
 
-export function DashboardShell({ userId, transactions: serverTransactions, debts, presupuestos, savingsGoals, currencies, displayCurrency: initialDisplayCurrency }: Props) {
+export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
@@ -63,23 +71,88 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   const [pickerOpen, setPickerOpen] = useState(false)
   const { online } = useNetworkStatus()
 
-  // Always call useLiveQuery — when offline mode is disabled the result is ignored.
+  // ── Dexie live queries ───────────────────────────────────────────────
+  // All useLiveQuery calls are unconditional (hooks rules) — OFFLINE_ENABLED
+  // guards the actual query so it resolves to undefined when flag is off.
+
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dexieTransactions = useLiveQuery(
     () => (OFFLINE_ENABLED ? getTransactionsDexie(userId) : Promise.resolve(undefined)),
     [userId]
   )
 
-  // Resolve which transaction list to use
-  const transactions: Transaction[] =
-    OFFLINE_ENABLED
-      ? (dexieTransactions ?? [])
-      : (serverTransactions ?? [])
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const dexieDebts = useLiveQuery(
+    () => (OFFLINE_ENABLED ? getDebtsDexie(userId) : Promise.resolve(undefined)),
+    [userId]
+  )
 
-  // Show skeleton while Dexie hasn't returned yet in offline mode
-  const isHydrating = OFFLINE_ENABLED && dexieTransactions === undefined
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const dexiePresupuestos = useLiveQuery(
+    () => (OFFLINE_ENABLED ? getPresupuestosDexie(userId) : Promise.resolve(undefined)),
+    [userId]
+  )
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const dexieSavingsGoals = useLiveQuery(
+    () => (OFFLINE_ENABLED ? getSavingsGoalsDexie(userId) : Promise.resolve(undefined)),
+    [userId]
+  )
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const dexieCurrencies = useLiveQuery(
+    () => (OFFLINE_ENABLED ? getUserCurrenciesDexie(userId) : Promise.resolve(undefined)),
+    [userId]
+  )
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const dexieDisplayCurrency = useLiveQuery(
+    () => (OFFLINE_ENABLED ? getDisplayCurrencyDexie(userId) : Promise.resolve(undefined)),
+    [userId]
+  )
+
+  // ── Resolved data sources ────────────────────────────────────────────
+  const transactions: Transaction[] = OFFLINE_ENABLED
+    ? (dexieTransactions ?? [])
+    : (serverTransactions ?? [])
+
+  const debts: Debt[] = OFFLINE_ENABLED
+    ? (dexieDebts ?? [])
+    : (serverDebts ?? [])
+
+  const presupuestos: Presupuesto[] = OFFLINE_ENABLED
+    ? (dexiePresupuestos ?? [])
+    : (serverPresupuestos ?? [])
+
+  const savingsGoals: SavingsGoal[] = OFFLINE_ENABLED
+    ? (dexieSavingsGoals ?? [])
+    : (serverSavingsGoals ?? [])
+
+  const resolvedCurrencies: string[] = OFFLINE_ENABLED
+    ? (dexieCurrencies ?? [])
+    : (serverCurrencies ?? [])
+
+  // Show skeleton while any Dexie query hasn't returned yet in offline mode
+  const isHydrating = OFFLINE_ENABLED && (
+    dexieTransactions === undefined ||
+    dexieDebts === undefined ||
+    dexiePresupuestos === undefined ||
+    dexieSavingsGoals === undefined ||
+    dexieCurrencies === undefined ||
+    dexieDisplayCurrency === undefined
+  )
+
+  // displayCurrency: Dexie value when offline, server value when online
+  // State is initialized from server; Dexie value takes over when OFFLINE_ENABLED
   const [activeDisplayCurrency, setActiveDisplayCurrency] = useState<string | null>(initialDisplayCurrency)
+
+  // Sync Dexie-provided display currency into local state
+  useEffect(() => {
+    if (OFFLINE_ENABLED && dexieDisplayCurrency !== undefined) {
+      setActiveDisplayCurrency(dexieDisplayCurrency ?? null)
+    }
+  }, [dexieDisplayCurrency])
+
   const [rates, setRates] = useState<Map<string, number>>(new Map())
   const [ratesLoading, setRatesLoading] = useState(false)
   const [ratesError, setRatesError] = useState(false)
@@ -91,7 +164,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     return () => window.removeEventListener('open-settings', handleOpenSettings)
   }, [])
 
-  const effectiveCurrencies = currencies.length > 0 ? currencies : ['COP', 'USD']
+  const effectiveCurrencies = resolvedCurrencies.length > 0 ? resolvedCurrencies : ['COP', 'USD']
 
   const currencyGroups = useMemo<CurrencyGroup[]>(() => Object.values(
     transactions.reduce<Record<string, CurrencyGroup>>((acc, t) => {
@@ -215,7 +288,23 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     })
   }
 
+  // ── Debt handlers ────────────────────────────────────────────────────
+
   function handleDebtAdd(d: Omit<Debt, 'id'>) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('debt.create', {
+          id: crypto.randomUUID(),
+          user_id: userId,
+          description: d.description.toUpperCase(),
+          amount: d.amount,
+          currency: d.currency,
+        })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
+
     const fd = new FormData()
     fd.set('description', d.description)
     fd.set('amount', String(d.amount))
@@ -228,6 +317,19 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handleDebtUpdate(d: Debt) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('debt.update', {
+          id: d.id,
+          description: d.description,
+          amount: d.amount,
+          currency: d.currency,
+        })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
+
     const fd = new FormData()
     fd.set('description', d.description)
     fd.set('amount', String(d.amount))
@@ -240,6 +342,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handleDeleteDebt(id: string) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('debt.delete', { id })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
     startTransition(async () => {
       const result = await deleteDebt(id)
       if (result && 'error' in result) setActionError(result.error)
@@ -247,13 +356,44 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handleDebtPayment(debtId: string, fd: FormData) {
+    if (OFFLINE_ENABLED) {
+      const amountRaw = fd.get('amount') as string | null
+      const note = fd.get('note') as string | null
+      startTransition(async () => {
+        const result = await writeOp('debt_payment.create', {
+          id: crypto.randomUUID(),
+          debt_id: debtId,
+          amount: amountRaw ? parseFloat(amountRaw) : 0,
+          note: note || null,
+          paid_at: new Date().toISOString().split('T')[0],
+        })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
     startTransition(async () => {
       const result = await createDebtPayment(debtId, fd)
       if (result && 'error' in result) setActionError(result.error)
     })
   }
 
+  // ── Presupuesto handlers ─────────────────────────────────────────────
+
   function handlePresupuestoCreate(p: { nombre: string; total: number; currency: string }) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('presupuesto.create', {
+          id: crypto.randomUUID(),
+          user_id: userId,
+          nombre: p.nombre.toUpperCase(),
+          total: p.total,
+          currency: p.currency,
+        })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
+
     const fd = new FormData()
     fd.set('nombre', p.nombre)
     fd.set('total', String(p.total))
@@ -265,6 +405,19 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handlePresupuestoUpdate(id: string, p: { nombre: string; total: number; currency: string }) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('presupuesto.update', {
+          id,
+          nombre: p.nombre,
+          total: p.total,
+          currency: p.currency,
+        })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
+
     const fd = new FormData()
     fd.set('nombre', p.nombre)
     fd.set('total', String(p.total))
@@ -276,6 +429,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handlePresupuestoDelete(id: string) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('presupuesto.delete', { id })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
     startTransition(async () => {
       const result = await deletePresupuesto(id)
       if (result && 'error' in result) setActionError(result.error)
@@ -283,6 +443,19 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handlePresupuestoItemCreate(presupuestoId: string, item: { nombre: string; monto: number }) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('presupuesto_item.create', {
+          id: crypto.randomUUID(),
+          presupuesto_id: presupuestoId,
+          nombre: item.nombre.toUpperCase(),
+          monto: item.monto,
+        })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
+
     const fd = new FormData()
     fd.set('nombre', item.nombre)
     fd.set('monto', String(item.monto))
@@ -293,6 +466,18 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handlePresupuestoItemUpdate(itemId: string, item: { nombre: string; monto: number }) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('presupuesto_item.update', {
+          id: itemId,
+          nombre: item.nombre,
+          monto: item.monto,
+        })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
+
     const fd = new FormData()
     fd.set('nombre', item.nombre)
     fd.set('monto', String(item.monto))
@@ -303,13 +488,37 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handlePresupuestoItemDelete(itemId: string) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('presupuesto_item.delete', { id: itemId })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
     startTransition(async () => {
       const result = await deletePresupuestoItem(itemId)
       if (result && 'error' in result) setActionError(result.error)
     })
   }
 
+  // ── Savings Goal handlers ────────────────────────────────────────────
+
   function handleGoalAdd(g: Omit<SavingsGoal, 'id'>) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('savings_goal.create', {
+          id: crypto.randomUUID(),
+          user_id: userId,
+          nombre: g.nombre,
+          monto_objetivo: g.monto_objetivo,
+          currency: g.currency,
+          status: 'active',
+        })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
+
     const fd = new FormData()
     fd.set('nombre', g.nombre)
     fd.set('monto_objetivo', String(g.monto_objetivo))
@@ -321,6 +530,19 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handleGoalUpdate(g: SavingsGoal) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('savings_goal.update', {
+          id: g.id,
+          nombre: g.nombre,
+          monto_objetivo: g.monto_objetivo,
+          currency: g.currency,
+        })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
+
     const fd = new FormData()
     fd.set('nombre', g.nombre)
     fd.set('monto_objetivo', String(g.monto_objetivo))
@@ -332,6 +554,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handleGoalDelete(id: string) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('savings_goal.delete', { id })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
     startTransition(async () => {
       const result = await deleteSavingsGoal(id)
       if (result && 'error' in result) setActionError(result.error)
@@ -339,6 +568,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handleGoalStatus(id: string, status: SavingsGoalStatus) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('savings_goal.status', { goal_id: id, status })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
     startTransition(async () => {
       const result = await updateGoalStatus(id, status)
       if (result && 'error' in result) setActionError(result.error)
@@ -346,6 +582,22 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handleContributionAdd(goalId: string, fd: FormData) {
+    if (OFFLINE_ENABLED) {
+      const montoRaw = fd.get('monto') as string | null
+      const fecha = (fd.get('fecha') as string | null) || new Date().toISOString().split('T')[0]
+      const nota = (fd.get('nota') as string | null) || null
+      startTransition(async () => {
+        const result = await writeOp('savings_contribution.create', {
+          id: crypto.randomUUID(),
+          goal_id: goalId,
+          monto: montoRaw ? parseFloat(montoRaw) : 0,
+          fecha,
+          nota,
+        })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
     startTransition(async () => {
       const result = await addContribution(goalId, fd)
       if (result && 'error' in result) setActionError(result.error)
@@ -353,8 +605,46 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }
 
   function handleContributionDelete(id: string) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('savings_contribution.delete', { id })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
     startTransition(async () => {
       const result = await deleteContribution(id)
+      if (result && 'error' in result) setActionError(result.error)
+    })
+  }
+
+  // ── Currency handlers ────────────────────────────────────────────────
+
+  function handleCurrenciesChange(codes: string[]) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('user.currencies', { codes })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await updateUserCurrencies(codes)
+      if (result && 'error' in result) setActionError(result.error)
+    })
+  }
+
+  function handleDisplayCurrencyChange(code: string | null) {
+    setActiveDisplayCurrency(code)
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('user.display_currency', { code })
+        if (!result.ok) setActionError(result.error)
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await updateDisplayCurrency(code)
       if (result && 'error' in result) setActionError(result.error)
     })
   }
@@ -560,7 +850,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           selected={effectiveCurrencies}
           displayCurrency={activeDisplayCurrency}
           onClose={() => setPickerOpen(false)}
-          onDisplayCurrencyChange={setActiveDisplayCurrency}
+          onDisplayCurrencyChange={handleDisplayCurrencyChange}
+          onCurrenciesChange={handleCurrenciesChange}
         />
       )}
     </div>

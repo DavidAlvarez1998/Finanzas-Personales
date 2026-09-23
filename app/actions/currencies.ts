@@ -9,7 +9,7 @@ const VALID_CODES = new Set(WORLD_CURRENCIES.map(c => c.code))
 
 export async function updateUserCurrencies(
   codes: string[]
-): Promise<{ error: string } | void> {
+): Promise<{ error: string } | { row: { currencies: string[] } }> {
   const { userId } = await verifySession()
   const safe = codes.filter(c => VALID_CODES.has(c))
   const supabase = createServerClient()
@@ -19,11 +19,12 @@ export async function updateUserCurrencies(
     .eq('id', userId)
   if (error) return { error: error.message }
   revalidatePath('/')
+  return { row: { currencies: safe } }
 }
 
 export async function updateDisplayCurrency(
   code: string | null
-): Promise<{ error: string } | void> {
+): Promise<{ error: string } | { row: { display_currency: string | null } }> {
   if (code !== null && !VALID_CODES.has(code)) return { error: 'Divisa inválida' }
   const { userId } = await verifySession()
   const supabase = createServerClient()
@@ -33,4 +34,5 @@ export async function updateDisplayCurrency(
     .eq('id', userId)
   if (error) return { error: error.message }
   revalidatePath('/')
+  return { row: { display_currency: code } }
 }
