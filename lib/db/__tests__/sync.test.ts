@@ -83,7 +83,8 @@ describe('drainQueue', () => {
     expect(callOrder).toEqual(['op-a', 'op-b', 'op-c'])
   })
 
-  it('marks op as failed on 400 validation error and stops drain', async () => {
+  it('marks op as failed on 400 validation error and continues drain (R6/G4)', async () => {
+    // Both ops reject with validation error
     let callCount = 0
     mockHandle.mockImplementation(() => {
       callCount++
@@ -100,14 +101,15 @@ describe('drainQueue', () => {
     const { drainQueue } = await import('../sync')
     await drainQueue()
 
-    expect(callCount).toBe(1) // only first op attempted
+    // Both ops must be attempted — failed op must not block the queue
+    expect(callCount).toBe(2)
 
     const storedA = await testDb.pending_ops.get('op-a')
     const storedB = await testDb.pending_ops.get('op-b')
 
     expect(storedA!.status).toBe('failed')
     expect(storedA!.error).toBe('Monto invalido')
-    expect(storedB!.status).toBe('queued') // not touched
+    expect(storedB!.status).toBe('failed') // also attempted and failed
   })
 
   it('dispatches auth-expired event and preserves op as queued on 401', async () => {

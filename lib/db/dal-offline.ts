@@ -117,3 +117,19 @@ export async function getDisplayCurrency(_userId: string): Promise<string | null
   const m = await db.meta.get('display_currency')
   return (m?.value as string | null) ?? null
 }
+
+/**
+ * Read a cached FX rate from Dexie.
+ * Returns null if no cached rate exists.
+ * Returns `stale: true` when the cached rate is older than 24 hours.
+ */
+export async function getExchangeRate(
+  from: string,
+  to: string
+): Promise<{ rate: number; stale: boolean } | null> {
+  const pair = `${from}_${to}`
+  const cached = await db.fx_rates.get(pair)
+  if (!cached) return null
+  const STALE_MS = 24 * 60 * 60 * 1000
+  return { rate: cached.rate, stale: Date.now() - cached.fetched_at > STALE_MS }
+}

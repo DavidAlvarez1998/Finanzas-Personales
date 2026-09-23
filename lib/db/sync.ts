@@ -239,7 +239,7 @@ export async function drainQueue(): Promise<void> {
             error: err instanceof Error ? err.message : String(err),
             updated_at: Date.now(),
           })
-          break // STOP — do not skip ahead
+          continue // skip to next op — failed op must not block the queue
         }
 
         // Transient error — bounded retry with exponential backoff
