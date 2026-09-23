@@ -9,25 +9,17 @@ async function Dashboard() {
   const { userId } = await verifySession()
 
   if (OFFLINE_ENABLED) {
-    // In offline mode, DashboardShell reads transactions from Dexie via useLiveQuery.
-    // Other sections (debts, presupuestos, savings) are still server-fetched in PR1.
-    const [debts, presupuestos, savingsGoals, currencies, displayCurrency] = await Promise.all([
-      getDebts(),
-      getPresupuestos(),
-      getSavingsGoals(),
-      getUserCurrencies(),
-      getDisplayCurrency(),
-    ])
-
+    // In offline mode, DashboardShell reads all data from Dexie via useLiveQuery.
+    // No server-side DAL calls needed — hydration happens in OfflineProvider.
     return (
       <DashboardShell
         userId={userId}
         transactions={null}
-        debts={debts}
-        presupuestos={presupuestos}
-        savingsGoals={savingsGoals}
-        currencies={currencies}
-        displayCurrency={displayCurrency}
+        debts={null}
+        presupuestos={null}
+        savingsGoals={null}
+        currencies={null}
+        displayCurrency={null}
       />
     )
   }
