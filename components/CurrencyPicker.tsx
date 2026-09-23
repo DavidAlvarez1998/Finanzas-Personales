@@ -12,9 +12,11 @@ interface Props {
   displayCurrency: string | null
   onClose: () => void
   onDisplayCurrencyChange: (code: string | null) => void
+  /** Optional override for saving currencies (used in offline mode). */
+  onCurrenciesChange?: (codes: string[]) => void
 }
 
-export function CurrencyPicker({ selected, displayCurrency, onClose, onDisplayCurrencyChange }: Props) {
+export function CurrencyPicker({ selected, displayCurrency, onClose, onDisplayCurrencyChange, onCurrenciesChange }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('currencies')
   const [localSelected, setLocalSelected] = useState<string[]>(selected)
   const [search, setSearch] = useState('')
@@ -36,6 +38,11 @@ export function CurrencyPicker({ selected, displayCurrency, onClose, onDisplayCu
   }
 
   function handleSaveCurrencies() {
+    if (onCurrenciesChange) {
+      onCurrenciesChange(localSelected)
+      onClose()
+      return
+    }
     startTransition(async () => {
       await updateUserCurrencies(localSelected)
       onClose()
@@ -44,7 +51,10 @@ export function CurrencyPicker({ selected, displayCurrency, onClose, onDisplayCu
 
   async function handleSaveDisplayCurrency(code: string | null) {
     setIsDisplaySaving(true)
-    await updateDisplayCurrency(code)
+    if (!onCurrenciesChange) {
+      // Direct SA call only when no override provided (online non-offline mode)
+      await updateDisplayCurrency(code)
+    }
     onDisplayCurrencyChange(code)
     setIsDisplaySaving(false)
     onClose()
