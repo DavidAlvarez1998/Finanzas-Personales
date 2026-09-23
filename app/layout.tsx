@@ -10,6 +10,9 @@ import { createServerClient } from "@/lib/supabase/server";
 import { daysUntilExpiry } from "@/lib/auth/user-status";
 import { ExpiryBanner } from "@/components/expiry-banner"
 import { SettingsButton } from "@/components/SettingsButton";
+import { OfflineProvider } from "@/app/providers/OfflineProvider";
+
+const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,12 +63,17 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     }
   }
 
+  const userId = session?.userId ?? null
+
   return (
     <html
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className="min-h-full flex flex-col bg-zinc-100 dark:bg-zinc-950">
         <Providers>
           {userEmail && (
@@ -90,7 +98,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               whatsappNumber={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}
             />
           )}
-          {children}
+          {OFFLINE_ENABLED && userId ? (
+            <OfflineProvider userId={userId}>
+              {children}
+            </OfflineProvider>
+          ) : (
+            children
+          )}
         </Providers>
       </body>
     </html>
