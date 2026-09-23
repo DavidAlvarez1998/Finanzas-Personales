@@ -2,7 +2,7 @@ import type { NextConfig } from 'next'
 import withSerwistInit from '@serwist/next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  turbopack: {},
 }
 
 const offlineEnabled = process.env.NEXT_PUBLIC_OFFLINE === '1'
