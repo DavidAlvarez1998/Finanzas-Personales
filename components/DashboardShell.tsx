@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useTransition, useMemo, useEffect, useRef } from 'react'
+import { toast } from 'sonner'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { Logo } from '@/components/Logo'
 import { SummaryCards } from '@/components/SummaryCards'
 import { TransactionTable } from '@/components/TransactionTable'
 import { TransactionForm } from '@/components/TransactionForm'
@@ -68,7 +70,6 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [initialType, setInitialType] = useState<'income' | 'expense'>('expense')
-  const [actionError, setActionError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [pickerOpen, setPickerOpen] = useState(false)
   const { online } = useNetworkStatus()
@@ -257,7 +258,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
             currency: t.currency ?? 'COP',
             category: t.category ?? '',
           })
-          if (!result.ok) setActionError(result.error)
+          if (!result.ok) toast.error(result.error)
+          else toast.success('Registro actualizado')
         } else {
           const result = await writeOp('transaction.create', {
             user_id: userId,
@@ -268,7 +270,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
             currency: t.currency ?? 'COP',
             category: t.category ?? null,
           })
-          if (!result.ok) setActionError(result.error)
+          if (!result.ok) toast.error(result.error)
+          else toast.success('Registro agregado')
         }
       })
       return
@@ -286,7 +289,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       const result = editing
         ? await updateTransaction(editing.id, fd)
         : await createTransaction(fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Registro agregado')
     })
   }
 
@@ -294,13 +298,15 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('transaction.delete', { id })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Registro eliminado')
       })
       return
     }
     startTransition(async () => {
       const result = await deleteTransaction(id)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Registro eliminado')
     })
   }
 
@@ -316,7 +322,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           amount: d.amount,
           currency: d.currency,
         })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Deuda agregada')
       })
       return
     }
@@ -328,7 +335,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
 
     startTransition(async () => {
       const result = await createDebt(fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Deuda agregada')
     })
   }
 
@@ -341,7 +349,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           amount: d.amount,
           currency: d.currency,
         })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
       })
       return
     }
@@ -353,7 +361,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
 
     startTransition(async () => {
       const result = await updateDebt(d.id, fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
     })
   }
 
@@ -361,13 +369,15 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('debt.delete', { id })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Deuda eliminada')
       })
       return
     }
     startTransition(async () => {
       const result = await deleteDebt(id)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Deuda eliminada')
     })
   }
 
@@ -383,13 +393,15 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           note: note || null,
           paid_at: new Date().toISOString().split('T')[0],
         })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Pago registrado')
       })
       return
     }
     startTransition(async () => {
       const result = await createDebtPayment(debtId, fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Pago registrado')
     })
   }
 
@@ -405,7 +417,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           total: p.total,
           currency: p.currency,
         })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Presupuesto creado')
       })
       return
     }
@@ -416,7 +429,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('currency', p.currency)
     startTransition(async () => {
       const result = await createPresupuesto(fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Presupuesto creado')
     })
   }
 
@@ -429,7 +443,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           total: p.total,
           currency: p.currency,
         })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
       })
       return
     }
@@ -440,7 +454,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('currency', p.currency)
     startTransition(async () => {
       const result = await updatePresupuesto(id, fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
     })
   }
 
@@ -448,13 +462,15 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto.delete', { id })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Presupuesto eliminado')
       })
       return
     }
     startTransition(async () => {
       const result = await deletePresupuesto(id)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Presupuesto eliminado')
     })
   }
 
@@ -467,7 +483,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           nombre: item.nombre.toUpperCase(),
           monto: item.monto,
         })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Ítem agregado')
       })
       return
     }
@@ -477,7 +494,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('monto', String(item.monto))
     startTransition(async () => {
       const result = await createPresupuestoItem(presupuestoId, fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Ítem agregado')
     })
   }
 
@@ -489,7 +507,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           nombre: item.nombre,
           monto: item.monto,
         })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
       })
       return
     }
@@ -499,7 +517,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('monto', String(item.monto))
     startTransition(async () => {
       const result = await updatePresupuestoItem(itemId, fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
     })
   }
 
@@ -507,13 +525,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto_item.delete', { id: itemId })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
       })
       return
     }
     startTransition(async () => {
       const result = await deletePresupuestoItem(itemId)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
     })
   }
 
@@ -530,7 +548,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           currency: g.currency,
           status: 'active',
         })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Meta creada')
       })
       return
     }
@@ -541,7 +560,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('currency', g.currency)
     startTransition(async () => {
       const result = await createSavingsGoal(fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Meta creada')
     })
   }
 
@@ -554,7 +574,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           monto_objetivo: g.monto_objetivo,
           currency: g.currency,
         })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
       })
       return
     }
@@ -565,7 +585,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('currency', g.currency)
     startTransition(async () => {
       const result = await updateSavingsGoal(g.id, fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
     })
   }
 
@@ -573,13 +593,15 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('savings_goal.delete', { id })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Meta eliminada')
       })
       return
     }
     startTransition(async () => {
       const result = await deleteSavingsGoal(id)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Meta eliminada')
     })
   }
 
@@ -587,13 +609,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('savings_goal.status', { goal_id: id, status })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
       })
       return
     }
     startTransition(async () => {
       const result = await updateGoalStatus(id, status)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
     })
   }
 
@@ -610,13 +632,15 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           fecha,
           nota,
         })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Contribución registrada')
       })
       return
     }
     startTransition(async () => {
       const result = await addContribution(goalId, fd)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Contribución registrada')
     })
   }
 
@@ -624,13 +648,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('savings_contribution.delete', { id })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
       })
       return
     }
     startTransition(async () => {
       const result = await deleteContribution(id)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
     })
   }
 
@@ -640,13 +664,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('user.currencies', { codes })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
       })
       return
     }
     startTransition(async () => {
       const result = await updateUserCurrencies(codes)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
     })
   }
 
@@ -655,19 +679,21 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('user.display_currency', { code })
-        if (!result.ok) setActionError(result.error)
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Moneda actualizada')
       })
       return
     }
     startTransition(async () => {
       const result = await updateDisplayCurrency(code)
-      if (result && 'error' in result) setActionError(result.error)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Moneda actualizada')
     })
   }
 
   if (isHydrating) {
     return (
-      <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-zinc-400 dark:text-zinc-500 text-sm animate-pulse">Cargando datos...</div>
       </div>
     )
@@ -681,20 +707,28 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       {OFFLINE_ENABLED && <OfflineBanner />}
       {/* Header */}
       <header className="border-b border-zinc-200/60 bg-white/80 backdrop-blur sticky top-0 z-10 dark:border-zinc-800/60 dark:bg-zinc-900/80">
-        <div className="mx-auto flex max-w-5xl items-center justify-end gap-2 px-4 py-3">
-          {OFFLINE_ENABLED && <SyncStatusBadge />}
-          <button
-            onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/30"
-          >
-            + Ingreso
-          </button>
-          <button
-            onClick={() => { setEditing(null); setInitialType('expense'); setShowForm(true) }}
-            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500 transition-colors shadow-lg shadow-rose-900/30"
-          >
-            + Egreso
-          </button>
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
+          <Logo
+            size={28}
+            className="text-zinc-950 dark:text-white"
+            label="Control de Finanzas"
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-zinc-950 dark:text-white">Finanzas</span>
+            {OFFLINE_ENABLED && <SyncStatusBadge />}
+            <button
+              onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/30"
+            >
+              + Ingreso
+            </button>
+            <button
+              onClick={() => { setEditing(null); setInitialType('expense'); setShowForm(true) }}
+              className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500 transition-colors shadow-lg shadow-rose-900/30"
+            >
+              + Egreso
+            </button>
+          </div>
         </div>
       </header>
 
@@ -715,7 +749,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           <div className="flex gap-1 rounded-xl border border-zinc-200 bg-zinc-100/50 p-1 w-max dark:border-zinc-800 dark:bg-zinc-900/50">
             <button
               onClick={() => setTab('transactions')}
-              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'transactions'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
                   : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
@@ -725,7 +759,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
             </button>
             <button
               onClick={() => setTab('debts')}
-              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'debts'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
                   : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
@@ -740,7 +774,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
             </button>
             <button
               onClick={() => setTab('presupuestos')}
-              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'presupuestos'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
                   : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
@@ -755,7 +789,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
             </button>
             <button
               onClick={() => setTab('savings')}
-              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'savings'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
                   : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
@@ -770,7 +804,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
             </button>
             <button
               onClick={() => setTab('charts')}
-              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'charts'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
                   : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
@@ -838,14 +872,6 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           {tab === 'charts' && <ChartsSection transactions={transactions} />}
         </div>
       </main>
-
-      {/* Error toast */}
-      {actionError && (
-        <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-rose-300 bg-rose-50 px-5 py-3 text-sm text-rose-700 shadow-xl dark:border-rose-700/50 dark:bg-rose-950 dark:text-rose-300">
-          {actionError}
-          <button onClick={() => setActionError(null)} className="ml-4 text-rose-400 hover:text-rose-700 dark:text-rose-500 dark:hover:text-rose-300">✕</button>
-        </div>
-      )}
 
       {/* Transaction form modal */}
       {showForm && (
