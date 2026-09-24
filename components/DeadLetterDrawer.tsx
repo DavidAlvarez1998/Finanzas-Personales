@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import type { PendingOp } from '@/lib/db/schema'
 
 interface DeadLetterDrawerProps {
@@ -38,18 +39,19 @@ function humanize(type: string): string {
 }
 
 export function DeadLetterDrawer({ failedOps, onRetry, onDismiss }: DeadLetterDrawerProps) {
-  if (failedOps.length === 0) return null
+  const [confirming, setConfirming] = useState<string | null>(null)
 
-  function handleDismiss(id: string) {
-    const confirmed = window.confirm(
-      'Esto eliminará la operación sin sincronizar. ¿Continuar?'
-    )
-    if (confirmed) onDismiss(id)
-  }
+  useEffect(() => {
+    if (!confirming) return
+    const t = setTimeout(() => setConfirming(null), 3000)
+    return () => clearTimeout(t)
+  }, [confirming])
+
+  if (failedOps.length === 0) return null
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 max-h-80 overflow-y-auto">
-      <div className="mx-auto max-w-5xl px-4 py-3">
+      <div className="animate-modal mx-auto max-w-5xl px-4 py-3">
         <p className="text-xs font-semibold uppercase tracking-widest text-rose-600 dark:text-rose-400 mb-3">
           Operaciones fallidas ({failedOps.length})
         </p>
@@ -76,12 +78,21 @@ export function DeadLetterDrawer({ failedOps, onRetry, onDismiss }: DeadLetterDr
                 >
                   Reintentar
                 </button>
-                <button
-                  onClick={() => handleDismiss(op.id)}
-                  className="rounded-md bg-rose-100 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-200 dark:bg-rose-900/40 dark:text-rose-400 dark:hover:bg-rose-900/60"
-                >
-                  Descartar
-                </button>
+                {confirming === op.id ? (
+                  <button
+                    onClick={() => { onDismiss(op.id); setConfirming(null) }}
+                    className="rounded-md bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:hover:bg-amber-900/60"
+                  >
+                    ¿Confirmar? (3s)
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setConfirming(op.id)}
+                    className="rounded-md bg-rose-100 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-200 dark:bg-rose-900/40 dark:text-rose-400 dark:hover:bg-rose-900/60"
+                  >
+                    Descartar
+                  </button>
+                )}
               </div>
             </li>
           ))}

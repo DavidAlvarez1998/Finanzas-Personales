@@ -77,7 +77,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-zinc-950 dark:text-white">Deudas</h2>
+          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Deudas</h2>
           <p className="text-xs text-zinc-500">{debts.length} deuda{debts.length !== 1 ? 's' : ''} registrada{debts.length !== 1 ? 's' : ''}</p>
         </div>
         <button
@@ -205,9 +205,9 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0 bg-black/50 backdrop-blur-sm dark:bg-black/60" onClick={() => setShowForm(false)}>
-          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-zinc-200/60 bg-white shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+          <div className="animate-modal w-full max-w-sm overflow-hidden rounded-2xl border border-zinc-200/60 bg-white shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
             <div className="max-h-[90svh] overflow-y-auto p-4 sm:p-6 [scrollbar-gutter:stable]">
-            <h3 className="mb-5 text-lg font-bold text-zinc-950 dark:text-white">
+            <h3 className="mb-5 text-base font-semibold text-zinc-950 dark:text-white">
               {editing ? 'Editar Deuda' : 'Nueva Deuda'}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -219,7 +219,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                   onChange={e => setDescription(e.target.value)}
                   placeholder="Ej: Préstamo banco"
                   required
-                  className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
+                  className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                 />
               </div>
               <div className="grid grid-cols-[minmax(0,1fr)_80px] gap-2">
@@ -268,7 +268,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
       {/* Delete confirmation */}
       {deletingId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm dark:bg-black/60" onClick={() => setDeletingId(null)}>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl w-full max-w-xs mx-4 dark:border-zinc-700 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+          <div className="animate-modal rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl w-full max-w-xs mx-4 dark:border-zinc-700 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
             <p className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">¿Eliminar esta deuda? Esta acción no se puede deshacer.</p>
             <div className="flex gap-3">
               <button
@@ -292,8 +292,8 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
       {/* Payment modal */}
       {payingDebtId && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-4 sm:pb-0 dark:bg-black/60 backdrop-blur-sm" onClick={() => setPayingDebtId(null)}>
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-300 bg-white p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
-            <h3 className="mb-4 text-base font-bold text-zinc-950 dark:text-white">Registrar Pago</h3>
+          <div className="animate-modal w-full max-w-sm rounded-2xl border border-zinc-300 bg-white p-6 shadow-2xl max-h-[90svh] overflow-y-auto dark:border-zinc-700 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+            <h3 className="mb-4 text-base font-semibold text-zinc-950 dark:text-white">Registrar Pago</h3>
             <form
               onSubmit={e => {
                 e.preventDefault()
@@ -316,7 +316,7 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
                   value={payNote}
                   onChange={e => setPayNote(e.target.value)}
                   placeholder="Ej: Cuota enero"
-                  className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                  className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 />
               </div>
               <div className="flex gap-3 pt-1">

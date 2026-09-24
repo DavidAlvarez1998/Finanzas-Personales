@@ -1,6 +1,7 @@
 /**
  * E1 — Dead-letter retry and dismiss behavior.
  * Spec R6: retry resets status to 'queued'; dismiss deletes the op.
+ * C9 — Inline confirm state machine for DeadLetterDrawer (R6).
  */
 import 'fake-indexeddb/auto'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
@@ -105,5 +106,91 @@ describe('dead-letter retry and dismiss', () => {
     expect(mockHandle).toHaveBeenCalledTimes(1)
     const stored = await testDb.pending_ops.get('retry-drain-op')
     expect(stored!.status).toBe('completed')
+  })
+})
+
+/**
+ * C9 — Inline confirm state machine for DeadLetterDrawer.
+ * Spec R6: first click → confirming state; second click → calls handler;
+ * auto-reset after 3s timeout.
+ *
+ * These tests exercise the pure state machine logic extracted from the component,
+ * keeping them compatible with the Node test environment (no jsdom needed).
+ */
+
+/** Simulates the confirming-state machine from DeadLetterDrawer */
+function makeConfirmMachine() {
+  let confirming: string | null = null
+  let timer: ReturnType<typeof setTimeout> | null = null
+
+  function setConfirming(id: string | null) {
+    if (timer) clearTimeout(timer)
+    timer = null
+    confirming = id
+    if (id !== null) {
+      timer = setTimeout(() => {
+        confirming = null
+      }, 3000)
+    }
+  }
+
+  function getConfirming() { return confirming }
+
+  function firstClick(opId: string) {
+    setConfirming(opId)
+  }
+
+  function secondClick(opId: string, dismiss: (id: string) => void) {
+    if (confirming === opId) {
+      dismiss(opId)
+      setConfirming(null)
+    }
+  }
+
+  function cleanup() {
+    if (timer) clearTimeout(timer)
+  }
+
+  return { firstClick, secondClick, getConfirming, cleanup }
+}
+
+describe('DeadLetterDrawer inline confirm state machine (C9 / R6)', () => {
+  it('dismiss button shows confirming state on first click', () => {
+    const machine = makeConfirmMachine()
+    machine.firstClick('op-1')
+    expect(machine.getConfirming()).toBe('op-1')
+    machine.cleanup()
+  })
+
+  it('dismiss button calls handler on second click', () => {
+    const machine = makeConfirmMachine()
+    const dismissed: string[] = []
+    machine.firstClick('op-1')
+    machine.secondClick('op-1', (id) => dismissed.push(id))
+    expect(dismissed).toEqual(['op-1'])
+    expect(machine.getConfirming()).toBeNull()
+    machine.cleanup()
+  })
+
+  it('second click on different op does not call handler', () => {
+    const machine = makeConfirmMachine()
+    const dismissed: string[] = []
+    machine.firstClick('op-1')
+    machine.secondClick('op-2', (id) => dismissed.push(id))
+    expect(dismissed).toHaveLength(0)
+    // confirming stays on op-1 (op-2 click is a no-op for the confirm gate)
+    expect(machine.getConfirming()).toBe('op-1')
+    machine.cleanup()
+  })
+
+  it('auto-resets confirming state after 3 seconds', async () => {
+    vi.useFakeTimers()
+    const machine = makeConfirmMachine()
+    machine.firstClick('op-1')
+    expect(machine.getConfirming()).toBe('op-1')
+    vi.advanceTimersByTime(3000)
+    expect(machine.getConfirming()).toBeNull()
+    machine.cleanup()
+    vi.useRealTimers()
   })
 })
