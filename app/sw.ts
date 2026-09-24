@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
 import { defaultCache } from '@serwist/next/worker'
-import { Serwist, NetworkFirst } from 'serwist'
+import { Serwist, NetworkFirst, CacheableResponsePlugin } from 'serwist'
 import type { PrecacheEntry } from 'serwist'
 
 declare const self: ServiceWorkerGlobalScope & {
@@ -14,6 +14,15 @@ const serwist = new Serwist({
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [
+    // MUST remain first — navigation matcher must win before defaultCache spreads. See ADR-1.
+    {
+      matcher: ({ request }: { request: Request }) => request.mode === 'navigate',
+      handler: new NetworkFirst({
+        cacheName: 'navigation-cache',
+        networkTimeoutSeconds: 3,
+        plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
+      }),
+    },
     ...defaultCache,
     {
       matcher: ({ url }: { url: URL }) => url.pathname.startsWith('/api/'),

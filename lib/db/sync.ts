@@ -196,6 +196,7 @@ export async function drainQueue(): Promise<void> {
 
   draining = true
   try {
+    let drainedClean = false
     while (true) {
       // Fetch the oldest queued op
       const op = await db.pending_ops
@@ -203,7 +204,7 @@ export async function drainQueue(): Promise<void> {
         .between(['queued', -Infinity], ['queued', Infinity])
         .first()
 
-      if (!op) break
+      if (!op) { drainedClean = true; break }
 
       await db.pending_ops.update(op.id, {
         status: 'processing',
@@ -260,6 +261,9 @@ export async function drainQueue(): Promise<void> {
         })
         await sleep(Math.min(2 ** attempts * 250, 8000))
       }
+    }
+    if (drainedClean) {
+      await db.meta.put({ key: 'last_sync_at', value: Date.now() })
     }
   } finally {
     draining = false

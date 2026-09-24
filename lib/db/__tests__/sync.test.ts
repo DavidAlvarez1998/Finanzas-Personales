@@ -158,4 +158,43 @@ describe('drainQueue', () => {
     expect(stored!.attempts).toBe(5)
     expect(stored!.error).toContain('Network error')
   }, 10000)
+
+  describe('last_sync_at timestamp', () => {
+    it('sets last_sync_at when queue drains to empty', async () => {
+      // No ops queued — queue is empty from the start
+      const before = Date.now()
+      const { drainQueue } = await import('../sync')
+      await drainQueue()
+      const meta = await testDb.meta.get('last_sync_at')
+      expect(meta).toBeDefined()
+      expect(typeof meta!.value).toBe('number')
+      expect(meta!.value as number).toBeGreaterThanOrEqual(before)
+      expect(meta!.value as number).toBeLessThanOrEqual(Date.now() + 100)
+    })
+
+    it('does NOT set last_sync_at on auth error', async () => {
+      mockHandle.mockRejectedValue(new Error('Unauthorized'))
+      const op = makeOp({ id: 'auth-ts-op' })
+      await testDb.pending_ops.put(op)
+
+      const { drainQueue } = await import('../sync')
+      await drainQueue()
+
+      const meta = await testDb.meta.get('last_sync_at')
+      expect(meta).toBeUndefined()
+    })
+
+    it('does NOT set last_sync_at on transient max-retries', async () => {
+      mockHandle.mockRejectedValue(new Error('Network error'))
+      // attempts: 4 means one more failure triggers the fail-and-break path
+      const op = makeOp({ id: 'transient-ts-op', attempts: 4 })
+      await testDb.pending_ops.put(op)
+
+      const { drainQueue } = await import('../sync')
+      await drainQueue()
+
+      const meta = await testDb.meta.get('last_sync_at')
+      expect(meta).toBeUndefined()
+    }, 10000)
+  })
 })
