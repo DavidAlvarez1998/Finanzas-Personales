@@ -3,7 +3,6 @@
 import { useState, useTransition, useMemo, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Logo } from '@/components/Logo'
 import { SummaryCards } from '@/components/SummaryCards'
 import { TransactionTable } from '@/components/TransactionTable'
 import { TransactionForm } from '@/components/TransactionForm'
@@ -708,11 +707,6 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       {/* Header */}
       <header className="border-b border-zinc-200/60 bg-white/80 backdrop-blur sticky top-0 z-10 dark:border-zinc-800/60 dark:bg-zinc-900/80">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
-          <Logo
-            size={28}
-            className="text-zinc-950 dark:text-white"
-            label="Control de Finanzas"
-          />
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-zinc-950 dark:text-white">Finanzas</span>
             {OFFLINE_ENABLED && <SyncStatusBadge />}
