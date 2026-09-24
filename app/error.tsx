@@ -13,7 +13,7 @@ export default function ErrorPage({ error, retry }: Props) {
   }, [error])
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 text-white gap-6 px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground gap-6 px-4">
       <div className="rounded-2xl border border-rose-800/40 bg-rose-950/20 p-8 max-w-md w-full text-center">
         <h2 className="text-lg font-bold text-rose-400 mb-2">
           Algo salió mal

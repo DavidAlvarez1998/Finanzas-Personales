@@ -332,7 +332,7 @@ export function SavingsSection({
       {/* Goal create/edit modal */}
       {showForm && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={closeForm}>
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6" onClick={e => e.stopPropagation()}>
+          <div className="animate-modal w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6" onClick={e => e.stopPropagation()}>
             <h3 className="mb-4 text-base font-semibold text-zinc-950 dark:text-white">
               {editing ? 'Editar Meta' : 'Nueva Meta de Ahorro'}
             </h3>
@@ -348,7 +348,7 @@ export function SavingsSection({
                   required
                   disabled={isPending}
                   placeholder="Ej: Viaje a Europa"
-                  className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-violet-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 dark:focus:border-violet-500 disabled:opacity-50"
+                  className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-violet-600 focus:outline-none focus:ring-1 focus:ring-violet-600/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 dark:focus:border-violet-500 disabled:opacity-50"
                 />
               </div>
               <div>
@@ -401,7 +401,7 @@ export function SavingsSection({
       {/* Goal delete confirm modal */}
       {deletingId && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setDeletingId(null)}>
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6 text-center" onClick={e => e.stopPropagation()}>
+          <div className="animate-modal w-full max-w-sm rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6 text-center" onClick={e => e.stopPropagation()}>
             <p className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
               ¿Eliminar esta meta y todos sus aportes? Esta acción no se puede deshacer.
             </p>
@@ -428,7 +428,7 @@ export function SavingsSection({
       {/* Contribution modal */}
       {contributingGoalId && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={closeContribForm}>
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6" onClick={e => e.stopPropagation()}>
+          <div className="animate-modal w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6" onClick={e => e.stopPropagation()}>
             <h3 className="mb-4 text-base font-semibold text-zinc-950 dark:text-white">
               Registrar Aporte
             </h3>
@@ -456,7 +456,7 @@ export function SavingsSection({
                   onChange={e => setContribFecha(e.target.value)}
                   required
                   disabled={isPending}
-                  className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 focus:border-violet-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-violet-500 disabled:opacity-50"
+                  className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 focus:border-violet-600 focus:outline-none focus:ring-1 focus:ring-violet-600/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-violet-500 disabled:opacity-50"
                 />
               </div>
               <div>
@@ -469,7 +469,7 @@ export function SavingsSection({
                   onChange={e => setContribNota(e.target.value)}
                   disabled={isPending}
                   placeholder="Ej: Bono de fin de año"
-                  className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-violet-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 dark:focus:border-violet-500 disabled:opacity-50"
+                  className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-violet-600 focus:outline-none focus:ring-1 focus:ring-violet-600/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 dark:focus:border-violet-500 disabled:opacity-50"
                 />
               </div>
               <div className="flex gap-2 pt-2">
@@ -497,7 +497,7 @@ export function SavingsSection({
       {/* Contribution delete confirm modal */}
       {deletingContribId && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setDeletingContribId(null)}>
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6 text-center" onClick={e => e.stopPropagation()}>
+          <div className="animate-modal w-full max-w-sm rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 p-6 text-center" onClick={e => e.stopPropagation()}>
             <p className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
               ¿Eliminar este aporte? El estado de la meta no cambiará automáticamente.
             </p>

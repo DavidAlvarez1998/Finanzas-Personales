@@ -12,9 +12,9 @@ interface Props {
 }
 
 const FOCUS: Record<NonNullable<Props['accent']>, string> = {
-  sky:    'focus-within:border-sky-600 dark:focus-within:border-sky-500',
-  amber:  'focus-within:border-amber-600 dark:focus-within:border-amber-500',
-  violet: 'focus-within:border-violet-600 dark:focus-within:border-violet-500',
+  sky:    'focus-within:border-sky-600 dark:focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500/30',
+  amber:  'focus-within:border-amber-600 dark:focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500/30',
+  violet: 'focus-within:border-violet-600 dark:focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-600/30',
 }
 
 // In es-AR: '.' = thousands separator (always stripped), ',' = decimal separator.
