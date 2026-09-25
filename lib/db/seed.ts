@@ -23,6 +23,16 @@ export async function needsHydration(userId: string): Promise<boolean> {
 }
 
 /**
+ * Returns true when the local Dexie snapshot is older than `thresholdMs`.
+ * Used to decide whether to re-pull from the server on tab focus.
+ */
+export async function isSyncStale(thresholdMs = 2 * 60 * 1000): Promise<boolean> {
+  const m = await db.meta.get('last_sync_at')
+  if (!m) return true
+  return (Date.now() - Number(m.value)) > thresholdMs
+}
+
+/**
  * Fetches a full snapshot from the server and bulk-writes it into Dexie
  * inside a single transaction. Idempotent — safe to call multiple times.
  */

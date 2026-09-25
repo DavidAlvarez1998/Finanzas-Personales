@@ -2,7 +2,7 @@
 
 import { useEffect, createContext, useContext } from 'react'
 import { useRouter } from 'next/navigation'
-import { hydrateFromServer, needsHydration } from '@/lib/db/seed'
+import { hydrateFromServer, needsHydration, isSyncStale } from '@/lib/db/seed'
 import { useSyncTrigger } from '@/lib/hooks/useSyncTrigger'
 
 interface OfflineContextValue {
@@ -47,6 +47,24 @@ export function OfflineProvider({ userId, children }: OfflineProviderProps) {
         })
       }
     })
+  }, [userId])
+
+  // Re-pull from server on tab focus if local data is stale (> 2 min).
+  // This ensures changes made on other devices show up without a full reload.
+  useEffect(() => {
+    if (!userId) return
+    function handleVisibility() {
+      if (document.visibilityState !== 'visible' || !navigator.onLine) return
+      isSyncStale().then(stale => {
+        if (stale) {
+          hydrateFromServer(userId).catch(err => {
+            console.error('[OfflineProvider] re-sync failed:', err)
+          })
+        }
+      })
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
   }, [userId])
 
   return (
