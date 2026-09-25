@@ -39,14 +39,17 @@ export function OfflineProvider({ userId, children }: OfflineProviderProps) {
 
   useEffect(() => {
     if (!userId) return
-    // Hydrate on mount if not yet done for this user and we're online
-    needsHydration(userId).then(needs => {
-      if (needs && typeof navigator !== 'undefined' && navigator.onLine) {
+    async function maybeHydrate() {
+      if (typeof navigator === 'undefined' || !navigator.onLine) return
+      const needs = await needsHydration(userId)
+      const stale = await isSyncStale()
+      if (needs || stale) {
         hydrateFromServer(userId).catch(err => {
           console.error('[OfflineProvider] hydration failed:', err)
         })
       }
-    })
+    }
+    maybeHydrate()
   }, [userId])
 
   // Re-pull from server on tab focus if local data is stale (> 2 min).
