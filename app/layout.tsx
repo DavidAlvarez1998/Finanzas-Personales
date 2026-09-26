@@ -11,6 +11,8 @@ import { daysUntilExpiry } from "@/lib/auth/user-status";
 import { ExpiryBanner } from "@/components/expiry-banner"
 import { SettingsButton } from "@/components/SettingsButton";
 import { OfflineProvider } from "@/app/providers/OfflineProvider";
+import { readImpersonationContext } from "@/lib/auth/impersonation";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
 
@@ -64,6 +66,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   }
 
   const userId = session?.userId ?? null
+  const imp = await readImpersonationContext(session)
 
   return (
     <html
@@ -76,6 +79,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col bg-zinc-100 dark:bg-zinc-950">
         <Providers>
+          {imp && <ImpersonationBanner impersonation={imp} />}
           {userEmail && (
             <div className="flex items-center justify-end gap-1 px-4 py-1 bg-white dark:bg-zinc-900 border-b border-zinc-200/60 dark:border-zinc-800/60">
               <SettingsButton />

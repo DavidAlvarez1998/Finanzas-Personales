@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { isExpired } from '@/lib/auth/user-status'
+import { readImpersonationPayload } from '@/lib/auth/impersonation'
 import type { VerifiedSession } from '@/types'
 
 const COOKIE = 'session'
@@ -43,18 +44,70 @@ export async function getSession(): Promise<SessionPayload | null> {
   }
 }
 
+/**
+ * Resolves the EFFECTIVE session.
+ *
+ * When a superadmin is actively impersonating, returns the target user's identity
+ * as the active userId (isSuperadmin = false). DAL functions always call this.
+ */
 export async function verifySession(): Promise<VerifiedSession> {
-  const session = await getSession()
-  if (!session) redirect('/login')
+  const base = await getSession()
+  if (!base) redirect('/login')
+
+  // Read full payload so we have targetUserId for the DB check
+  const impPayload = await readImpersonationPayload(base)
+  // Read context (strips targetUserId) for the VerifiedSession.impersonation field
+  const imp = impPayload
+    ? {
+        adminUserId: impPayload.adminUserId,
+        adminEmail: impPayload.adminEmail,
+        targetEmail: impPayload.targetEmail,
+      }
+    : null
+
+  const effectiveUserId = impPayload?.targetUserId ?? base.userId
+  const effectiveEmail = impPayload?.targetEmail ?? base.email
+  const baseIsSuperadmin = base.email === process.env.SUPERADMIN_EMAIL
+  const effectiveIsSuperadmin = impPayload ? false : baseIsSuperadmin
 
   const supabase = createServerClient()
   const { data: user } = await supabase
     .from('users')
     .select('status, expires_at, email')
-    .eq('id', session.userId)
+    .eq('id', effectiveUserId)
     .single()
 
-  const isSuperadmin = session.email === process.env.SUPERADMIN_EMAIL
+  if (!effectiveIsSuperadmin) {
+    if (!user || user.status !== 'active') redirect('/blocked')
+    if (isExpired(user.expires_at)) redirect('/blocked')
+  }
+
+  return {
+    userId: effectiveUserId,
+    email: effectiveEmail,
+    status: user?.status ?? 'pending',
+    expires_at: user?.expires_at ?? null,
+    isSuperadmin: effectiveIsSuperadmin,
+    impersonation: imp ?? undefined,
+  }
+}
+
+/**
+ * Resolves the REAL session — reads only the base session cookie, ignores impersonation.
+ * Used exclusively by requireAdmin() so /admin routes always check the real human.
+ */
+export async function getRealSession(): Promise<VerifiedSession> {
+  const base = await getSession()
+  if (!base) redirect('/login')
+
+  const supabase = createServerClient()
+  const { data: user } = await supabase
+    .from('users')
+    .select('status, expires_at, email')
+    .eq('id', base.userId)
+    .single()
+
+  const isSuperadmin = base.email === process.env.SUPERADMIN_EMAIL
 
   if (!isSuperadmin) {
     if (!user || user.status !== 'active') redirect('/blocked')
@@ -62,12 +115,13 @@ export async function verifySession(): Promise<VerifiedSession> {
   }
 
   return {
-    userId: session.userId,
-    email: session.email,
+    userId: base.userId,
+    email: base.email,
     status: user?.status ?? 'pending',
     expires_at: user?.expires_at ?? null,
     isSuperadmin,
-  } as VerifiedSession
+    // impersonation intentionally omitted — this function does not know or care
+  }
 }
 
 export async function destroySession(): Promise<void> {

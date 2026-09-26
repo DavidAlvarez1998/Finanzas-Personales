@@ -1,6 +1,18 @@
 import { createServerClient } from '@/lib/supabase/server'
 import type { AdminUserRow, UserStatus } from '@/types'
 
+export async function getUserById(userId: string): Promise<AdminUserRow | null> {
+  const supabase = createServerClient()
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, email, status, expires_at, created_at')
+    .eq('id', userId)
+    .single()
+
+  if (error) return null
+  return data as AdminUserRow
+}
+
 export async function getAllUsers(): Promise<AdminUserRow[]> {
   const supabase = createServerClient()
   const { data, error } = await supabase

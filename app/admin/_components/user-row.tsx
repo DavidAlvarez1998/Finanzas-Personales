@@ -3,9 +3,11 @@
 import { useTransition } from 'react'
 import type { AdminUserRow } from '@/types'
 import { activateUser, deactivateUser, setExpiry, clearExpiry } from '../_actions'
+import { ImpersonateButton } from './impersonate-button'
 
 interface Props {
   user: AdminUserRow
+  superadminEmail?: string
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -65,7 +67,7 @@ function ExpiryTag({ expires_at }: { expires_at: string | null }) {
   )
 }
 
-export function UserRow({ user }: Props) {
+export function UserRow({ user, superadminEmail }: Props) {
   const [isPending, startTransition] = useTransition()
 
   function handleActivate() {
@@ -129,6 +131,12 @@ export function UserRow({ user }: Props) {
             Desactivar
           </button>
         )}
+        <ImpersonateButton
+          userId={user.id}
+          userEmail={user.email}
+          isSuperadminTarget={!!superadminEmail && user.email === superadminEmail}
+          userStatus={user.status}
+        />
 
         <form
           action={async (formData: FormData) => {

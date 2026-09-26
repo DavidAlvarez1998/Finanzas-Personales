@@ -61,12 +61,20 @@ export type ActionResult<T = void> =
 
 export type UserStatus = 'pending' | 'active' | 'inactive'
 
+export interface ImpersonationContext {
+  adminUserId: string
+  adminEmail: string
+  targetEmail: string
+}
+
 export interface VerifiedSession {
   userId: string
   email: string
   status: UserStatus
   expires_at: string | null
   isSuperadmin: boolean
+  /** Present only when a superadmin is actively impersonating another user */
+  impersonation?: ImpersonationContext
 }
 
 export interface AdminUserRow {

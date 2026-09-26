@@ -12,7 +12,7 @@ export default async function AdminPage() {
       <p className="text-sm text-zinc-500 mb-6">{users.length} {users.length === 1 ? 'cliente' : 'clientes'}</p>
       <div className="space-y-3">
         {users.map(u => (
-          <UserRow key={u.id} user={u} />
+          <UserRow key={u.id} user={u} superadminEmail={superadminEmail} />
         ))}
         {users.length === 0 && (
           <p className="text-sm text-zinc-600 text-center py-12">No hay clientes registrados todavía.</p>
