@@ -196,6 +196,16 @@ export async function drainQueue(): Promise<void> {
 
   draining = true
   try {
+    // Recover ops stuck in 'processing' (browser closed / crashed mid-drain).
+    const staleThreshold = Date.now() - 30_000
+    const stuckOps = await db.pending_ops
+      .where('status').equals('processing')
+      .filter(op => op.updated_at < staleThreshold)
+      .toArray()
+    for (const op of stuckOps) {
+      await db.pending_ops.update(op.id, { status: 'queued', updated_at: Date.now() })
+    }
+
     let drainedClean = false
     while (true) {
       // Fetch the oldest queued op

@@ -2,18 +2,30 @@
 
 import { useEffect } from 'react'
 import { drainQueue } from '@/lib/db/sync'
+import { db } from '@/lib/db'
+
+async function resetFailedAndDrain(): Promise<void> {
+  const failedOps = await db.pending_ops.where('status').equals('failed').toArray()
+  if (failedOps.length > 0) {
+    const now = Date.now()
+    await Promise.all(
+      failedOps.map(op =>
+        db.pending_ops.update(op.id, { status: 'queued', attempts: 0, error: null, updated_at: now })
+      )
+    )
+  }
+  await drainQueue()
+}
 
 export function useSyncTrigger(): void {
   useEffect(() => {
     const handleOnline = () => {
-      drainQueue().catch(() => {
-        // Silent — errors are captured inside drainQueue and stored in Dexie
-      })
+      resetFailedAndDrain().catch(() => {})
     }
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        drainQueue().catch(() => {})
+        resetFailedAndDrain().catch(() => {})
       }
     }
 
