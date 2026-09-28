@@ -2,7 +2,7 @@
 
 import { useEffect, createContext, useContext } from 'react'
 import { useRouter } from 'next/navigation'
-import { hydrateFromServer, needsHydration, isSyncStale } from '@/lib/db/seed'
+import { hydrateFromServer, isSyncStale } from '@/lib/db/seed'
 import { useSyncTrigger } from '@/lib/hooks/useSyncTrigger'
 
 interface OfflineContextValue {
@@ -41,13 +41,11 @@ export function OfflineProvider({ userId, children }: OfflineProviderProps) {
     if (!userId) return
     async function maybeHydrate() {
       if (typeof navigator === 'undefined' || !navigator.onLine) return
-      const needs = await needsHydration(userId)
-      const stale = await isSyncStale()
-      if (needs || stale) {
-        hydrateFromServer(userId).catch(err => {
-          console.error('[OfflineProvider] hydration failed:', err)
-        })
-      }
+      // Always pull on mount (page load / app open) when online.
+      // The 2-min stale guard is only for visibilitychange to avoid excess requests.
+      hydrateFromServer(userId).catch(err => {
+        console.error('[OfflineProvider] hydration failed:', err)
+      })
     }
     maybeHydrate()
   }, [userId])
