@@ -4,7 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { requireAdmin } from '@/lib/auth/guards'
-import { setUserStatus, setUserExpiry, getUserById } from '@/lib/supabase/admin-dal'
+import { setUserStatus, setUserExpiry, getUserById, updatePasswordHash, clearResetToken, setResetToken } from '@/lib/supabase/admin-dal'
+import { hashPassword } from '@/lib/auth/password'
+import { generateResetToken } from '@/lib/auth/reset-token'
 import {
   signImpersonationToken,
   deleteImpersonationSession,
@@ -82,4 +84,37 @@ export async function stopImpersonation(): Promise<void> {
   await deleteImpersonationSession()
   revalidatePath('/', 'layout')
   redirect('/')
+}
+
+export async function generateResetLink(
+  userId: string,
+): Promise<{ error: string } | { url: string }> {
+  await requireAdmin()
+
+  const appUrl = process.env.APP_URL
+  if (!appUrl) return { error: 'APP_URL no está configurado en el entorno.' }
+
+  const { raw, hashed } = generateResetToken()
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1h
+  await setResetToken(userId, hashed, expiresAt)
+
+  return { url: `${appUrl}/reset-password?token=${raw}` }
+}
+
+export async function forceResetPassword(
+  userId: string,
+  newPassword: string,
+): Promise<{ error: string } | void> {
+  await requireAdmin()
+
+  if (newPassword.length < 8) {
+    return { error: 'La contraseña debe tener al menos 8 caracteres.' }
+  }
+
+  const hash = await hashPassword(newPassword)
+  await updatePasswordHash(userId, hash)
+  // Defense in depth: clear any pending reset token so stale email links are invalidated.
+  await clearResetToken(userId)
+
+  revalidatePath('/admin')
 }

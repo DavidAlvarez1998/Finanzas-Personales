@@ -1,8 +1,8 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useTransition, useState } from 'react'
 import type { AdminUserRow } from '@/types'
-import { activateUser, deactivateUser, setExpiry, clearExpiry } from '../_actions'
+import { activateUser, deactivateUser, setExpiry, clearExpiry, forceResetPassword, generateResetLink } from '../_actions'
 import { ImpersonateButton } from './impersonate-button'
 
 interface Props {
@@ -69,6 +69,14 @@ function ExpiryTag({ expires_at }: { expires_at: string | null }) {
 
 export function UserRow({ user, superadminEmail }: Props) {
   const [isPending, startTransition] = useTransition()
+  const [resetPassword, setResetPassword] = useState('')
+  const [resetFeedback, setResetFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
+  const [isResetting, setIsResetting] = useState(false)
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+
+  const isSuperadmin = !!superadminEmail && user.email === superadminEmail
 
   function handleActivate() {
     startTransition(async () => { await activateUser(user.id) })
@@ -80,6 +88,42 @@ export function UserRow({ user, superadminEmail }: Props) {
 
   function handleClearExpiry() {
     startTransition(async () => { await clearExpiry(user.id) })
+  }
+
+  async function handleGenerateLink() {
+    setIsGenerating(true)
+    setGeneratedLink(null)
+    setLinkCopied(false)
+    const result = await generateResetLink(user.id)
+    setIsGenerating(false)
+    if ('error' in result) {
+      setResetFeedback({ ok: false, msg: result.error })
+    } else {
+      setGeneratedLink(result.url)
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!generatedLink) return
+    await navigator.clipboard.writeText(generatedLink)
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2000)
+  }
+
+  async function handleForceReset(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setResetFeedback(null)
+    setIsResetting(true)
+
+    const result = await forceResetPassword(user.id, resetPassword)
+
+    setIsResetting(false)
+    if (result && 'error' in result) {
+      setResetFeedback({ ok: false, msg: result.error })
+    } else {
+      setResetFeedback({ ok: true, msg: 'Contraseña actualizada.' })
+      setResetPassword('')
+    }
   }
 
   return (
@@ -159,6 +203,69 @@ export function UserRow({ user, superadminEmail }: Props) {
           </button>
         </form>
       </div>
+
+      {/* Generate reset link — share manually with the user */}
+      {!isSuperadmin && (
+        <div className="mt-3 pt-3 border-t border-zinc-800">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-zinc-500 shrink-0">Recuperación:</span>
+            <button
+              type="button"
+              onClick={handleGenerateLink}
+              disabled={isGenerating}
+              className="rounded px-3 py-1.5 text-xs font-medium bg-sky-800 hover:bg-sky-700 text-white transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {isGenerating ? 'Generando...' : 'Generar link'}
+            </button>
+          </div>
+          {generatedLink && (
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                readOnly
+                value={generatedLink}
+                className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 flex-1 min-w-0 font-mono"
+              />
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="rounded px-3 py-1.5 text-xs font-medium bg-zinc-700 hover:bg-zinc-600 text-zinc-200 transition-colors whitespace-nowrap"
+              >
+                {linkCopied ? '¡Copiado!' : 'Copiar'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Force-reset — superadmin only, not shown for the superadmin account itself */}
+      {!isSuperadmin && (
+        <div className="mt-3 pt-3 border-t border-zinc-800">
+          <form onSubmit={handleForceReset} className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-zinc-500 shrink-0">Nueva contraseña:</span>
+            <input
+              type="password"
+              value={resetPassword}
+              onChange={e => setResetPassword(e.target.value)}
+              placeholder="mínimo 8 caracteres"
+              minLength={8}
+              required
+              className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-200 focus:border-zinc-500 focus:outline-none flex-1 min-w-0"
+            />
+            <button
+              type="submit"
+              disabled={isResetting}
+              className="rounded px-3 py-1.5 text-xs font-medium bg-amber-700 hover:bg-amber-600 text-white transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {isResetting ? 'Guardando...' : 'Resetear'}
+            </button>
+          </form>
+          {resetFeedback && (
+            <p className={`mt-1.5 text-xs ${resetFeedback.ok ? 'text-green-400' : 'text-red-400'}`}>
+              {resetFeedback.msg}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

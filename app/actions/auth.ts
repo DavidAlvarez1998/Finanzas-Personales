@@ -7,6 +7,15 @@ import { createSession, destroySession } from '@/lib/auth/session'
 import { hashPassword, verifyPassword } from '@/lib/auth/password'
 import { isExpired } from '@/lib/auth/user-status'
 import { WORLD_CURRENCIES } from '@/lib/constants/currencies'
+import { generateResetToken, hashResetToken } from '@/lib/auth/reset-token'
+import { sendPasswordResetEmail } from '@/lib/email/resend'
+import {
+  getUserByEmail,
+  setResetToken,
+  getUserByResetToken,
+  clearResetToken,
+  updatePasswordHash,
+} from '@/lib/supabase/admin-dal'
 
 const VALID_CURRENCY_CODES = new Set(WORLD_CURRENCIES.map(c => c.code))
 
@@ -107,4 +116,53 @@ export async function register(
 export async function logout(): Promise<void> {
   await destroySession()
   redirect('/login')
+}
+
+// ---------------------------------------------------------------------------
+// Password reset — self-service
+// ---------------------------------------------------------------------------
+
+export async function requestPasswordReset(
+  formData: FormData
+): Promise<{ ok: true } | { error: string }> {
+  const email = (formData.get('email') as string | null)?.toLowerCase().trim()
+  if (!email) return { error: 'El email es requerido.' }
+
+  // Always run one token generation for timing normalisation (enumeration guard).
+  const { raw, hashed } = generateResetToken()
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1h
+
+  const user = await getUserByEmail(email)
+  if (user && user.status === 'active') {
+    await setResetToken(user.id, hashed, expiresAt)
+    const resetLink = `${process.env.APP_URL}/reset-password?token=${raw}`
+    await sendPasswordResetEmail(email, resetLink)
+  }
+
+  // Return identical shape regardless of hit/miss (enumeration guard).
+  return { ok: true }
+}
+
+export async function resetPassword(
+  formData: FormData
+): Promise<{ error: string } | void> {
+  const token = (formData.get('token') as string | null) ?? ''
+  const newPassword = (formData.get('password') as string | null) ?? ''
+
+  if (!token) return { error: 'Token inválido o expirado.' }
+
+  const hashed = hashResetToken(token)
+  const user = await getUserByResetToken(hashed)
+
+  if (!user) return { error: 'Token inválido o expirado.' }
+
+  if (newPassword.length < 8) {
+    return { error: 'La contraseña debe tener al menos 8 caracteres.' }
+  }
+
+  const newHash = await hashPassword(newPassword)
+  await updatePasswordHash(user.id, newHash)
+  await clearResetToken(user.id)
+
+  redirect('/login?reset=ok')
 }
