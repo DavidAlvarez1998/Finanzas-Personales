@@ -1,6 +1,6 @@
 import { createServerClient } from './server'
 import { verifySession } from '@/lib/auth/session'
-import type { Transaction, Debt, DebtPayment, Presupuesto, PresupuestoItem, SavingsGoal, SavingsContribution } from '@/types'
+import type { Transaction, Debt, DebtPayment, Presupuesto, PresupuestoItem, SavingsGoal, SavingsContribution, Investment, InvestmentReturn } from '@/types'
 
 export async function getTransactions(): Promise<Transaction[]> {
   const { userId } = await verifySession()
@@ -73,6 +73,34 @@ export async function getUserCurrencies(): Promise<string[]> {
     .eq('id', userId)
     .single()
   return (data?.currencies as string[] | null) ?? []
+}
+
+export async function getInvestments(): Promise<Investment[]> {
+  const { userId } = await verifySession()
+  const supabase = createServerClient()
+
+  const { data, error } = await supabase
+    .from('investments')
+    .select('*, investment_returns(id, investment_id, monto, fecha, nota, created_at)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(`getInvestments failed: ${error.message}`)
+
+  return ((data ?? []) as any[]).map(inv => {
+    const returns: InvestmentReturn[] = (inv.investment_returns ?? [])
+      .slice()
+      .sort((a: InvestmentReturn, b: InvestmentReturn) => b.fecha.localeCompare(a.fecha))
+    const principal = Number(inv.principal)
+    const total_retornos = returns.reduce((s, r) => s + Number(r.monto), 0)
+    return {
+      ...inv,
+      principal,
+      returns,
+      total_retornos,
+      roi_pct: principal > 0 ? (total_retornos / principal) * 100 : 0,
+    } as Investment
+  })
 }
 
 export async function getDisplayCurrency(): Promise<string | null> {

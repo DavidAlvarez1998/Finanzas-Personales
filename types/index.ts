@@ -135,6 +135,39 @@ export interface SavingsGoal {
   progress_pct?: number
 }
 
+export type InvestmentStatus = 'active' | 'completed' | 'withdrawn'
+export type ReturnPeriod = 'monthly' | 'quarterly' | 'annual' | 'one_time' | 'custom'
+
+export interface InvestmentReturn {
+  id: string
+  investment_id: string
+  monto: number
+  fecha: string
+  nota?: string | null
+  created_at?: string
+}
+
+export interface Investment {
+  id: string
+  user_id?: string
+  nombre: string
+  descripcion?: string | null
+  principal: number
+  currency: string
+  fecha_inicio: string
+  fecha_vencimiento?: string | null
+  tasa_esperada?: number | null
+  periodo_retorno: ReturnPeriod
+  status: InvestmentStatus
+  created_at?: string
+  /** Sorted by fecha DESC, computed by DAL */
+  returns?: InvestmentReturn[]
+  /** Sum of returns[].monto, computed by DAL */
+  total_retornos?: number
+  /** (total_retornos / principal) * 100, computed by DAL */
+  roi_pct?: number
+}
+
 export interface FxRateResponse {
   rate: number
   from: string

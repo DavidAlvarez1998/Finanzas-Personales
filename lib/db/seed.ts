@@ -1,5 +1,5 @@
 import { db } from './index'
-import type { Transaction, Debt, DebtPayment, Presupuesto, PresupuestoItem, SavingsGoal, SavingsContribution } from '@/types'
+import type { Transaction, Debt, DebtPayment, Presupuesto, PresupuestoItem, SavingsGoal, SavingsContribution, Investment, InvestmentReturn } from '@/types'
 
 export interface SyncSnapshot {
   transactions: Transaction[]
@@ -9,6 +9,8 @@ export interface SyncSnapshot {
   presupuesto_items: PresupuestoItem[]
   savings_goals: SavingsGoal[]
   savings_contributions: SavingsContribution[]
+  investments: Investment[]
+  investment_returns: InvestmentReturn[]
   currencies: string[]
   display_currency: string | null
 }
@@ -61,6 +63,8 @@ export async function hydrateFromServer(userId: string): Promise<void> {
       db.presupuesto_items,
       db.savings_goals,
       db.savings_contributions,
+      db.investments,
+      db.investment_returns,
       db.meta,
     ],
     async () => {
@@ -71,6 +75,8 @@ export async function hydrateFromServer(userId: string): Promise<void> {
       await db.presupuesto_items.bulkPut(snapshot.presupuesto_items)
       await db.savings_goals.bulkPut(snapshot.savings_goals)
       await db.savings_contributions.bulkPut(snapshot.savings_contributions)
+      await db.investments.bulkPut(snapshot.investments)
+      await db.investment_returns.bulkPut(snapshot.investment_returns)
       await db.meta.put({ key: 'user_currencies', value: snapshot.currencies })
       await db.meta.put({ key: 'display_currency', value: snapshot.display_currency })
       await db.meta.put({ key: 'hydrated_user_id', value: userId })

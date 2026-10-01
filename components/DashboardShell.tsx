@@ -10,6 +10,7 @@ import { DebtSection } from '@/components/DebtSection'
 import { ChartsSection } from '@/components/ChartsSection'
 import { PresupuestosSection } from '@/components/PresupuestosSection'
 import { SavingsSection } from '@/components/SavingsSection'
+import { InversionesSection } from '@/components/InversionesSection'
 import {
   createTransaction,
   updateTransaction,
@@ -32,10 +33,18 @@ import {
   deleteContribution,
   updateGoalStatus,
 } from '@/app/actions/savings'
+import {
+  createInvestment,
+  updateInvestment,
+  deleteInvestment,
+  updateInvestmentStatus,
+  addReturn,
+  deleteReturn,
+} from '@/app/actions/investments'
 import { updateUserCurrencies, updateDisplayCurrency } from '@/app/actions/currencies'
 import { CurrencyPicker } from '@/components/CurrencyPicker'
 import { fetchRateWithCache } from '@/lib/fx/frankfurter'
-import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus } from '@/types'
+import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus, Investment, InvestmentStatus } from '@/types'
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
 import { writeOp } from '@/lib/db/write-adapter'
 import { SyncStatusBadge } from '@/components/SyncStatusBadge'
@@ -45,6 +54,7 @@ import {
   getDebts as getDebtsDexie,
   getPresupuestos as getPresupuestosDexie,
   getSavingsGoals as getSavingsGoalsDexie,
+  getInvestments as getInvestmentsDexie,
   getUserCurrencies as getUserCurrenciesDexie,
   getDisplayCurrency as getDisplayCurrencyDexie,
 } from '@/lib/db/dal-offline'
@@ -58,13 +68,14 @@ interface Props {
   debts: Debt[] | null
   presupuestos: Presupuesto[] | null
   savingsGoals: SavingsGoal[] | null
+  investments: Investment[] | null
   currencies: string[] | null
   displayCurrency: string | null
 }
 
-type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'charts'
+type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'inversiones' | 'charts'
 
-export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
+export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
@@ -102,6 +113,12 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   )
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
+  const dexieInvestments = useLiveQuery(
+    () => (OFFLINE_ENABLED ? getInvestmentsDexie(userId) : Promise.resolve(undefined)),
+    [userId]
+  )
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const dexieCurrencies = useLiveQuery(
     () => (OFFLINE_ENABLED ? getUserCurrenciesDexie(userId) : Promise.resolve(undefined)),
     [userId]
@@ -130,6 +147,10 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     ? (dexieSavingsGoals ?? [])
     : (serverSavingsGoals ?? [])
 
+  const investments: Investment[] = OFFLINE_ENABLED
+    ? (dexieInvestments ?? [])
+    : (serverInvestments ?? [])
+
   const resolvedCurrencies: string[] = OFFLINE_ENABLED
     ? (dexieCurrencies ?? [])
     : (serverCurrencies ?? [])
@@ -140,6 +161,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     dexieDebts === undefined ||
     dexiePresupuestos === undefined ||
     dexieSavingsGoals === undefined ||
+    dexieInvestments === undefined ||
     dexieCurrencies === undefined ||
     dexieDisplayCurrency === undefined
   )
@@ -657,6 +679,122 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     })
   }
 
+  // ── Investment handlers ──────────────────────────────────────────────
+
+  function handleCreateInvestment(payload: Record<string, unknown>) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('investment.create', {
+          user_id: userId,
+          ...payload,
+        })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Inversión creada')
+      })
+      return
+    }
+    const fd = new FormData()
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v != null) fd.set(k, String(v))
+    })
+    startTransition(async () => {
+      const result = await createInvestment(fd)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Inversión creada')
+    })
+  }
+
+  function handleUpdateInvestment(id: string, payload: Record<string, unknown>) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('investment.update', { id, ...payload })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Inversión actualizada')
+      })
+      return
+    }
+    const fd = new FormData()
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v != null) fd.set(k, String(v))
+    })
+    startTransition(async () => {
+      const result = await updateInvestment(id, fd)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Inversión actualizada')
+    })
+  }
+
+  function handleDeleteInvestment(id: string) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('investment.delete', { id })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Inversión eliminada')
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await deleteInvestment(id)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Inversión eliminada')
+    })
+  }
+
+  function handleUpdateInvestmentStatus(id: string, status: InvestmentStatus) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('investment.status', { investment_id: id, status })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Estado actualizado')
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await updateInvestmentStatus(id, status)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Estado actualizado')
+    })
+  }
+
+  function handleAddReturn(investmentId: string, payload: Record<string, unknown>) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('investment_return.create', {
+          investment_id: investmentId,
+          ...payload,
+        })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Retorno registrado')
+      })
+      return
+    }
+    const fd = new FormData()
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v != null) fd.set(k, String(v))
+    })
+    startTransition(async () => {
+      const result = await addReturn(investmentId, fd)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Retorno registrado')
+    })
+  }
+
+  function handleDeleteReturn(id: string) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('investment_return.delete', { id })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Retorno eliminado')
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await deleteReturn(id)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Retorno eliminado')
+    })
+  }
+
   // ── Currency handlers ────────────────────────────────────────────────
 
   function handleCurrenciesChange(codes: string[]) {
@@ -797,6 +935,21 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               )}
             </button>
             <button
+              onClick={() => setTab('inversiones')}
+              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
+                tab === 'inversiones'
+                  ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+              }`}
+            >
+              Inversiones
+              {investments.length > 0 && (
+                <span className="ml-2 rounded-full bg-emerald-600 px-1.5 py-0.5 text-xs font-bold text-white">
+                  {investments.length}
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => setTab('charts')}
               className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'charts'
@@ -859,6 +1012,19 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               onAddContribution={handleContributionAdd}
               onDeleteContribution={handleContributionDelete}
               onUpdateStatus={handleGoalStatus}
+              isPending={isPending}
+              currencies={effectiveCurrencies}
+            />
+          )}
+          {tab === 'inversiones' && (
+            <InversionesSection
+              investments={investments}
+              onCreateInvestment={handleCreateInvestment}
+              onUpdateInvestment={handleUpdateInvestment}
+              onDeleteInvestment={handleDeleteInvestment}
+              onUpdateStatus={handleUpdateInvestmentStatus}
+              onAddReturn={handleAddReturn}
+              onDeleteReturn={handleDeleteReturn}
               isPending={isPending}
               currencies={effectiveCurrencies}
             />

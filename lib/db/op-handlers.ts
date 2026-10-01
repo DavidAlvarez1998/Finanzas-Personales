@@ -32,6 +32,14 @@ import {
   updateGoalStatusInternal,
 } from '@/app/actions/savings'
 import {
+  createInvestment,
+  updateInvestment,
+  deleteInvestment,
+  updateInvestmentStatus,
+  addReturn,
+  deleteReturn,
+} from '@/app/actions/investments'
+import {
   updateUserCurrencies,
   updateDisplayCurrency,
 } from '@/app/actions/currencies'
@@ -44,6 +52,8 @@ import type {
   PresupuestoItem,
   SavingsGoal,
   SavingsContribution,
+  Investment,
+  InvestmentReturn,
 } from '@/types'
 
 function toFormData(obj: Record<string, unknown>): FormData {
@@ -115,6 +125,8 @@ export type HandlerResult =
   | PresupuestoItem
   | SavingsGoal
   | SavingsContribution
+  | Investment
+  | InvestmentReturn
   | { currencies: string[] }
   | { display_currency: string | null }
   | null
@@ -222,6 +234,34 @@ export async function handle(op: PendingOp): Promise<HandlerResult> {
     }
     case 'savings_contribution.delete': {
       await callDeleteAction(deleteContribution, payload.id as string)
+      return null
+    }
+
+    // ── Investments ───────────────────────────────────────────────────
+    case 'investment.create': {
+      return callAction(createInvestment, toFormData(payload))
+    }
+    case 'investment.update': {
+      const { id, ...rest } = payload
+      return callActionWithId(updateInvestment, id as string, toFormData(rest))
+    }
+    case 'investment.delete': {
+      await callDeleteAction(deleteInvestment, payload.id as string)
+      return null
+    }
+    case 'investment.status': {
+      return callActionDirect(
+        updateInvestmentStatus,
+        payload.investment_id as string,
+        payload.status
+      )
+    }
+    case 'investment_return.create': {
+      const { investment_id, ...rest } = payload
+      return callActionWithId(addReturn, investment_id as string, toFormData(rest))
+    }
+    case 'investment_return.delete': {
+      await callDeleteAction(deleteReturn, payload.id as string)
       return null
     }
 

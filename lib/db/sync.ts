@@ -17,6 +17,8 @@ import type {
   PresupuestoItem,
   SavingsGoal,
   SavingsContribution,
+  Investment,
+  InvestmentReturn,
 } from '@/types'
 
 let draining = false
@@ -47,6 +49,8 @@ type ServerRow =
   | PresupuestoItem
   | SavingsGoal
   | SavingsContribution
+  | Investment
+  | InvestmentReturn
   | { currencies: string[] }
   | { display_currency: string | null }
   | null
@@ -131,6 +135,28 @@ async function reconcile(op: PendingOp, serverRow: ServerRow): Promise<void> {
       })
     } else {
       await db.savings_contributions.put(serverRow as SavingsContribution)
+    }
+  } else if (
+    opType === 'investment.create' ||
+    opType === 'investment.update' ||
+    opType === 'investment.status'
+  ) {
+    if (op.optimistic_id && op.optimistic_id !== row.id) {
+      await db.transaction('rw', db.investments, async () => {
+        await db.investments.delete(op.optimistic_id!)
+        await db.investments.put(serverRow as Investment)
+      })
+    } else {
+      await db.investments.put(serverRow as Investment)
+    }
+  } else if (opType === 'investment_return.create') {
+    if (op.optimistic_id && op.optimistic_id !== row.id) {
+      await db.transaction('rw', db.investment_returns, async () => {
+        await db.investment_returns.delete(op.optimistic_id!)
+        await db.investment_returns.put(serverRow as InvestmentReturn)
+      })
+    } else {
+      await db.investment_returns.put(serverRow as InvestmentReturn)
     }
   } else if (opType === 'user.currencies') {
     const data = serverRow as unknown as { currencies: string[] }

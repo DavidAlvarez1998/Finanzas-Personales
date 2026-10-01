@@ -7,6 +7,8 @@ import type {
   PresupuestoItem,
   SavingsGoal,
   SavingsContribution,
+  Investment,
+  InvestmentReturn,
 } from '@/types'
 
 export type PendingOpStatus = 'queued' | 'processing' | 'failed' | 'completed'
@@ -34,6 +36,12 @@ export type PendingOpType =
   | 'savings_contribution.delete'
   | 'user.currencies'
   | 'user.display_currency'
+  | 'investment.create'
+  | 'investment.update'
+  | 'investment.delete'
+  | 'investment.status'
+  | 'investment_return.create'
+  | 'investment_return.delete'
 
 export interface PendingOp {
   id: string            // uuid
@@ -68,6 +76,8 @@ export class FinanzasDB extends Dexie {
   presupuesto_items!: Table<PresupuestoItem, string>
   savings_goals!: Table<SavingsGoal, string>
   savings_contributions!: Table<SavingsContribution, string>
+  investments!: Table<Investment, string>
+  investment_returns!: Table<InvestmentReturn, string>
   pending_ops!: Table<PendingOp, string>
   fx_rates!: Table<FxRate, string>
   meta!: Table<Meta, string>
@@ -96,6 +106,22 @@ export class FinanzasDB extends Dexie {
       presupuesto_items:     'id, presupuesto_id',
       savings_goals:         'id, user_id, status, [user_id+status], currency',
       savings_contributions: 'id, goal_id, fecha, [goal_id+fecha]',
+      pending_ops:           'id, status, created_at, [status+created_at], type',
+      fx_rates:              'pair, fetched_at',
+      meta:                  'key',
+    })
+
+    // v3: adds investments and investment_returns tables
+    this.version(3).stores({
+      transactions:          'id, user_id, date, [user_id+date], currency',
+      debts:                 'id, user_id, created_at, currency',
+      debt_payments:         'id, debt_id, paid_at, [debt_id+paid_at]',
+      presupuestos:          'id, user_id, created_at',
+      presupuesto_items:     'id, presupuesto_id',
+      savings_goals:         'id, user_id, status, [user_id+status], currency',
+      savings_contributions: 'id, goal_id, fecha, [goal_id+fecha]',
+      investments:           'id, user_id, status, [user_id+status], currency',
+      investment_returns:    'id, investment_id, fecha, [investment_id+fecha]',
       pending_ops:           'id, status, created_at, [status+created_at], type',
       fx_rates:              'pair, fetched_at',
       meta:                  'key',

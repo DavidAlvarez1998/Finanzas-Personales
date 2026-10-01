@@ -4,7 +4,7 @@
  * Designed to be called from useLiveQuery.
  */
 import { db } from './index'
-import type { Transaction, Debt, Presupuesto, SavingsGoal } from '@/types'
+import type { Transaction, Debt, Presupuesto, SavingsGoal, Investment } from '@/types'
 
 export async function getTransactions(userId: string): Promise<Transaction[]> {
   return db.transactions
@@ -102,6 +102,35 @@ export async function getSavingsGoals(userId: string): Promise<SavingsGoal[]> {
 
   // Sort by created_at descending
   return withContributions.sort((a, b) => {
+    const aTime = a.created_at ? new Date(a.created_at).getTime() : 0
+    const bTime = b.created_at ? new Date(b.created_at).getTime() : 0
+    return bTime - aTime
+  })
+}
+
+export async function getInvestments(userId: string): Promise<Investment[]> {
+  const invs = await db.investments.where('user_id').equals(userId).toArray()
+
+  const withReturns = await Promise.all(
+    invs.map(async inv => {
+      const returns = await db.investment_returns
+        .where('investment_id')
+        .equals(inv.id)
+        .toArray()
+
+      const total_retornos = returns.reduce((sum, r) => sum + Number(r.monto), 0)
+      const principal = Number(inv.principal)
+
+      return {
+        ...inv,
+        returns: returns.slice().sort((a, b) => b.fecha.localeCompare(a.fecha)),
+        total_retornos,
+        roi_pct: principal > 0 ? (total_retornos / principal) * 100 : 0,
+      }
+    })
+  )
+
+  return withReturns.sort((a, b) => {
     const aTime = a.created_at ? new Date(a.created_at).getTime() : 0
     const bTime = b.created_at ? new Date(b.created_at).getTime() : 0
     return bTime - aTime

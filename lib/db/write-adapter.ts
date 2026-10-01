@@ -17,6 +17,10 @@ import type {
   PresupuestoItem,
   SavingsGoal,
   SavingsContribution,
+  Investment,
+  InvestmentReturn,
+  InvestmentStatus,
+  ReturnPeriod,
 } from '@/types'
 
 export type WriteOpResult =
@@ -230,6 +234,79 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
       break
     }
 
+    // ── Investments ───────────────────────────────────────────────────
+    case 'investment.create': {
+      const record: Investment = {
+        id: payload.id as string,
+        user_id: payload.user_id as string,
+        nombre: (payload.nombre as string) ?? '',
+        descripcion: (payload.descripcion as string | null) ?? null,
+        principal: Number(payload.principal),
+        currency: (payload.currency as string) ?? 'COP',
+        fecha_inicio:
+          (payload.fecha_inicio as string) ??
+          new Date().toISOString().split('T')[0],
+        fecha_vencimiento: (payload.fecha_vencimiento as string | null) ?? null,
+        tasa_esperada:
+          payload.tasa_esperada != null ? Number(payload.tasa_esperada) : null,
+        periodo_retorno: (payload.periodo_retorno as ReturnPeriod) ?? 'monthly',
+        status: (payload.status as InvestmentStatus) ?? 'active',
+        created_at: (payload.created_at as string) ?? new Date().toISOString(),
+        returns: [],
+        total_retornos: 0,
+        roi_pct: 0,
+      }
+      await db.investments.put(record)
+      break
+    }
+    case 'investment.update': {
+      await db.investments.update(payload.id as string, {
+        nombre: payload.nombre as string,
+        descripcion: (payload.descripcion as string | null) ?? null,
+        principal: Number(payload.principal),
+        currency: payload.currency as string,
+        fecha_inicio: payload.fecha_inicio as string,
+        fecha_vencimiento: (payload.fecha_vencimiento as string | null) ?? null,
+        tasa_esperada:
+          payload.tasa_esperada != null ? Number(payload.tasa_esperada) : null,
+        periodo_retorno: payload.periodo_retorno as ReturnPeriod,
+      })
+      break
+    }
+    case 'investment.delete': {
+      // Dexie has no FK cascade — remove children explicitly to match server behavior
+      const invId = payload.id as string
+      const childKeys = await db.investment_returns
+        .where('investment_id')
+        .equals(invId)
+        .primaryKeys()
+      await db.investment_returns.bulkDelete(childKeys as string[])
+      await db.investments.delete(invId)
+      break
+    }
+    case 'investment.status': {
+      await db.investments.update(payload.investment_id as string, {
+        status: payload.status as InvestmentStatus,
+      })
+      break
+    }
+    case 'investment_return.create': {
+      const record: InvestmentReturn = {
+        id: payload.id as string,
+        investment_id: payload.investment_id as string,
+        monto: Number(payload.monto),
+        fecha:
+          (payload.fecha as string) ?? new Date().toISOString().split('T')[0],
+        nota: (payload.nota as string | null) ?? null,
+      }
+      await db.investment_returns.put(record)
+      break
+    }
+    case 'investment_return.delete': {
+      await db.investment_returns.delete(payload.id as string)
+      break
+    }
+
     // ── Currencies ────────────────────────────────────────────────────
     case 'user.currencies': {
       await db.meta.put({ key: 'user_currencies', value: payload.codes as string[] })
@@ -271,6 +348,17 @@ function getTablesForOp(type: PendingOpType): any[] {
     tables.push(db.savings_contributions as ReturnType<typeof db.table>)
   } else if (type.startsWith('savings_goal.')) {
     tables.push(db.savings_goals as ReturnType<typeof db.table>)
+  } else if (type === 'investment.delete') {
+    // Cascade-equivalent delete — needs both tables
+    tables.push(
+      db.investments as ReturnType<typeof db.table>,
+      db.investment_returns as ReturnType<typeof db.table>
+    )
+  } else if (type.startsWith('investment_return.')) {
+    // MUST come before investment.* to avoid prefix collision
+    tables.push(db.investment_returns as ReturnType<typeof db.table>)
+  } else if (type.startsWith('investment.')) {
+    tables.push(db.investments as ReturnType<typeof db.table>)
   } else if (type.startsWith('user.')) {
     tables.push(db.meta as ReturnType<typeof db.table>)
   }
