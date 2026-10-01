@@ -6,11 +6,20 @@ import { db } from '@/lib/db'
 
 async function resetFailedAndDrain(): Promise<void> {
   const failedOps = await db.pending_ops.where('status').equals('failed').toArray()
-  if (failedOps.length > 0) {
+  // Only auto-reset ops that failed transiently (or have no class recorded — legacy default to transient).
+  // Validation failures must stay 'failed' until the user explicitly retries from DeadLetterDrawer.
+  const resetable = failedOps.filter(op => op.error_class !== 'validation' && op.error_class !== 'auth')
+  if (resetable.length > 0) {
     const now = Date.now()
     await Promise.all(
-      failedOps.map(op =>
-        db.pending_ops.update(op.id, { status: 'queued', attempts: 0, error: null, updated_at: now })
+      resetable.map(op =>
+        db.pending_ops.update(op.id, {
+          status: 'queued',
+          attempts: 0,
+          error: null,
+          error_class: undefined, // clear — op is no longer failed
+          updated_at: now,
+        })
       )
     )
   }

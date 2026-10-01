@@ -42,14 +42,14 @@ export async function createTransaction(
     category,
   }
 
-  // Accept client-supplied UUID — server upserts by PK
+  // Accept client-supplied UUID — idempotent upsert so retries after disconnect don't duplicate
   if (id) {
     insertData.id = id
   }
 
   const { data, error } = await supabase
     .from('transactions')
-    .insert(insertData)
+    .upsert(insertData, { onConflict: 'id' })
     .select('*')
     .single()
 

@@ -28,6 +28,7 @@ export function SyncStatusBadge() {
     await db.pending_ops.update(id, {
       status: 'queued',
       error: null,
+      error_class: null,
       updated_at: Date.now(),
     })
     await drainQueue()

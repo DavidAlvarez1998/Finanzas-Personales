@@ -45,6 +45,7 @@ export interface PendingOp {
   created_at: number    // Date.now()
   updated_at: number
   error: string | null
+  error_class?: 'transient' | 'validation' | 'auth' | null // unset for queued/processing/completed and legacy failed ops
 }
 
 export interface FxRate {
@@ -74,6 +75,20 @@ export class FinanzasDB extends Dexie {
   constructor() {
     super('finanzas')
     this.version(1).stores({
+      transactions:          'id, user_id, date, [user_id+date], currency',
+      debts:                 'id, user_id, created_at, currency',
+      debt_payments:         'id, debt_id, paid_at, [debt_id+paid_at]',
+      presupuestos:          'id, user_id, created_at',
+      presupuesto_items:     'id, presupuesto_id',
+      savings_goals:         'id, user_id, status, [user_id+status], currency',
+      savings_contributions: 'id, goal_id, fecha, [goal_id+fecha]',
+      pending_ops:           'id, status, created_at, [status+created_at], type',
+      fx_rates:              'pair, fetched_at',
+      meta:                  'key',
+    })
+
+    // v2: adds optional PendingOp.error_class (no index change, no data migration)
+    this.version(2).stores({
       transactions:          'id, user_id, date, [user_id+date], currency',
       debts:                 'id, user_id, created_at, currency',
       debt_payments:         'id, debt_id, paid_at, [debt_id+paid_at]',

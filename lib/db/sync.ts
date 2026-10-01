@@ -197,7 +197,7 @@ export async function drainQueue(): Promise<void> {
   draining = true
   try {
     // Recover ops stuck in 'processing' (browser closed / crashed mid-drain).
-    const staleThreshold = Date.now() - 30_000
+    const staleThreshold = Date.now() - 90_000 // 90s — exceeds worst-case drain (~35s/op × 2 ops + headroom)
     const stuckOps = await db.pending_ops
       .where('status').equals('processing')
       .filter(op => op.updated_at < staleThreshold)
@@ -247,6 +247,7 @@ export async function drainQueue(): Promise<void> {
         if (errClass === 'validation') {
           await db.pending_ops.update(op.id, {
             status: 'failed',
+            error_class: 'validation',
             error: err instanceof Error ? err.message : String(err),
             updated_at: Date.now(),
           })
@@ -258,6 +259,7 @@ export async function drainQueue(): Promise<void> {
         if (attempts >= 5) {
           await db.pending_ops.update(op.id, {
             status: 'failed',
+            error_class: 'transient',
             attempts,
             error: err instanceof Error ? err.message : String(err),
             updated_at: Date.now(),

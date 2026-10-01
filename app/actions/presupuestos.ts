@@ -27,13 +27,13 @@ export async function createPresupuesto(
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from('presupuestos')
-    .insert({
+    .upsert({
       ...(clientId ? { id: clientId } : {}),
       user_id: session.userId,
       nombre: nombre.toUpperCase(),
       total,
       currency,
-    })
+    }, { onConflict: 'id' })
     .select('*')
     .single()
 
@@ -133,12 +133,12 @@ export async function createPresupuestoItem(
 
   const { data, error } = await supabase
     .from('presupuesto_items')
-    .insert({
+    .upsert({
       ...(clientId ? { id: clientId } : {}),
       presupuesto_id: presupuestoId,
       nombre: nombre.toUpperCase(),
       monto,
-    })
+    }, { onConflict: 'id' })
     .select('*')
     .single()
 

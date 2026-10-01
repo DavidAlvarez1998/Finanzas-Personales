@@ -27,13 +27,13 @@ export async function createDebt(
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from('debts')
-    .insert({
+    .upsert({
       ...(clientId ? { id: clientId } : {}),
       user_id: session.userId,
       description: description.toUpperCase(),
       amount,
       currency,
-    })
+    }, { onConflict: 'id' })
     .select('*')
     .single()
 
@@ -133,13 +133,13 @@ export async function createDebtPayment(
 
   const { data, error } = await supabase
     .from('debt_payments')
-    .insert({
+    .upsert({
       ...(clientId ? { id: clientId } : {}),
       debt_id: debtId,
       amount,
       note,
       paid_at: new Date().toISOString().split('T')[0],
-    })
+    }, { onConflict: 'id' })
     .select('*')
     .single()
 

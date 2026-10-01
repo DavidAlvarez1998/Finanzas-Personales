@@ -25,14 +25,14 @@ export async function createSavingsGoal(
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from('savings_goals')
-    .insert({
+    .upsert({
       ...(clientId ? { id: clientId } : {}),
       user_id: session.userId,
       nombre: nombreRaw.toUpperCase(),
       monto_objetivo,
       currency,
       status: 'active',
-    })
+    }, { onConflict: 'id' })
     .select('*')
     .single()
 
@@ -178,13 +178,13 @@ export async function addContribution(
 
   const { data, error: insertError } = await supabase
     .from('savings_contributions')
-    .insert({
+    .upsert({
       ...(clientId ? { id: clientId } : {}),
       goal_id: goalId,
       monto,
       fecha,
       nota,
-    })
+    }, { onConflict: 'id' })
     .select('*')
     .single()
 
