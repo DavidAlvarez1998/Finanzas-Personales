@@ -20,6 +20,7 @@ interface Props {
 }
 
 const PERIOD_LABELS: Record<ReturnPeriod, string> = {
+  weekly: 'Semanal',
   monthly: 'Mensual',
   quarterly: 'Trimestral',
   annual: 'Anual',
@@ -28,6 +29,7 @@ const PERIOD_LABELS: Record<ReturnPeriod, string> = {
 }
 
 const PERIOD_OPTIONS: { value: ReturnPeriod; label: string }[] = [
+  { value: 'weekly', label: 'Semanal' },
   { value: 'monthly', label: 'Mensual' },
   { value: 'quarterly', label: 'Trimestral' },
   { value: 'annual', label: 'Anual' },
@@ -42,6 +44,7 @@ function formatCurrency(amount: number, currency: string) {
 /** Days in one period for forecast math */
 function periodDays(period: ReturnPeriod): number {
   switch (period) {
+    case 'weekly': return 7
     case 'monthly': return 30.4375
     case 'quarterly': return 91.3125
     case 'annual': return 365.25

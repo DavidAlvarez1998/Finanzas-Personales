@@ -5,7 +5,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { verifySession } from '@/lib/auth/session'
 import type { Investment, InvestmentReturn, InvestmentStatus, ReturnPeriod } from '@/types'
 
-const VALID_PERIODS: ReturnPeriod[] = ['monthly', 'quarterly', 'annual', 'one_time', 'custom']
+const VALID_PERIODS: ReturnPeriod[] = ['weekly', 'monthly', 'quarterly', 'annual', 'one_time', 'custom']
 const VALID_STATUSES: InvestmentStatus[] = ['active', 'completed', 'withdrawn']
 
 export async function createInvestment(

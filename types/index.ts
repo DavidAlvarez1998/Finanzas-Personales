@@ -136,7 +136,7 @@ export interface SavingsGoal {
 }
 
 export type InvestmentStatus = 'active' | 'completed' | 'withdrawn'
-export type ReturnPeriod = 'monthly' | 'quarterly' | 'annual' | 'one_time' | 'custom'
+export type ReturnPeriod = 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'one_time' | 'custom'
 
 export interface InvestmentReturn {
   id: string
