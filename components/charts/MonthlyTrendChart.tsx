@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function MonthlyTrendChart({ data, incomeColor, expenseColor }: Props) {
-  if (data.length < 2) {
+  if (data.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50">
         No hay suficientes datos para mostrar la tendencia
