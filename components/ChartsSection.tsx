@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { groupByMonth, getTotals } from '@/lib/aggregations'
+import { groupByMonth, groupByCategory } from '@/lib/aggregations'
 import { MonthlyTrendChart } from '@/components/charts/MonthlyTrendChart'
-import { DistributionChart } from '@/components/charts/DistributionChart'
+import { CategoryChart } from '@/components/charts/CategoryChart'
 import type { Transaction } from '@/types'
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 }
 
 function getCSSVar(name: string): string {
-  if (typeof window === 'undefined') return '#000'
+  if (typeof window === 'undefined') return ''
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 }
 
@@ -19,28 +19,36 @@ export function ChartsSection({ transactions }: Props) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
-  // Detect available currencies
   const currencies = Array.from(new Set(transactions.map(t => t.currency ?? 'COP')))
   const [selectedCurrency, setSelectedCurrency] = useState(currencies[0] ?? 'COP')
 
   const monthData = groupByMonth(transactions, selectedCurrency)
-  const totals = getTotals(transactions, selectedCurrency)
+  const expenseByCategory = groupByCategory(transactions, selectedCurrency, 'expense')
+  const incomeByCategory = groupByCategory(transactions, selectedCurrency, 'income')
 
   const incomeColor = getCSSVar('--color-income') || '#10b981'
   const expenseColor = getCSSVar('--color-expense') || '#f43f5e'
 
+  const tooltipStyle: React.CSSProperties = {
+    fontSize: 12,
+    borderRadius: 8,
+    backgroundColor: getCSSVar('--color-surface') || '#18181b',
+    border: `1px solid ${getCSSVar('--color-border') || '#3f3f46'}`,
+    color: getCSSVar('--color-text') || '#fafafa',
+  }
+
   if (!mounted) {
     return (
       <div className="space-y-6">
-        <div className="h-64 animate-pulse rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800" />
-        <div className="h-64 animate-pulse rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800" />
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-48 animate-pulse rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800" />
+        ))}
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Currency selector — only show if multiple currencies exist */}
+    <div className="space-y-8">
       {currencies.length > 1 && (
         <div className="flex items-center gap-2">
           <span className="text-xs text-zinc-500">Divisa:</span>
@@ -60,7 +68,6 @@ export function ChartsSection({ transactions }: Props) {
         </div>
       )}
 
-      {/* Monthly trend */}
       <div>
         <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
           Tendencia mensual ({selectedCurrency})
@@ -69,19 +76,29 @@ export function ChartsSection({ transactions }: Props) {
           data={monthData}
           incomeColor={incomeColor}
           expenseColor={expenseColor}
+          tooltipStyle={tooltipStyle}
         />
       </div>
 
-      {/* Distribution */}
       <div>
         <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          Distribución ({selectedCurrency})
+          Top gastos por categoría ({selectedCurrency})
         </h3>
-        <DistributionChart
-          income={totals.income}
-          expense={totals.expense}
-          incomeColor={incomeColor}
-          expenseColor={expenseColor}
+        <CategoryChart
+          data={expenseByCategory}
+          color={expenseColor}
+          tooltipStyle={tooltipStyle}
+        />
+      </div>
+
+      <div>
+        <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          Top ingresos por categoría ({selectedCurrency})
+        </h3>
+        <CategoryChart
+          data={incomeByCategory}
+          color={incomeColor}
+          tooltipStyle={tooltipStyle}
         />
       </div>
     </div>

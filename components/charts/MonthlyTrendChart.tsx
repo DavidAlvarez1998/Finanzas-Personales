@@ -11,9 +11,10 @@ interface Props {
   data: MonthData[]
   incomeColor: string
   expenseColor: string
+  tooltipStyle: React.CSSProperties
 }
 
-export function MonthlyTrendChart({ data, incomeColor, expenseColor }: Props) {
+export function MonthlyTrendChart({ data, incomeColor, expenseColor, tooltipStyle }: Props) {
   if (data.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -31,7 +32,7 @@ export function MonthlyTrendChart({ data, incomeColor, expenseColor }: Props) {
           <YAxis tickFormatter={n => `$${(n/1000).toFixed(0)}k`} tick={{ fontSize: 11 }} stroke="currentColor" strokeOpacity={0.3} width={52} />
           <Tooltip
             formatter={(value: number, name: string) => [formatAmount(value), name === 'income' ? 'Ingresos' : 'Egresos']}
-            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+            contentStyle={tooltipStyle}
           />
           <Legend formatter={name => name === 'income' ? 'Ingresos' : 'Egresos'} />
           <Bar dataKey="income" fill={incomeColor} radius={[4, 4, 0, 0]} maxBarSize={32} />
