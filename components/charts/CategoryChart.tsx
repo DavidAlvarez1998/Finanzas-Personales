@@ -48,9 +48,9 @@ export function CategoryChart({ data, color, tooltipStyle }: Props) {
             formatter={(value: number) => [formatAmount(value), 'Total']}
             contentStyle={tooltipStyle}
           />
-          <Bar dataKey="amount" radius={[0, 4, 4, 0]} maxBarSize={22}>
+          <Bar dataKey="amount" radius={[0, 4, 4, 0]} maxBarSize={22} background={{ fill: 'rgba(128,128,128,0.08)', radius: 4 }}>
             {data.map((_, i) => (
-              <Cell key={i} fill={color} fillOpacity={Math.max(0.35, 1 - i * 0.08)} />
+              <Cell key={i} fill={color} fillOpacity={Math.max(0.6, 1 - i * 0.05)} />
             ))}
           </Bar>
         </BarChart>

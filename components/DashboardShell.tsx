@@ -844,10 +844,12 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       {OFFLINE_ENABLED && <OfflineBanner />}
       {/* Header */}
       <header className="border-b border-zinc-200/60 bg-white/80 backdrop-blur sticky top-0 z-10 dark:border-zinc-800/60 dark:bg-zinc-900/80">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
+        <div className="flex items-center justify-between gap-2 px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-zinc-950 dark:text-white">Finanzas</span>
             {OFFLINE_ENABLED && <SyncStatusBadge />}
+          </div>
+          <div className="flex items-center gap-2">
             <button
               onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/30"

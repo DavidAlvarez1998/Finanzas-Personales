@@ -4,6 +4,7 @@ import { defaultCache } from '@serwist/next/worker'
 import {
   Serwist,
   NetworkFirst,
+  StaleWhileRevalidate,
   CacheableResponsePlugin,
   PrecacheFallbackPlugin,
 } from 'serwist'
@@ -17,9 +18,11 @@ declare const self: ServiceWorkerGlobalScope & {
 // the fully-constructed serwist instance via push() after assignment — avoiding
 // the null-capture bug that occurs when serwist is referenced inside its own
 // constructor (the plugin stores the reference by value, not by variable).
-const navStrategy = new NetworkFirst({
+// StaleWhileRevalidate: serves cached app shell instantly when offline,
+// updates the cache in the background when online. Avoids the 3-second
+// NetworkFirst timeout that left users stuck on /offline.html.
+const navStrategy = new StaleWhileRevalidate({
   cacheName: 'navigation-cache',
-  networkTimeoutSeconds: 3,
   plugins: [
     new CacheableResponsePlugin({ statuses: [0, 200] }),
   ],
@@ -29,8 +32,8 @@ const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  // D1: disable browser Navigation Preload — it races with NetworkFirst offline
-  // and can surface a network error before the SW cache fallback runs.
+  // D1: disable browser Navigation Preload — it can race with cache lookup
+  // and surface a network error before the SW cache fallback runs.
   navigationPreload: false,
   runtimeCaching: [
     // MUST remain first — navigation matcher must win before defaultCache spreads.
