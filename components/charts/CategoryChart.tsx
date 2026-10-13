@@ -47,6 +47,7 @@ export function CategoryChart({ data, color, tooltipStyle }: Props) {
           <Tooltip
             formatter={(value: number) => [formatAmount(value), 'Total']}
             contentStyle={tooltipStyle}
+            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Bar dataKey="amount" radius={[0, 4, 4, 0]} maxBarSize={22} background={{ fill: 'rgba(128,128,128,0.08)', radius: 4 }}>
             {data.map((_, i) => (

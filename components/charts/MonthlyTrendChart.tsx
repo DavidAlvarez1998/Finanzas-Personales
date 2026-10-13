@@ -33,6 +33,7 @@ export function MonthlyTrendChart({ data, incomeColor, expenseColor, tooltipStyl
           <Tooltip
             formatter={(value: number, name: string) => [formatAmount(value), name === 'income' ? 'Ingresos' : 'Egresos']}
             contentStyle={tooltipStyle}
+            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Legend formatter={name => name === 'income' ? 'Ingresos' : 'Egresos'} />
           <Bar dataKey="income" fill={incomeColor} radius={[4, 4, 0, 0]} maxBarSize={32} />
