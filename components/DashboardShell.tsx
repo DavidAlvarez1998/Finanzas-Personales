@@ -84,10 +84,11 @@ interface Props {
   displayCurrency: string | null
 }
 
-type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'ahorros' | 'inversiones' | 'charts'
+type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'ahorros' | 'inversiones'
 
 export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, ahorroAccounts: serverAhorroAccounts, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
+  const [viewMode, setViewMode] = useState<'list' | 'charts'>('list')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [initialType, setInitialType] = useState<'income' | 'expense'>('expense')
@@ -1109,16 +1110,6 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
                 </span>
               )}
             </button>
-            <button
-              onClick={() => setTab('charts')}
-              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
-                tab === 'charts'
-                  ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
-              }`}
-            >
-              Graficos
-            </button>
           </div>
           </div>
 
@@ -1130,12 +1121,48 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
                   <p>Conectate una vez para cargar tus datos. Despues podras usarlos sin conexion.</p>
                 </div>
               ) : (
-                <TransactionTable
-                  transactions={transactions}
-                  onEdit={handleEdit}
-                  onDelete={handleDeleteTransaction}
-                  isPending={isPending}
-                />
+                <>
+                  {/* View toggle: Lista | Gráficos */}
+                  <div className="mb-4 flex justify-end">
+                    <div className="flex gap-1 rounded-xl border border-zinc-200 bg-zinc-100/50 p-1 dark:border-zinc-800 dark:bg-zinc-900/50">
+                      <button
+                        onClick={() => setViewMode('list')}
+                        className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
+                          viewMode === 'list'
+                            ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
+                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+                        }`}
+                      >
+                        Lista
+                      </button>
+                      <button
+                        onClick={() => setViewMode('charts')}
+                        className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
+                          viewMode === 'charts'
+                            ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
+                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+                        }`}
+                      >
+                        Gráficos
+                      </button>
+                    </div>
+                  </div>
+
+                  {viewMode === 'list' ? (
+                    <TransactionTable
+                      transactions={transactions}
+                      onEdit={handleEdit}
+                      onDelete={handleDeleteTransaction}
+                      isPending={isPending}
+                    />
+                  ) : transactions.length === 0 ? (
+                    <div className="rounded-xl border border-zinc-200 bg-white px-5 py-10 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+                      Sin registros para mostrar gráficos.
+                    </div>
+                  ) : (
+                    <ChartsSection transactions={transactions} />
+                  )}
+                </>
               )}
             </>
           )}
@@ -1202,7 +1229,6 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               currencies={effectiveCurrencies}
             />
           )}
-          {tab === 'charts' && <ChartsSection transactions={transactions} />}
         </div>
       </main>
 
