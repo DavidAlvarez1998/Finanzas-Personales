@@ -31,7 +31,7 @@ export function CategoryChart({ data, color, tooltipStyle }: Props) {
         >
           <XAxis
             type="number"
-            tick={{ fontSize: 10 }}
+            tick={{ fontSize: 10, fill: 'currentColor' }}
             stroke="currentColor"
             strokeOpacity={0.3}
             tickFormatter={n => `$${(n / 1000).toFixed(0)}k`}
@@ -40,7 +40,7 @@ export function CategoryChart({ data, color, tooltipStyle }: Props) {
             type="category"
             dataKey="category"
             width={120}
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 11, fill: 'currentColor' }}
             stroke="currentColor"
             strokeOpacity={0.3}
           />
