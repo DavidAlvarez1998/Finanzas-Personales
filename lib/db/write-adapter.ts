@@ -21,6 +21,9 @@ import type {
   InvestmentReturn,
   InvestmentStatus,
   ReturnPeriod,
+  AhorroAccount,
+  AhorroMovimiento,
+  AhorroAccountStatus,
 } from '@/types'
 
 export type WriteOpResult =
@@ -307,6 +310,62 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
       break
     }
 
+    // ── Ahorros ───────────────────────────────────────────────────────────
+    case 'ahorro_account.create': {
+      const record: AhorroAccount = {
+        id: payload.id as string,
+        user_id: payload.user_id as string,
+        nombre: (payload.nombre as string) ?? '',
+        currency: (payload.currency as string) ?? 'COP',
+        status: (payload.status as AhorroAccountStatus) ?? 'active',
+        created_at: (payload.created_at as string) ?? new Date().toISOString(),
+        movimientos: [],
+        total_actual: 0,
+      }
+      await db.ahorro_accounts.put(record)
+      break
+    }
+    case 'ahorro_account.update': {
+      await db.ahorro_accounts.update(payload.id as string, {
+        nombre: payload.nombre as string,
+        currency: payload.currency as string,
+      })
+      break
+    }
+    case 'ahorro_account.delete': {
+      // Dexie has no FK cascade — remove children explicitly (mirrors investment.delete)
+      const accId = payload.id as string
+      const childKeys = await db.ahorro_movimientos
+        .where('account_id')
+        .equals(accId)
+        .primaryKeys()
+      await db.ahorro_movimientos.bulkDelete(childKeys as string[])
+      await db.ahorro_accounts.delete(accId)
+      break
+    }
+    case 'ahorro_account.status': {
+      await db.ahorro_accounts.update(payload.account_id as string, {
+        status: payload.status as AhorroAccountStatus,
+      })
+      break
+    }
+    case 'ahorro_movimiento.create': {
+      const record: AhorroMovimiento = {
+        id: payload.id as string,
+        account_id: payload.account_id as string,
+        monto: Number(payload.monto), // sign preserved
+        fecha: (payload.fecha as string) ?? new Date().toISOString().split('T')[0],
+        nota: (payload.nota as string | null) ?? null,
+      }
+      await db.ahorro_movimientos.put(record)
+      // DO NOT call any auto-complete logic. Ahorros has no completion state.
+      break
+    }
+    case 'ahorro_movimiento.delete': {
+      await db.ahorro_movimientos.delete(payload.id as string)
+      break
+    }
+
     // ── Currencies ────────────────────────────────────────────────────
     case 'user.currencies': {
       await db.meta.put({ key: 'user_currencies', value: payload.codes as string[] })
@@ -359,6 +418,17 @@ function getTablesForOp(type: PendingOpType): any[] {
     tables.push(db.investment_returns as ReturnType<typeof db.table>)
   } else if (type.startsWith('investment.')) {
     tables.push(db.investments as ReturnType<typeof db.table>)
+  } else if (type === 'ahorro_account.delete') {
+    // Cascade-equivalent delete — needs both tables
+    tables.push(
+      db.ahorro_accounts as ReturnType<typeof db.table>,
+      db.ahorro_movimientos as ReturnType<typeof db.table>
+    )
+  } else if (type.startsWith('ahorro_movimiento.')) {
+    // MUST come before ahorro_account.* to avoid prefix collision risk (defensive ordering)
+    tables.push(db.ahorro_movimientos as ReturnType<typeof db.table>)
+  } else if (type.startsWith('ahorro_account.')) {
+    tables.push(db.ahorro_accounts as ReturnType<typeof db.table>)
   } else if (type.startsWith('user.')) {
     tables.push(db.meta as ReturnType<typeof db.table>)
   }

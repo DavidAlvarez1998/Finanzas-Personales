@@ -19,6 +19,8 @@ import type {
   SavingsContribution,
   Investment,
   InvestmentReturn,
+  AhorroAccount,
+  AhorroMovimiento,
 } from '@/types'
 
 let draining = false
@@ -51,6 +53,8 @@ type ServerRow =
   | SavingsContribution
   | Investment
   | InvestmentReturn
+  | AhorroAccount
+  | AhorroMovimiento
   | { currencies: string[] }
   | { display_currency: string | null }
   | null
@@ -158,6 +162,28 @@ async function reconcile(op: PendingOp, serverRow: ServerRow): Promise<void> {
     } else {
       await db.investment_returns.put(serverRow as InvestmentReturn)
     }
+  } else if (
+    opType === 'ahorro_account.create' ||
+    opType === 'ahorro_account.update' ||
+    opType === 'ahorro_account.status'
+  ) {
+    if (op.optimistic_id && op.optimistic_id !== row.id) {
+      await db.transaction('rw', db.ahorro_accounts, async () => {
+        await db.ahorro_accounts.delete(op.optimistic_id!)
+        await db.ahorro_accounts.put(serverRow as AhorroAccount)
+      })
+    } else {
+      await db.ahorro_accounts.put(serverRow as AhorroAccount)
+    }
+  } else if (opType === 'ahorro_movimiento.create') {
+    if (op.optimistic_id && op.optimistic_id !== row.id) {
+      await db.transaction('rw', db.ahorro_movimientos, async () => {
+        await db.ahorro_movimientos.delete(op.optimistic_id!)
+        await db.ahorro_movimientos.put(serverRow as AhorroMovimiento)
+      })
+    } else {
+      await db.ahorro_movimientos.put(serverRow as AhorroMovimiento)
+    }
   } else if (opType === 'user.currencies') {
     const data = serverRow as unknown as { currencies: string[] }
     await db.meta.put({ key: 'user_currencies', value: data.currencies })
@@ -176,6 +202,9 @@ async function reconcile(op: PendingOp, serverRow: ServerRow): Promise<void> {
  * Spec R12 — auto-complete side effect.
  */
 async function replicateSideEffects(op: PendingOp, _serverRow: ServerRow): Promise<void> {
+  // NOTE: ahorro_movimiento.create intentionally has NO side effect here.
+  // Ahorros has no completion/archive state tied to balance thresholds.
+  // Adding a branch here would corrupt account state. See sdd/ahorros-feature/proposal R2.
   if (op.type !== 'savings_contribution.create') return
 
   const payload = op.payload as Record<string, unknown>

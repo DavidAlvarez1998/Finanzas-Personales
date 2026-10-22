@@ -1,6 +1,6 @@
 import { createServerClient } from './server'
 import { verifySession } from '@/lib/auth/session'
-import type { Transaction, Debt, DebtPayment, Presupuesto, PresupuestoItem, SavingsGoal, SavingsContribution, Investment, InvestmentReturn } from '@/types'
+import type { Transaction, Debt, DebtPayment, Presupuesto, PresupuestoItem, SavingsGoal, SavingsContribution, Investment, InvestmentReturn, AhorroAccount, AhorroMovimiento } from '@/types'
 
 export async function getTransactions(): Promise<Transaction[]> {
   const { userId } = await verifySession()
@@ -100,6 +100,33 @@ export async function getInvestments(): Promise<Investment[]> {
       total_retornos,
       roi_pct: principal > 0 ? (total_retornos / principal) * 100 : 0,
     } as Investment
+  })
+}
+
+export async function getAhorroAccounts(): Promise<AhorroAccount[]> {
+  const { userId } = await verifySession()
+  const supabase = createServerClient()
+
+  const { data, error } = await supabase
+    .from('ahorro_accounts')
+    .select('*, ahorro_movimientos(id, account_id, monto, fecha, nota, created_at)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(`getAhorroAccounts failed: ${error.message}`)
+
+  return ((data ?? []) as any[]).map(a => {
+    const movimientos: AhorroMovimiento[] = (a.ahorro_movimientos ?? [])
+      .slice()
+      .sort((x: AhorroMovimiento, y: AhorroMovimiento) =>
+        y.fecha.localeCompare(x.fecha)
+      )
+    const total_actual = movimientos.reduce((s, m) => s + Number(m.monto), 0)
+    return {
+      ...a,
+      movimientos,
+      total_actual,
+    } as AhorroAccount
   })
 }
 

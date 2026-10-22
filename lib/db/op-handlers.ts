@@ -40,6 +40,14 @@ import {
   deleteReturn,
 } from '@/app/actions/investments'
 import {
+  createAhorroAccount,
+  updateAhorroAccount,
+  deleteAhorroAccount,
+  updateAhorroAccountStatus,
+  addMovimiento,
+  deleteMovimiento,
+} from '@/app/actions/ahorros'
+import {
   updateUserCurrencies,
   updateDisplayCurrency,
 } from '@/app/actions/currencies'
@@ -54,6 +62,8 @@ import type {
   SavingsContribution,
   Investment,
   InvestmentReturn,
+  AhorroAccount,
+  AhorroMovimiento,
 } from '@/types'
 
 function toFormData(obj: Record<string, unknown>): FormData {
@@ -127,6 +137,8 @@ export type HandlerResult =
   | SavingsContribution
   | Investment
   | InvestmentReturn
+  | AhorroAccount
+  | AhorroMovimiento
   | { currencies: string[] }
   | { display_currency: string | null }
   | null
@@ -262,6 +274,36 @@ export async function handle(op: PendingOp): Promise<HandlerResult> {
     }
     case 'investment_return.delete': {
       await callDeleteAction(deleteReturn, payload.id as string)
+      return null
+    }
+
+    // ── Ahorros Accounts ──────────────────────────────────────────────────
+    case 'ahorro_account.create': {
+      return callAction(createAhorroAccount, toFormData(payload))
+    }
+    case 'ahorro_account.update': {
+      const { id, ...rest } = payload
+      return callActionWithId(updateAhorroAccount, id as string, toFormData(rest))
+    }
+    case 'ahorro_account.delete': {
+      await callDeleteAction(deleteAhorroAccount, payload.id as string)
+      return null
+    }
+    case 'ahorro_account.status': {
+      return callActionDirect(
+        updateAhorroAccountStatus,
+        payload.account_id as string,
+        payload.status
+      )
+    }
+
+    // ── Ahorros Movimientos ───────────────────────────────────────────────
+    case 'ahorro_movimiento.create': {
+      const { account_id, ...rest } = payload
+      return callActionWithId(addMovimiento, account_id as string, toFormData(rest))
+    }
+    case 'ahorro_movimiento.delete': {
+      await callDeleteAction(deleteMovimiento, payload.id as string)
       return null
     }
 

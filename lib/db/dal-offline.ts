@@ -4,7 +4,7 @@
  * Designed to be called from useLiveQuery.
  */
 import { db } from './index'
-import type { Transaction, Debt, Presupuesto, SavingsGoal, Investment } from '@/types'
+import type { Transaction, Debt, Presupuesto, SavingsGoal, Investment, AhorroAccount } from '@/types'
 
 export async function getTransactions(userId: string): Promise<Transaction[]> {
   return db.transactions
@@ -131,6 +131,31 @@ export async function getInvestments(userId: string): Promise<Investment[]> {
   )
 
   return withReturns.sort((a, b) => {
+    const aTime = a.created_at ? new Date(a.created_at).getTime() : 0
+    const bTime = b.created_at ? new Date(b.created_at).getTime() : 0
+    return bTime - aTime
+  })
+}
+
+export async function getAhorroAccounts(userId: string): Promise<AhorroAccount[]> {
+  const accounts = await db.ahorro_accounts.where('user_id').equals(userId).toArray()
+
+  const withMovimientos = await Promise.all(
+    accounts.map(async acc => {
+      const movimientos = await db.ahorro_movimientos
+        .where('account_id')
+        .equals(acc.id)
+        .toArray()
+      const total_actual = movimientos.reduce((sum, m) => sum + Number(m.monto), 0)
+      return {
+        ...acc,
+        movimientos: movimientos.slice().sort((a, b) => b.fecha.localeCompare(a.fecha)),
+        total_actual,
+      }
+    })
+  )
+
+  return withMovimientos.sort((a, b) => {
     const aTime = a.created_at ? new Date(a.created_at).getTime() : 0
     const bTime = b.created_at ? new Date(b.created_at).getTime() : 0
     return bTime - aTime

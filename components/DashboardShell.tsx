@@ -10,6 +10,7 @@ import { DebtSection } from '@/components/DebtSection'
 import { ChartsSection } from '@/components/ChartsSection'
 import { PresupuestosSection } from '@/components/PresupuestosSection'
 import { SavingsSection } from '@/components/SavingsSection'
+import { AhorrosSection } from '@/components/AhorrosSection'
 import { InversionesSection } from '@/components/InversionesSection'
 import {
   createTransaction,
@@ -34,6 +35,14 @@ import {
   updateGoalStatus,
 } from '@/app/actions/savings'
 import {
+  createAhorroAccount,
+  updateAhorroAccount,
+  deleteAhorroAccount,
+  updateAhorroAccountStatus,
+  addMovimiento,
+  deleteMovimiento,
+} from '@/app/actions/ahorros'
+import {
   createInvestment,
   updateInvestment,
   deleteInvestment,
@@ -44,7 +53,7 @@ import {
 import { updateUserCurrencies, updateDisplayCurrency } from '@/app/actions/currencies'
 import { CurrencyPicker } from '@/components/CurrencyPicker'
 import { fetchRateWithCache } from '@/lib/fx/frankfurter'
-import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus, Investment, InvestmentStatus } from '@/types'
+import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus, Investment, InvestmentStatus, AhorroAccount, AhorroAccountStatus } from '@/types'
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
 import { writeOp } from '@/lib/db/write-adapter'
 import { SyncStatusBadge } from '@/components/SyncStatusBadge'
@@ -55,6 +64,7 @@ import {
   getPresupuestos as getPresupuestosDexie,
   getSavingsGoals as getSavingsGoalsDexie,
   getInvestments as getInvestmentsDexie,
+  getAhorroAccounts as getAhorroAccountsDexie,
   getUserCurrencies as getUserCurrenciesDexie,
   getDisplayCurrency as getDisplayCurrencyDexie,
 } from '@/lib/db/dal-offline'
@@ -69,13 +79,14 @@ interface Props {
   presupuestos: Presupuesto[] | null
   savingsGoals: SavingsGoal[] | null
   investments: Investment[] | null
+  ahorroAccounts: AhorroAccount[] | null
   currencies: string[] | null
   displayCurrency: string | null
 }
 
-type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'inversiones' | 'charts'
+type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'ahorros' | 'inversiones' | 'charts'
 
-export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
+export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, ahorroAccounts: serverAhorroAccounts, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
@@ -119,6 +130,12 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   )
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
+  const dexieAhorroAccounts = useLiveQuery(
+    () => (OFFLINE_ENABLED ? getAhorroAccountsDexie(userId) : Promise.resolve(undefined)),
+    [userId]
+  )
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const dexieCurrencies = useLiveQuery(
     () => (OFFLINE_ENABLED ? getUserCurrenciesDexie(userId) : Promise.resolve(undefined)),
     [userId]
@@ -151,6 +168,10 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     ? (dexieInvestments ?? [])
     : (serverInvestments ?? [])
 
+  const ahorroAccounts: AhorroAccount[] = OFFLINE_ENABLED
+    ? (dexieAhorroAccounts ?? [])
+    : (serverAhorroAccounts ?? [])
+
   const resolvedCurrencies: string[] = OFFLINE_ENABLED
     ? (dexieCurrencies ?? [])
     : (serverCurrencies ?? [])
@@ -162,6 +183,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     dexiePresupuestos === undefined ||
     dexieSavingsGoals === undefined ||
     dexieInvestments === undefined ||
+    dexieAhorroAccounts === undefined ||
     dexieCurrencies === undefined ||
     dexieDisplayCurrency === undefined
   )
@@ -795,6 +817,127 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     })
   }
 
+  // ── Ahorro handlers ──────────────────────────────────────────────────
+
+  function handleAhorroAdd(fd: FormData) {
+    if (OFFLINE_ENABLED) {
+      const nombreRaw = (fd.get('nombre') as string | null)?.trim() ?? ''
+      const currency = (fd.get('currency') as string | null) ?? 'COP'
+      startTransition(async () => {
+        const result = await writeOp('ahorro_account.create', {
+          id: crypto.randomUUID(),
+          user_id: userId,
+          nombre: nombreRaw.toUpperCase(),
+          currency,
+          status: 'active',
+        })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Cuenta creada')
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await createAhorroAccount(fd)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Cuenta creada')
+    })
+  }
+
+  function handleAhorroUpdate(id: string, fd: FormData) {
+    if (OFFLINE_ENABLED) {
+      const nombreRaw = (fd.get('nombre') as string | null)?.trim() ?? ''
+      const currency = (fd.get('currency') as string | null) ?? 'COP'
+      startTransition(async () => {
+        const result = await writeOp('ahorro_account.update', {
+          id,
+          nombre: nombreRaw.toUpperCase(),
+          currency,
+        })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Cuenta actualizada')
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await updateAhorroAccount(id, fd)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Cuenta actualizada')
+    })
+  }
+
+  function handleAhorroDelete(id: string) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('ahorro_account.delete', { id })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Cuenta eliminada')
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await deleteAhorroAccount(id)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Cuenta eliminada')
+    })
+  }
+
+  function handleAhorroStatus(id: string, status: AhorroAccountStatus) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('ahorro_account.status', { account_id: id, status })
+        if (!result.ok) toast.error(result.error)
+        else toast.success(status === 'archived' ? 'Cuenta archivada' : 'Cuenta reactivada')
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await updateAhorroAccountStatus(id, status)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success(status === 'archived' ? 'Cuenta archivada' : 'Cuenta reactivada')
+    })
+  }
+
+  function handleMovimientoAdd(accountId: string, fd: FormData) {
+    if (OFFLINE_ENABLED) {
+      const montoRaw = fd.get('monto') as string | null // already signed by UI
+      const fecha = (fd.get('fecha') as string | null) || new Date().toISOString().split('T')[0]
+      const nota = (fd.get('nota') as string | null) || null
+      startTransition(async () => {
+        const result = await writeOp('ahorro_movimiento.create', {
+          id: crypto.randomUUID(),
+          account_id: accountId,
+          monto: montoRaw ? parseFloat(montoRaw) : 0, // sign preserved
+          fecha,
+          nota,
+        })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Movimiento registrado')
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await addMovimiento(accountId, fd)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Movimiento registrado')
+    })
+  }
+
+  function handleMovimientoDelete(id: string) {
+    if (OFFLINE_ENABLED) {
+      startTransition(async () => {
+        const result = await writeOp('ahorro_movimiento.delete', { id })
+        if (!result.ok) toast.error(result.error)
+        else toast.success('Movimiento eliminado')
+      })
+      return
+    }
+    startTransition(async () => {
+      const result = await deleteMovimiento(id)
+      if (result && 'error' in result) toast.error(result.error)
+      else toast.success('Movimiento eliminado')
+    })
+  }
+
   // ── Currency handlers ────────────────────────────────────────────────
 
   function handleCurrenciesChange(codes: string[]) {
@@ -937,6 +1080,21 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               )}
             </button>
             <button
+              onClick={() => setTab('ahorros')}
+              className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
+                tab === 'ahorros'
+                  ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+              }`}
+            >
+              Ahorros
+              {ahorroAccounts.length > 0 && (
+                <span className="ml-2 rounded-full bg-sky-600 px-1.5 py-0.5 text-xs font-bold text-white">
+                  {ahorroAccounts.length}
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => setTab('inversiones')}
               className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'inversiones'
@@ -1014,6 +1172,19 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               onAddContribution={handleContributionAdd}
               onDeleteContribution={handleContributionDelete}
               onUpdateStatus={handleGoalStatus}
+              isPending={isPending}
+              currencies={effectiveCurrencies}
+            />
+          )}
+          {tab === 'ahorros' && (
+            <AhorrosSection
+              accounts={ahorroAccounts}
+              onAdd={handleAhorroAdd}
+              onUpdate={handleAhorroUpdate}
+              onDelete={handleAhorroDelete}
+              onAddMovimiento={handleMovimientoAdd}
+              onDeleteMovimiento={handleMovimientoDelete}
+              onUpdateStatus={handleAhorroStatus}
               isPending={isPending}
               currencies={effectiveCurrencies}
             />

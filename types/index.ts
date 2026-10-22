@@ -168,6 +168,31 @@ export interface Investment {
   roi_pct?: number
 }
 
+export type AhorroAccountStatus = 'active' | 'archived'
+
+export interface AhorroMovimiento {
+  id: string
+  account_id: string
+  /** Positive = depósito, negative = retiro. No > 0 check. */
+  monto: number
+  fecha: string
+  nota?: string | null
+  created_at?: string
+}
+
+export interface AhorroAccount {
+  id: string
+  user_id?: string
+  nombre: string
+  currency: string
+  status: AhorroAccountStatus
+  created_at?: string
+  /** Hydrated by the DAL (server + offline). */
+  movimientos?: AhorroMovimiento[]
+  /** sum(monto) — may be negative if withdrawals exceed deposits. Computed by DAL, never stored. */
+  total_actual?: number
+}
+
 export interface FxRateResponse {
   rate: number
   from: string

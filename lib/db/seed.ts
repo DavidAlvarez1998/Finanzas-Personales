@@ -1,7 +1,7 @@
 import { db } from './index'
 import { drainQueue } from './sync'
 import type { PendingOp } from './schema'
-import type { Transaction, Debt, DebtPayment, Presupuesto, PresupuestoItem, SavingsGoal, SavingsContribution, Investment, InvestmentReturn } from '@/types'
+import type { Transaction, Debt, DebtPayment, Presupuesto, PresupuestoItem, SavingsGoal, SavingsContribution, Investment, InvestmentReturn, AhorroAccount, AhorroMovimiento } from '@/types'
 
 export interface SyncSnapshot {
   transactions: Transaction[]
@@ -13,6 +13,8 @@ export interface SyncSnapshot {
   savings_contributions: SavingsContribution[]
   investments: Investment[]
   investment_returns: InvestmentReturn[]
+  ahorro_accounts: AhorroAccount[]
+  ahorro_movimientos: AhorroMovimiento[]
   currencies: string[]
   display_currency: string | null
 }
@@ -31,6 +33,8 @@ interface ProtectedIds {
   savings_contributions: Set<string>
   investments: Set<string>
   investment_returns: Set<string>
+  ahorro_accounts: Set<string>
+  ahorro_movimientos: Set<string>
 }
 
 // ---------------------------------------------------------------------------
@@ -54,6 +58,8 @@ function collectProtectedIdsByTable(ops: PendingOp[]): ProtectedIds {
     savings_contributions: new Set(),
     investments: new Set(),
     investment_returns: new Set(),
+    ahorro_accounts: new Set(),
+    ahorro_movimientos: new Set(),
   }
   for (const op of ops) {
     if (!op.optimistic_id) continue // delete ops & user.* ops have no optimistic_id
@@ -93,6 +99,12 @@ function collectProtectedIdsByTable(ops: PendingOp[]): ProtectedIds {
         } else {
           result.investments.add(op.optimistic_id)
         }
+        break
+      case 'ahorro_movimiento':
+        result.ahorro_movimientos.add(op.optimistic_id)
+        break
+      case 'ahorro_account':
+        result.ahorro_accounts.add(op.optimistic_id)
         break
       // 'user' prefix (user.currencies, user.display_currency) has no optimistic_id — skipped above
     }
@@ -190,6 +202,8 @@ export async function hydrateFromServer(userId: string): Promise<void> {
       db.savings_contributions,
       db.investments,
       db.investment_returns,
+      db.ahorro_accounts,
+      db.ahorro_movimientos,
       db.meta,
     ],
     async () => {
@@ -203,6 +217,8 @@ export async function hydrateFromServer(userId: string): Promise<void> {
       await clearExceptProtected(db.savings_contributions, protectedIds.savings_contributions)
       await clearExceptProtected(db.investments,           protectedIds.investments)
       await clearExceptProtected(db.investment_returns,    protectedIds.investment_returns)
+      await clearExceptProtected(db.ahorro_accounts,       protectedIds.ahorro_accounts)
+      await clearExceptProtected(db.ahorro_movimientos,    protectedIds.ahorro_movimientos)
 
       // 4b. bulkAdd snapshot rows, skipping any IDs that collide with
       // still-pending (protected) rows. If reconcile is working correctly
@@ -235,6 +251,12 @@ export async function hydrateFromServer(userId: string): Promise<void> {
       )
       await db.investment_returns.bulkAdd(
         snapshot.investment_returns.filter(r => !protectedIds.investment_returns.has(r.id))
+      )
+      await db.ahorro_accounts.bulkAdd(
+        snapshot.ahorro_accounts.filter(r => !protectedIds.ahorro_accounts.has(r.id))
+      )
+      await db.ahorro_movimientos.bulkAdd(
+        snapshot.ahorro_movimientos.filter(r => !protectedIds.ahorro_movimientos.has(r.id))
       )
 
       // 4c. Meta writes — inside the same tx so last_sync_at only bumps
