@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { PendingOp } from '@/lib/db/schema'
 
 interface DeadLetterDrawerProps {
@@ -30,6 +30,18 @@ const OP_LABELS: Record<string, string> = {
   'savings_goal.status': 'Actualizar estado de meta',
   'savings_contribution.create': 'Agregar aporte',
   'savings_contribution.delete': 'Eliminar aporte',
+  'investment.create': 'Crear inversión',
+  'investment.update': 'Editar inversión',
+  'investment.delete': 'Eliminar inversión',
+  'investment.status': 'Actualizar estado de inversión',
+  'investment_return.create': 'Agregar retorno',
+  'investment_return.delete': 'Eliminar retorno',
+  'ahorro_account.create': 'Crear cuenta de ahorro',
+  'ahorro_account.update': 'Editar cuenta de ahorro',
+  'ahorro_account.delete': 'Eliminar cuenta de ahorro',
+  'ahorro_account.status': 'Archivar cuenta de ahorro',
+  'ahorro_movimiento.create': 'Registrar movimiento',
+  'ahorro_movimiento.delete': 'Eliminar movimiento',
   'user.currencies': 'Actualizar monedas',
   'user.display_currency': 'Cambiar moneda principal',
 }
@@ -40,12 +52,6 @@ function humanize(type: string): string {
 
 export function DeadLetterDrawer({ failedOps, onRetry, onDismiss }: DeadLetterDrawerProps) {
   const [confirming, setConfirming] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!confirming) return
-    const t = setTimeout(() => setConfirming(null), 3000)
-    return () => clearTimeout(t)
-  }, [confirming])
 
   if (failedOps.length === 0) return null
 
@@ -81,9 +87,9 @@ export function DeadLetterDrawer({ failedOps, onRetry, onDismiss }: DeadLetterDr
                 {confirming === op.id ? (
                   <button
                     onClick={() => { onDismiss(op.id); setConfirming(null) }}
-                    className="rounded-md bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:hover:bg-amber-900/60"
+                    className="rounded-md bg-rose-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-rose-600"
                   >
-                    ¿Confirmar? (3s)
+                    Confirmar
                   </button>
                 ) : (
                   <button
