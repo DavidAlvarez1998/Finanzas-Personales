@@ -55,7 +55,7 @@ const serwist = new Serwist({
 // D2: push AFTER serwist is fully constructed so _serwist is never null.
 // PrecacheFallbackPlugin resolves the correct __WB_REVISION__ key automatically.
 navStrategy.plugins.push(new PrecacheFallbackPlugin({
-  fallbackUrls: ['/offline.html'],
+  fallbackUrls: ['/app-shell'],
   serwist,
 }))
 

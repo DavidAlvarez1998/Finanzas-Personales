@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Sin conexion - Finanzas</title>
     <!--
-      revision: 1
+      revision: 2
       Bump this AND the revision in next.config.ts additionalPrecacheEntries
       whenever this file is edited, so Serwist invalidates the precache entry.
     -->
@@ -72,5 +72,31 @@
       </p>
       <button type="button" onclick="window.location.reload()">Recargar</button>
     </main>
+    <script>
+      try {
+        var req = indexedDB.open('finanzas');
+        req.onerror = null;
+        req.onblocked = null;
+        req.onsuccess = function (e) {
+          try {
+            var idb = e.target.result;
+            var tx = idb.transaction('meta', 'readonly');
+            var store = tx.objectStore('meta');
+            var getReq = store.get('hydrated_user_id');
+            getReq.onsuccess = function (ev) {
+              try {
+                var row = ev.target.result;
+                if (row && row.value) {
+                  window.location.replace('/');
+                } else {
+                  window.location.replace('/login');
+                }
+              } catch (_) {}
+            };
+            getReq.onerror = null;
+          } catch (_) {}
+        };
+      } catch (_) {}
+    </script>
   </body>
 </html>

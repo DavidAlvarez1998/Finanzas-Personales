@@ -27,8 +27,9 @@ export function SyncStatusBadge() {
   async function handleRetry(id: string) {
     await db.pending_ops.update(id, {
       status: 'queued',
+      attempts: 0,
       error: null,
-      error_class: null,
+      error_class: undefined,
       updated_at: Date.now(),
     })
     await drainQueue()
