@@ -1,4 +1,4 @@
-import { logout } from '@/app/actions/auth'
+import { LogoutForm } from '@/components/LogoutForm'
 
 export default function BlockedPage() {
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER
@@ -35,14 +35,7 @@ export default function BlockedPage() {
             </a>
           )}
 
-          <form action={logout}>
-            <button
-              type="submit"
-              className="w-full rounded-lg border border-zinc-700 px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
-            >
-              Cerrar sesión
-            </button>
-          </form>
+          <LogoutForm />
         </div>
       </div>
     </div>

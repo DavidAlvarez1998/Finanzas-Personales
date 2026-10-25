@@ -59,4 +59,16 @@ navStrategy.plugins.push(new PrecacheFallbackPlugin({
   serwist,
 }))
 
+// Install-time warm-up: pre-populate navigation-cache with /app-shell so the
+// first navigation after SW activation resolves instantly from cache even on
+// a cold / flaky network. Best-effort: swallow errors so a missing /app-shell
+// route (dev builds, pre-render failures) never blocks SW install.
+self.addEventListener('install', (event: ExtendableEvent) => {
+  event.waitUntil(
+    caches.open('navigation-cache').then(cache =>
+      cache.add('/app-shell').catch(() => {})
+    )
+  )
+})
+
 serwist.addEventListeners()

@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getSession } from "@/lib/auth/session";
-import { logout } from "@/app/actions/auth";
 import { Providers } from "@/components/Providers";
 import { AdminNavLink } from "@/components/AdminNavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -13,6 +12,7 @@ import { SettingsButton } from "@/components/SettingsButton";
 import { OfflineProvider } from "@/app/providers/OfflineProvider";
 import { readImpersonationContext } from "@/lib/auth/impersonation";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { LogoutForm } from "@/components/LogoutForm";
 
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
 
@@ -86,14 +86,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <span className="mr-auto truncate max-w-[200px] text-xs text-zinc-400 dark:text-zinc-500">{userEmail}</span>
               {isSuperadmin && <AdminNavLink />}
               <ThemeToggle />
-              <form action={logout}>
-                <button
-                  type="submit"
-                  className="rounded px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
-                >
-                  Cerrar sesión
-                </button>
-              </form>
+              <LogoutForm />
             </div>
           )}
           {daysLeft !== null && (

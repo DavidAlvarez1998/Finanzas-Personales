@@ -68,6 +68,7 @@ import {
   getUserCurrencies as getUserCurrenciesDexie,
   getDisplayCurrency as getDisplayCurrencyDexie,
 } from '@/lib/db/dal-offline'
+import { isHydrated } from '@/lib/db/hydration-flag'
 
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
 
@@ -89,6 +90,7 @@ type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'ahorros' | '
 export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, ahorroAccounts: serverAhorroAccounts, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
   const [viewMode, setViewMode] = useState<'list' | 'charts'>('list')
+  const everHydrated = useState(() => isHydrated())[0]
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [initialType, setInitialType] = useState<'income' | 'expense'>('expense')
@@ -177,8 +179,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     ? (dexieCurrencies ?? [])
     : (serverCurrencies ?? [])
 
-  // Show skeleton while any Dexie query hasn't returned yet in offline mode
-  const isHydrating = OFFLINE_ENABLED && (
+  // Show skeleton only on true cold start — if we've ever hydrated, trust Dexie
+  // to resolve to [] in a frame or two and let components render empty states.
+  const isHydrating = OFFLINE_ENABLED && !everHydrated && (
     dexieTransactions === undefined ||
     dexieDebts === undefined ||
     dexiePresupuestos === undefined ||

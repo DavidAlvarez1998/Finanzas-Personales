@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
 import { db } from '@/lib/db/index'
+import { useOfflineContext } from '@/app/providers/OfflineProvider'
 
 function formatLastSync(ts: number): string {
   const diffMs = Date.now() - ts
@@ -22,12 +23,28 @@ export function OfflineBanner() {
   const { online } = useNetworkStatus()
   const [showOnline, setShowOnline] = useState(false)
   const [wasOffline, setWasOffline] = useState(false)
+  const { syncError, clearSyncError } = useOfflineContext()
+  const [showSyncError, setShowSyncError] = useState(false)
 
   const lastSyncMeta = useLiveQuery(
     () => db.meta.get('last_sync_at'),
     []
   )
   const lastSyncAt = lastSyncMeta?.value as number | null | undefined
+
+  // Reveal sync-error strip when the error appears, auto-dismiss after 5s.
+  useEffect(() => {
+    if (!syncError) {
+      setShowSyncError(false)
+      return
+    }
+    setShowSyncError(true)
+    const t = setTimeout(() => {
+      setShowSyncError(false)
+      clearSyncError()
+    }, 5000)
+    return () => clearTimeout(t)
+  }, [syncError, clearSyncError])
 
   // Track transitions: offline → online triggers the "Conectado" brief banner
   useEffect(() => {
@@ -42,7 +59,25 @@ export function OfflineBanner() {
     }
   }, [online, wasOffline])
 
-  if (online && !showOnline) return null
+  // Offline takes priority
+  if (!online) {
+    const syncLabel = lastSyncAt
+      ? `última sincronización: ${formatLastSync(lastSyncAt)}`
+      : 'nunca sincronizado'
+    return (
+      <div className="w-full bg-amber-600 text-white text-xs font-medium px-4 py-1.5 text-center">
+        Sin conexión — {syncLabel}
+      </div>
+    )
+  }
+
+  if (online && showSyncError) {
+    return (
+      <div className="w-full bg-amber-500 text-white text-xs font-medium px-4 py-1.5 text-center">
+        No se pudo actualizar los datos
+      </div>
+    )
+  }
 
   if (online && showOnline) {
     return (
@@ -52,14 +87,5 @@ export function OfflineBanner() {
     )
   }
 
-  // Offline
-  const syncLabel = lastSyncAt
-    ? `última sincronización: ${formatLastSync(lastSyncAt)}`
-    : 'nunca sincronizado'
-
-  return (
-    <div className="w-full bg-amber-600 text-white text-xs font-medium px-4 py-1.5 text-center">
-      Sin conexión — {syncLabel}
-    </div>
-  )
+  return null
 }

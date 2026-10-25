@@ -2,6 +2,7 @@ import { db } from './index'
 import { drainQueue } from './sync'
 import type { PendingOp } from './schema'
 import type { Transaction, Debt, DebtPayment, Presupuesto, PresupuestoItem, SavingsGoal, SavingsContribution, Investment, InvestmentReturn, AhorroAccount, AhorroMovimiento } from '@/types'
+import { markHydrated, clearHydrated } from './hydration-flag'
 
 export interface SyncSnapshot {
   transactions: Transaction[]
@@ -170,6 +171,7 @@ export async function hydrateFromServer(userId: string): Promise<void> {
   const res = await fetch('/api/sync', { cache: 'no-store' })
 
   if (res.status === 401) {
+    clearHydrated()
     window.dispatchEvent(new CustomEvent('offline-sync:auth-expired'))
     return
   }
@@ -267,4 +269,5 @@ export async function hydrateFromServer(userId: string): Promise<void> {
       await db.meta.put({ key: 'last_sync_at',     value: Date.now() })
     }
   )
+  markHydrated()
 }
