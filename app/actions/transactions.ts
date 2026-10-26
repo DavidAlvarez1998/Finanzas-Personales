@@ -2,13 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
-import { verifySession } from '@/lib/auth/session'
+import { getSessionForAction } from '@/lib/auth/session'
 import type { Transaction } from '@/types'
 
 export async function createTransaction(
   formData: FormData
 ): Promise<{ error: string } | { row: Transaction } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const id = formData.get('id') as string | null  // optional client-supplied UUID
   const description = formData.get('description') as string | null
@@ -65,7 +66,8 @@ export async function updateTransaction(
   id: string,
   formData: FormData
 ): Promise<{ error: string } | { row: Transaction } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const description = formData.get('description') as string | null
   const date = formData.get('date') as string | null
@@ -113,7 +115,8 @@ export async function updateTransaction(
 export async function deleteTransaction(
   id: string
 ): Promise<{ error: string } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
   const { error } = await supabase

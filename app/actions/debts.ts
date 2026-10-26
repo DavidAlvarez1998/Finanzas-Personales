@@ -2,13 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
-import { verifySession } from '@/lib/auth/session'
+import { getSessionForAction } from '@/lib/auth/session'
 import type { Debt, DebtPayment } from '@/types'
 
 export async function createDebt(
   formData: FormData
 ): Promise<{ error: string } | { row: Debt }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const clientId = (formData.get('id') as string | null) || undefined
   const description = formData.get('description') as string | null
@@ -49,7 +50,8 @@ export async function updateDebt(
   id: string,
   formData: FormData
 ): Promise<{ error: string } | { row: Debt }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const description = formData.get('description') as string | null
   const amountRaw = formData.get('amount') as string | null
@@ -88,7 +90,8 @@ export async function updateDebt(
 export async function deleteDebt(
   id: string
 ): Promise<{ error: string } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
   const { error } = await supabase
@@ -108,7 +111,8 @@ export async function createDebtPayment(
   debtId: string,
   formData: FormData
 ): Promise<{ error: string } | { row: DebtPayment }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const clientId = (formData.get('id') as string | null) || undefined
   const amountRaw = formData.get('amount') as string | null
@@ -152,7 +156,8 @@ export async function createDebtPayment(
 export async function deleteDebtPayment(
   id: string
 ): Promise<{ error: string } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
 

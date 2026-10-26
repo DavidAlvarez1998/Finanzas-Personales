@@ -93,6 +93,57 @@ export async function verifySession(): Promise<VerifiedSession> {
 }
 
 /**
+ * Resolves the EFFECTIVE session for Server Action callers.
+ *
+ * Semantically identical to verifySession() — same predicates (base session,
+ * user active, not expired, impersonation-aware) — but returns null instead of
+ * calling redirect(). Server Actions MUST use this; pages/layouts MUST use
+ * verifySession().
+ *
+ * Why: redirect() throws NEXT_REDIRECT, which the offline-sync classifier maps
+ * to 'transient' (misclassified), causing retries + data loss on session expiry.
+ */
+export async function getSessionForAction(): Promise<VerifiedSession | null> {
+  const base = await getSession()
+  if (!base) return null
+
+  const impPayload = await readImpersonationPayload(base)
+  const imp = impPayload
+    ? {
+        adminUserId: impPayload.adminUserId,
+        adminEmail: impPayload.adminEmail,
+        targetEmail: impPayload.targetEmail,
+      }
+    : null
+
+  const effectiveUserId = impPayload?.targetUserId ?? base.userId
+  const effectiveEmail = impPayload?.targetEmail ?? base.email
+  const baseIsSuperadmin = base.email === process.env.SUPERADMIN_EMAIL
+  const effectiveIsSuperadmin = impPayload ? false : baseIsSuperadmin
+
+  const supabase = createServerClient()
+  const { data: user } = await supabase
+    .from('users')
+    .select('status, expires_at, email')
+    .eq('id', effectiveUserId)
+    .single()
+
+  if (!effectiveIsSuperadmin) {
+    if (!user || user.status !== 'active') return null
+    if (isExpired(user.expires_at)) return null
+  }
+
+  return {
+    userId: effectiveUserId,
+    email: effectiveEmail,
+    status: user?.status ?? 'pending',
+    expires_at: user?.expires_at ?? null,
+    isSuperadmin: effectiveIsSuperadmin,
+    impersonation: imp ?? undefined,
+  }
+}
+
+/**
  * Resolves the REAL session — reads only the base session cookie, ignores impersonation.
  * Used exclusively by requireAdmin() so /admin routes always check the real human.
  */

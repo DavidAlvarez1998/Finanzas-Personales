@@ -2,13 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
-import { verifySession } from '@/lib/auth/session'
+import { getSessionForAction } from '@/lib/auth/session'
 import type { SavingsGoal, SavingsContribution, SavingsGoalStatus } from '@/types'
 
 export async function createSavingsGoal(
   formData: FormData
 ): Promise<{ error: string } | { row: SavingsGoal }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const clientId = (formData.get('id') as string | null) || undefined
   const nombreRaw = (formData.get('nombre') as string | null)?.trim() ?? ''
@@ -46,7 +47,8 @@ export async function updateSavingsGoal(
   id: string,
   formData: FormData
 ): Promise<{ error: string } | { row: SavingsGoal }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const nombreRaw = (formData.get('nombre') as string | null)?.trim() ?? ''
   const montoRaw = formData.get('monto_objetivo') as string | null
@@ -82,7 +84,8 @@ export async function updateSavingsGoal(
 export async function deleteSavingsGoal(
   id: string
 ): Promise<{ error: string } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
   const { error } = await supabase
@@ -100,7 +103,8 @@ export async function updateGoalStatus(
   id: string,
   status: SavingsGoalStatus
 ): Promise<{ error: string } | { row: SavingsGoal }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   // 'completed' is auto-set only — block manual forcing
   if (status !== 'active' && status !== 'paused') {
@@ -131,7 +135,8 @@ export async function updateGoalStatusInternal(
   id: string,
   status: SavingsGoalStatus
 ): Promise<{ error: string } | { row: SavingsGoal }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
   const { data, error } = await supabase
@@ -152,7 +157,8 @@ export async function addContribution(
   goalId: string,
   formData: FormData
 ): Promise<{ error: string } | { row: SavingsContribution }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
 
@@ -216,7 +222,8 @@ export async function addContribution(
 export async function deleteContribution(
   id: string
 ): Promise<{ error: string } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
 

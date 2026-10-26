@@ -2,13 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
-import { verifySession } from '@/lib/auth/session'
+import { getSessionForAction } from '@/lib/auth/session'
 import type { AhorroAccount, AhorroMovimiento, AhorroAccountStatus } from '@/types'
 
 export async function createAhorroAccount(
   formData: FormData
 ): Promise<{ error: string } | { row: AhorroAccount }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const clientId = (formData.get('id') as string | null) || undefined
   const nombreRaw = (formData.get('nombre') as string | null)?.trim() ?? ''
@@ -39,7 +40,8 @@ export async function updateAhorroAccount(
   id: string,
   formData: FormData
 ): Promise<{ error: string } | { row: AhorroAccount }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const nombreRaw = (formData.get('nombre') as string | null)?.trim() ?? ''
   const currency = (formData.get('currency') as string | null) ?? 'COP'
@@ -68,7 +70,8 @@ export async function updateAhorroAccount(
 export async function deleteAhorroAccount(
   id: string
 ): Promise<{ error: string } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
   const { error } = await supabase
@@ -86,7 +89,8 @@ export async function updateAhorroAccountStatus(
   id: string,
   status: AhorroAccountStatus
 ): Promise<{ error: string } | { row: AhorroAccount }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   if (status !== 'active' && status !== 'archived') {
     return { error: 'Invalid status' }
@@ -111,7 +115,8 @@ export async function addMovimiento(
   accountId: string,
   formData: FormData
 ): Promise<{ error: string } | { row: AhorroMovimiento }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
 
@@ -160,7 +165,8 @@ export async function addMovimiento(
 export async function deleteMovimiento(
   id: string
 ): Promise<{ error: string } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
 

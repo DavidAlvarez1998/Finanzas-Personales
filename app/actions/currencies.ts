@@ -1,6 +1,6 @@
 'use server'
 
-import { verifySession } from '@/lib/auth/session'
+import { getSessionForAction } from '@/lib/auth/session'
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { WORLD_CURRENCIES } from '@/lib/constants/currencies'
@@ -10,7 +10,9 @@ const VALID_CODES = new Set(WORLD_CURRENCIES.map(c => c.code))
 export async function updateUserCurrencies(
   codes: string[]
 ): Promise<{ error: string } | { row: { currencies: string[] } }> {
-  const { userId } = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
+  const { userId } = session
   const safe = codes.filter(c => VALID_CODES.has(c))
   const supabase = createServerClient()
   const { error } = await supabase
@@ -26,7 +28,9 @@ export async function updateDisplayCurrency(
   code: string | null
 ): Promise<{ error: string } | { row: { display_currency: string | null } }> {
   if (code !== null && !VALID_CODES.has(code)) return { error: 'Divisa inválida' }
-  const { userId } = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
+  const { userId } = session
   const supabase = createServerClient()
   const { error } = await supabase
     .from('users')

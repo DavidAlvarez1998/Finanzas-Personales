@@ -2,13 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
-import { verifySession } from '@/lib/auth/session'
+import { getSessionForAction } from '@/lib/auth/session'
 import type { Presupuesto, PresupuestoItem } from '@/types'
 
 export async function createPresupuesto(
   formData: FormData
 ): Promise<{ error: string } | { row: Presupuesto }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const clientId = (formData.get('id') as string | null) || undefined
   const nombre = formData.get('nombre') as string | null
@@ -49,7 +50,8 @@ export async function updatePresupuesto(
   id: string,
   formData: FormData
 ): Promise<{ error: string } | { row: Presupuesto }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const nombre = formData.get('nombre') as string | null
   const totalRaw = formData.get('total') as string | null
@@ -84,7 +86,8 @@ export async function updatePresupuesto(
 export async function deletePresupuesto(
   id: string
 ): Promise<{ error: string } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
   const { error } = await supabase
@@ -104,7 +107,8 @@ export async function createPresupuestoItem(
   presupuestoId: string,
   formData: FormData
 ): Promise<{ error: string } | { row: PresupuestoItem }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const clientId = (formData.get('id') as string | null) || undefined
   const nombre = formData.get('nombre') as string | null
@@ -154,7 +158,8 @@ export async function updatePresupuestoItem(
   itemId: string,
   formData: FormData
 ): Promise<{ error: string } | { row: PresupuestoItem }> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const nombre = formData.get('nombre') as string | null
   const montoRaw = formData.get('monto') as string | null
@@ -199,7 +204,8 @@ export async function updatePresupuestoItem(
 export async function deletePresupuestoItem(
   itemId: string
 ): Promise<{ error: string } | void> {
-  const session = await verifySession()
+  const session = await getSessionForAction()
+  if (!session) return { error: 'Unauthorized' }
 
   const supabase = createServerClient()
 

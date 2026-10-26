@@ -184,9 +184,11 @@ describe('drainQueue', () => {
       expect(meta).toBeUndefined()
     })
 
-    it('does NOT set last_sync_at on transient max-retries', async () => {
+    it('sets last_sync_at after transient max-retries (continue path drains cleanly)', async () => {
       mockHandle.mockRejectedValue(new Error('Network error'))
-      // attempts: 4 means one more failure triggers the fail-and-break path
+      // attempts: 4 means one more failure triggers the fail-and-continue path
+      // After continue, no more queued ops remain → drainedClean = true → last_sync_at IS set
+      const before = Date.now()
       const op = makeOp({ id: 'transient-ts-op', attempts: 4 })
       await testDb.pending_ops.put(op)
 
@@ -194,7 +196,8 @@ describe('drainQueue', () => {
       await drainQueue()
 
       const meta = await testDb.meta.get('last_sync_at')
-      expect(meta).toBeUndefined()
+      expect(meta).toBeDefined()
+      expect(meta!.value as number).toBeGreaterThanOrEqual(before)
     }, 10000)
   })
 })

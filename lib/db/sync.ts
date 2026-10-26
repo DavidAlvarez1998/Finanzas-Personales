@@ -31,13 +31,24 @@ function sleep(ms: number): Promise<void> {
 
 type ErrorClass = 'auth' | 'validation' | 'transient'
 
-function classifyError(err: unknown): ErrorClass {
+export function classifyError(err: unknown): ErrorClass {
+  // 1. NEXT_REDIRECT belt-and-suspenders
+  // Next.js redirect() throws an object with digest 'NEXT_REDIRECT;...'.
+  // After the action-layer migration this path should be unreachable, but keep the
+  // guard so a future stray redirect() in action code can never masquerade as
+  // transient and trigger retries + potential data loss.
+  const digest = (err as { digest?: unknown })?.digest
+  if (typeof digest === 'string' && digest.startsWith('NEXT_REDIRECT')) {
+    return 'auth'
+  }
+
   if (err instanceof Error) {
-    // __validation is set by op-handlers when Server Action returns { error }
-    if ((err as Error & { __validation?: boolean }).__validation) return 'validation'
-    // HTTP status errors from fetch-based calls
     const msg = err.message
+    // 2. Auth MUST win over __validation — Unauthorized means re-auth, not user-fixable
     if (msg.includes('401') || msg.includes('Unauthorized')) return 'auth'
+    // 3. Explicit validation flag from op-handlers
+    if ((err as Error & { __validation?: boolean }).__validation) return 'validation'
+    // 4. Generic 4xx fallback
     if (/^4\d\d/.test(msg)) return 'validation'
   }
   return 'transient'
@@ -319,7 +330,7 @@ export async function drainQueue(): Promise<void> {
             error: err instanceof Error ? err.message : String(err),
             updated_at: Date.now(),
           })
-          break
+          continue
         }
         await db.pending_ops.update(op.id, {
           status: 'queued',
