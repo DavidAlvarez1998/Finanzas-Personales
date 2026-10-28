@@ -10,9 +10,10 @@ interface Props {
   data: CategoryData[]
   color: string
   tooltipStyle: React.CSSProperties
+  tickColor?: string
 }
 
-export function CategoryChart({ data, color, tooltipStyle }: Props) {
+export function CategoryChart({ data, color, tooltipStyle, tickColor = '#71717a' }: Props) {
   if (data.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -31,8 +32,8 @@ export function CategoryChart({ data, color, tooltipStyle }: Props) {
         >
           <XAxis
             type="number"
-            tick={{ fontSize: 10, fill: 'currentColor' }}
-            stroke="currentColor"
+            tick={{ fontSize: 10, fill: tickColor }}
+            stroke={tickColor}
             strokeOpacity={0.3}
             tickFormatter={n => `$${(n / 1000).toFixed(0)}k`}
           />
@@ -40,8 +41,8 @@ export function CategoryChart({ data, color, tooltipStyle }: Props) {
             type="category"
             dataKey="category"
             width={120}
-            tick={{ fontSize: 11, fill: 'currentColor' }}
-            stroke="currentColor"
+            tick={{ fontSize: 11, fill: tickColor }}
+            stroke={tickColor}
             strokeOpacity={0.3}
           />
           <Tooltip

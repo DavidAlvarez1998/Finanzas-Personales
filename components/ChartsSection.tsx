@@ -28,6 +28,7 @@ export function ChartsSection({ transactions }: Props) {
 
   const incomeColor = getCSSVar('--color-income') || '#10b981'
   const expenseColor = getCSSVar('--color-expense') || '#f43f5e'
+  const tickColor = getCSSVar('--color-text-muted') || getCSSVar('--color-text') || '#a1a1aa'
 
   const tooltipStyle: React.CSSProperties = {
     fontSize: 12,
@@ -88,6 +89,7 @@ export function ChartsSection({ transactions }: Props) {
           data={expenseByCategory}
           color={expenseColor}
           tooltipStyle={tooltipStyle}
+          tickColor={tickColor}
         />
       </div>
 
@@ -99,6 +101,7 @@ export function ChartsSection({ transactions }: Props) {
           data={incomeByCategory}
           color={incomeColor}
           tooltipStyle={tooltipStyle}
+          tickColor={tickColor}
         />
       </div>
     </div>
