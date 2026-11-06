@@ -55,9 +55,13 @@ import { CurrencyPicker } from '@/components/CurrencyPicker'
 import { fetchRateWithCache } from '@/lib/fx/frankfurter'
 import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus, Investment, InvestmentStatus, AhorroAccount, AhorroAccountStatus } from '@/types'
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
+import { db } from '@/lib/db/index'
 import { writeOp } from '@/lib/db/write-adapter'
 import { SyncStatusBadge } from '@/components/SyncStatusBadge'
+import { DeadLetterDrawer } from '@/components/DeadLetterDrawer'
 import { OfflineBanner } from '@/components/OfflineBanner'
+import { drainQueue } from '@/lib/db/sync'
+import type { PendingOp } from '@/lib/db/schema'
 import {
   getTransactions as getTransactionsDexie,
   getDebts as getDebtsDexie,
@@ -96,7 +100,15 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   const [initialType, setInitialType] = useState<'income' | 'expense'>('expense')
   const [isPending, startTransition] = useTransition()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const { online } = useNetworkStatus()
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const failedOps = useLiveQuery<PendingOp[], PendingOp[]>(
+    () => (OFFLINE_ENABLED ? db.pending_ops.where('status').equals('failed').toArray() : Promise.resolve([])),
+    [],
+    []
+  )
 
   // ── Dexie live queries ───────────────────────────────────────────────
   // All useLiveQuery calls are unconditional (hooks rules) — OFFLINE_ENABLED
@@ -288,20 +300,45 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     setEditing(null)
   }
 
+  async function handleRetry(id: string) {
+    await db.pending_ops.update(id, {
+      status: 'queued',
+      attempts: 0,
+      error: null,
+      error_class: undefined,
+      updated_at: Date.now(),
+    })
+    const ran = await drainQueue()
+    if (!ran) {
+      toast.info('Sincronizando…')
+    }
+  }
+
+  async function handleDismiss(id: string) {
+    await db.pending_ops.delete(id)
+  }
+
   function handleTransactionSave(t: Omit<Transaction, 'id'>) {
     setEditing(null)
     setShowForm(false)
 
+    const type = t.income !== null ? 'income' : 'expense'
+    const amount = type === 'income' ? t.income : t.expense
+    if (amount == null || !Number.isFinite(amount) || amount <= 0) {
+      console.error('[transaction] invalid amount in payload', { type, t })
+      toast.error('Error interno: monto inválido. Por favor reintentá.')
+      return
+    }
+
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
-        const type = t.income !== null ? 'income' : 'expense'
         if (editing) {
           const result = await writeOp('transaction.update', {
             id: editing.id,
             description: t.description,
             date: t.date,
             type,
-            amount: String(t.income ?? t.expense ?? 0),
+            amount: String(amount),
             currency: t.currency ?? 'COP',
             category: t.category ?? '',
           })
@@ -312,8 +349,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
             user_id: userId,
             description: t.description.toUpperCase(),
             date: t.date,
-            income: type === 'income' ? (t.income ?? 0) : null,
-            expense: type === 'expense' ? (t.expense ?? 0) : null,
+            income: type === 'income' ? amount : null,
+            expense: type === 'expense' ? amount : null,
             currency: t.currency ?? 'COP',
             category: t.category ?? null,
           })
@@ -327,8 +364,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     const fd = new FormData()
     fd.set('description', t.description)
     fd.set('date', t.date)
-    fd.set('type', t.income !== null ? 'income' : 'expense')
-    fd.set('amount', String(t.income ?? t.expense ?? 0))
+    fd.set('type', type)
+    fd.set('amount', String(amount))
     fd.set('currency', t.currency ?? 'COP')
     fd.set('category', t.category ?? '')
 
@@ -994,7 +1031,12 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-zinc-950 dark:text-white">Finanzas</span>
-            {OFFLINE_ENABLED && <SyncStatusBadge />}
+            {OFFLINE_ENABLED && (
+              <SyncStatusBadge
+                drawerOpen={drawerOpen}
+                onToggleDrawer={() => setDrawerOpen(v => !v)}
+              />
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -1254,6 +1296,14 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           onClose={() => setPickerOpen(false)}
           onDisplayCurrencyChange={handleDisplayCurrencyChange}
           onCurrenciesChange={handleCurrenciesChange}
+        />
+      )}
+
+      {OFFLINE_ENABLED && drawerOpen && (
+        <DeadLetterDrawer
+          failedOps={failedOps}
+          onRetry={handleRetry}
+          onDismiss={handleDismiss}
         />
       )}
     </div>

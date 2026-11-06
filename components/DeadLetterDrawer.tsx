@@ -2,6 +2,28 @@
 
 import { useState } from 'react'
 import type { PendingOp } from '@/lib/db/schema'
+import { formatAmount } from '@/lib/format'
+
+interface TransactionCreatePayload {
+  user_id: string
+  description: string
+  date: string
+  income: number | null
+  expense: number | null
+  currency: string
+  category: string | null
+}
+
+function isTransactionCreatePayload(value: unknown): value is TransactionCreatePayload {
+  if (value == null || typeof value !== 'object') return false
+  const v = value as Record<string, unknown>
+  return (
+    typeof v.description === 'string' &&
+    typeof v.currency === 'string' &&
+    (typeof v.income === 'number' || v.income === null) &&
+    (typeof v.expense === 'number' || v.expense === null)
+  )
+}
 
 interface DeadLetterDrawerProps {
   failedOps: PendingOp[]
@@ -71,6 +93,22 @@ export function DeadLetterDrawer({ failedOps, onRetry, onDismiss }: DeadLetterDr
                 <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
                   {humanize(op.type)}
                 </p>
+                {op.type === 'transaction.create' && (() => {
+                  if (!isTransactionCreatePayload(op.payload)) {
+                    console.warn('[DeadLetterDrawer] invalid transaction.create payload', op.id, op.payload)
+                    return null
+                  }
+                  const payload = op.payload
+                  const amount = payload.income ?? payload.expense ?? null
+                  return (
+                    <p className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-400 truncate">
+                      {payload.description || 'Sin descripción'}
+                      {amount !== null
+                        ? ` — ${formatAmount(amount)} ${payload.currency}`
+                        : ' — monto no disponible'}
+                    </p>
+                  )
+                })()}
                 {op.error && (
                   <p className="mt-0.5 text-xs text-rose-600 dark:text-rose-400 truncate">
                     {op.error}
