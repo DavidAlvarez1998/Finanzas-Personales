@@ -110,7 +110,7 @@ export function DeadLetterDrawer({ failedOps, onRetry, onDismiss }: DeadLetterDr
                   )
                 })()}
                 {op.error && (
-                  <p className="mt-0.5 text-xs text-rose-600 dark:text-rose-400 truncate">
+                  <p className="mt-0.5 text-xs text-rose-600 dark:text-rose-400 break-words">
                     {op.error}
                   </p>
                 )}
