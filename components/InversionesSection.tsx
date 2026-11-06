@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { AmountInput } from '@/components/AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
@@ -95,7 +95,7 @@ function computeForecast(inv: Investment): ForecastData | null {
   return { projectedTotal, totalEarned, roiPct, daysToMaturity, fechaVencimientoFormatted }
 }
 
-export function InversionesSection({
+function InversionesSectionImpl({
   investments,
   onCreateInvestment,
   onUpdateInvestment,
@@ -688,3 +688,5 @@ export function InversionesSection({
     </div>
   )
 }
+
+export const InversionesSection = memo(InversionesSectionImpl)

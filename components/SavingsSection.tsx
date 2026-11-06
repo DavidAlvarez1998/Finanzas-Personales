@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { AmountInput } from '@/components/AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
@@ -45,7 +45,7 @@ function formatCurrency(amount: number, currency: string) {
   return `${currency} ${formatAmount(amount)}`
 }
 
-export function SavingsSection({
+function SavingsSectionImpl({
   goals,
   onAdd,
   onUpdate,
@@ -523,3 +523,5 @@ export function SavingsSection({
     </div>
   )
 }
+
+export const SavingsSection = memo(SavingsSectionImpl)
