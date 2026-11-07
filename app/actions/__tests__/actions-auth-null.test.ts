@@ -18,7 +18,8 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 vi.mock('next/cache', () => ({
-  revalidatePath: vi.fn(),
+  updateTag: vi.fn(),
+  revalidateTag: vi.fn(),
 }))
 
 import { getSessionForAction } from '@/lib/auth/session'
