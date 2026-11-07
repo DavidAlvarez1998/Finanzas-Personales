@@ -13,9 +13,12 @@ interface Props {
   editing?: Transaction | null
   initialType?: 'income' | 'expense'
   currencies: string[]
+  isPending?: boolean
+  isOnline?: boolean
+  className?: string
 }
 
-export function TransactionForm({ onSave, onClose, editing, initialType = 'expense', currencies }: Props) {
+export function TransactionForm({ onSave, onClose, editing, initialType = 'expense', currencies, isPending, isOnline, className }: Props) {
   const [date, setDate] = useState(() => {
     const now = new Date()
     const y = now.getFullYear()
@@ -69,7 +72,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 pb-4 sm:pb-0 dark:bg-black/60" onClick={onClose}>
-      <div className="animate-modal w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200/60 bg-white shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900" onClick={e => e.stopPropagation()}>
+      <div className={`animate-modal w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200/60 bg-white shadow-2xl dark:border-zinc-700/50 dark:bg-zinc-900${className ? ` ${className}` : ''}`} onClick={e => e.stopPropagation()}>
         <div className="max-h-[90svh] overflow-y-auto p-4 sm:p-6 [scrollbar-gutter:stable]">
         <h2 className={`mb-5 text-base font-semibold ${type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
           {editing
@@ -145,6 +148,11 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
             </div>
           </div>
 
+          {isOnline === false && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Sin conexión — se guardará al reconectar
+            </p>
+          )}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -155,13 +163,14 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
             </button>
             <button
               type="submit"
-              className={`flex-1 rounded-lg py-2 text-sm font-medium text-white transition-colors ${
+              disabled={isPending}
+              className={`flex-1 rounded-lg py-2 text-sm font-medium text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
                 type === 'income'
                   ? 'bg-emerald-600 hover:bg-emerald-500'
                   : 'bg-rose-600 hover:bg-rose-500'
               }`}
             >
-              {editing ? 'Guardar Cambios' : 'Agregar'}
+              {isPending ? 'Guardando...' : (editing ? 'Guardar Cambios' : 'Agregar')}
             </button>
           </div>
         </form>

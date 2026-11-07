@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, memo } from 'react'
+import { useState, useMemo, useEffect, memo, useDeferredValue } from 'react'
 import type { Transaction } from '@/types'
 import { Select } from '@/components/ui/Select'
 import { formatAmount } from '@/lib/format'
@@ -84,6 +84,7 @@ function TransactionTableImpl({ transactions, onEdit, onDelete, isPending }: Pro
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const deferredSearch = useDeferredValue(searchQuery)
   const [page, setPage] = useState(0)
   const [showAll, setShowAll] = useState(false)
 
@@ -104,11 +105,11 @@ function TransactionTableImpl({ transactions, onEdit, onDelete, isPending }: Pro
       .filter(t => {
         const { month, year } = parseMonth(t.date)
         const matchesDate = showAll || (month === filterMonth && year === filterYear)
-        const matchesSearch = !searchQuery || t.description.toLowerCase().includes(searchQuery.toLowerCase())
+        const matchesSearch = !deferredSearch || t.description.toLowerCase().includes(deferredSearch.toLowerCase())
         return matchesDate && matchesSearch
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    [transactions, filterMonth, filterYear, searchQuery, showAll]
+    [transactions, filterMonth, filterYear, deferredSearch, showAll]
   )
 
   // Reset page when filters change

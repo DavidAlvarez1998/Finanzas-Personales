@@ -3,15 +3,16 @@
  * All functions return arrays (never throw on empty).
  * Designed to be called from useLiveQuery.
  */
+import Dexie from 'dexie'
 import { db } from './index'
 import type { Transaction, Debt, Presupuesto, SavingsGoal, Investment, AhorroAccount } from '@/types'
 
 export async function getTransactions(userId: string): Promise<Transaction[]> {
   return db.transactions
-    .where('user_id')
-    .equals(userId)
-    .sortBy('date')
-    .then(rows => rows.reverse())
+    .where('[user_id+date]')
+    .between([userId, Dexie.minKey], [userId, Dexie.maxKey])
+    .reverse()
+    .toArray()
 }
 
 export async function getDebts(userId: string): Promise<Debt[]> {

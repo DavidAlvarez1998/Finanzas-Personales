@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
 import { db } from '@/lib/db/index'
@@ -25,6 +25,7 @@ export function OfflineBanner() {
   const [wasOffline, setWasOffline] = useState(false)
   const { syncError, clearSyncError } = useOfflineContext()
   const [showSyncError, setShowSyncError] = useState(false)
+  const bannerRef = useRef<HTMLDivElement>(null)
 
   const lastSyncMeta = useLiveQuery(
     () => db.meta.get('last_sync_at'),
@@ -59,33 +60,55 @@ export function OfflineBanner() {
     }
   }, [online, wasOffline])
 
-  // Offline takes priority
-  if (!online) {
-    const syncLabel = lastSyncAt
-      ? `última sincronización: ${formatLastSync(lastSyncAt)}`
-      : 'nunca sincronizado'
-    return (
-      <div className="w-full bg-amber-600 text-white text-xs font-medium px-4 py-1.5 text-center">
-        Sin conexión — {syncLabel}
-      </div>
-    )
+  // Determine visibility and content
+  const visible = !online || (online && showSyncError) || (online && showOnline)
+
+  // Publish banner height as CSS variable on the root element
+  useEffect(() => {
+    const el = bannerRef.current
+    if (!el) return
+    if (visible) {
+      document.documentElement.style.setProperty('--banner-h', el.offsetHeight + 'px')
+    } else {
+      document.documentElement.style.setProperty('--banner-h', '0px')
+    }
+  }, [visible])
+
+  function getBannerContent() {
+    if (!online) {
+      const syncLabel = lastSyncAt
+        ? `última sincronización: ${formatLastSync(lastSyncAt)}`
+        : 'nunca sincronizado'
+      return {
+        text: `Sin conexión — ${syncLabel}`,
+        colorClass: 'bg-amber-600',
+      }
+    }
+    if (showSyncError) {
+      return {
+        text: 'No se pudo actualizar los datos',
+        colorClass: 'bg-amber-500',
+      }
+    }
+    if (showOnline) {
+      return {
+        text: 'Conectado',
+        colorClass: 'bg-emerald-600',
+      }
+    }
+    return { text: '', colorClass: 'bg-amber-600' }
   }
 
-  if (online && showSyncError) {
-    return (
-      <div className="w-full bg-amber-500 text-white text-xs font-medium px-4 py-1.5 text-center">
-        No se pudo actualizar los datos
-      </div>
-    )
-  }
+  const { text, colorClass } = getBannerContent()
 
-  if (online && showOnline) {
-    return (
-      <div className="w-full bg-emerald-600 text-white text-xs font-medium px-4 py-1.5 text-center">
-        Conectado
-      </div>
-    )
-  }
-
-  return null
+  return (
+    <div
+      ref={bannerRef}
+      className={`fixed top-0 inset-x-0 z-20 ${colorClass} text-white text-xs font-medium px-4 py-1.5 text-center transition-transform duration-300 ${
+        visible ? 'translate-y-0' : '-translate-y-full'
+      }`}
+    >
+      {text}
+    </div>
+  )
 }
