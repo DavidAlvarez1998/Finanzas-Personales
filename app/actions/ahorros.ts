@@ -1,6 +1,7 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
+import { CACHE_TAGS, tagFor } from '@/lib/cache/tags'
 import { createServerClient } from '@/lib/supabase/server'
 import { getSessionForAction } from '@/lib/auth/session'
 import type { AhorroAccount, AhorroMovimiento, AhorroAccountStatus } from '@/types'
@@ -32,7 +33,7 @@ export async function createAhorroAccount(
 
   if (error) return { error: `Error al guardar cuenta: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.ahorros, session.userId))
   return { row: data as AhorroAccount }
 }
 
@@ -63,7 +64,7 @@ export async function updateAhorroAccount(
   if (error) return { error: `Error al actualizar cuenta: ${error.message}` }
   if (!data) return { error: 'Cuenta no encontrada' }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.ahorros, session.userId))
   return { row: data as AhorroAccount }
 }
 
@@ -82,7 +83,7 @@ export async function deleteAhorroAccount(
 
   if (error) return { error: `Error al eliminar cuenta: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.ahorros, session.userId))
 }
 
 export async function updateAhorroAccountStatus(
@@ -107,7 +108,7 @@ export async function updateAhorroAccountStatus(
 
   if (error) return { error: `Error al actualizar estado: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.ahorros, session.userId))
   return { row: data as AhorroAccount }
 }
 
@@ -158,7 +159,7 @@ export async function addMovimiento(
   // CRITICAL: Do NOT re-fetch or call any auto-complete helper.
   // Ahorros has no completion state — this is intentional.
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.ahorros, session.userId))
   return { row: data as AhorroMovimiento }
 }
 
@@ -191,5 +192,5 @@ export async function deleteMovimiento(
 
   if (error) return { error: `Error al eliminar movimiento: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.ahorros, session.userId))
 }

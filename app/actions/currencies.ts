@@ -2,7 +2,8 @@
 
 import { getSessionForAction } from '@/lib/auth/session'
 import { createServerClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
+import { CACHE_TAGS, tagFor } from '@/lib/cache/tags'
 import { WORLD_CURRENCIES } from '@/lib/constants/currencies'
 
 const VALID_CODES = new Set(WORLD_CURRENCIES.map(c => c.code))
@@ -20,7 +21,7 @@ export async function updateUserCurrencies(
     .update({ currencies: safe })
     .eq('id', userId)
   if (error) return { error: error.message }
-  revalidatePath('/')
+  updateTag(tagFor('userSettings', session.userId))
   return { row: { currencies: safe } }
 }
 
@@ -37,6 +38,6 @@ export async function updateDisplayCurrency(
     .update({ display_currency: code })
     .eq('id', userId)
   if (error) return { error: error.message }
-  revalidatePath('/')
+  updateTag(tagFor('userSettings', session.userId))
   return { row: { display_currency: code } }
 }

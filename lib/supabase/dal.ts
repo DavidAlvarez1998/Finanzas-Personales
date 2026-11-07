@@ -1,11 +1,13 @@
+import { unstable_cache } from 'next/cache'
 import { createServerClient } from './server'
-import { verifySession } from '@/lib/auth/session'
+import { CACHE_TAGS, tagFor } from '@/lib/cache/tags'
 import type { Transaction, Debt, DebtPayment, Presupuesto, PresupuestoItem, SavingsGoal, SavingsContribution, Investment, InvestmentReturn, AhorroAccount, AhorroMovimiento } from '@/types'
 
-export async function getTransactions(): Promise<Transaction[]> {
-  const { userId } = await verifySession()
-  const supabase = createServerClient()
+type SupabaseClient = ReturnType<typeof createServerClient>
 
+// ─── Transactions ────────────────────────────────────────────────────────────
+
+async function _getTransactionsRaw(supabase: SupabaseClient, userId: string): Promise<Transaction[]> {
   const { data, error } = await supabase
     .from('transactions')
     .select('id, user_id, description, date, income, expense, currency, category, created_at')
@@ -16,10 +18,16 @@ export async function getTransactions(): Promise<Transaction[]> {
   return (data ?? []) as Transaction[]
 }
 
-export async function getDebts(): Promise<Debt[]> {
-  const { userId } = await verifySession()
-  const supabase = createServerClient()
+export const getTransactions = (supabase: SupabaseClient, userId: string) =>
+  unstable_cache(
+    () => _getTransactionsRaw(supabase, userId),
+    [CACHE_TAGS.transactions, userId],
+    { tags: [tagFor('transactions', userId)] }
+  )()
 
+// ─── Debts ───────────────────────────────────────────────────────────────────
+
+async function _getDebtsRaw(supabase: SupabaseClient, userId: string): Promise<Debt[]> {
   const { data, error } = await supabase
     .from('debts')
     .select('*, debt_payments(id, amount, paid_at, note, created_at)')
@@ -40,10 +48,16 @@ export async function getDebts(): Promise<Debt[]> {
   })
 }
 
-export async function getPresupuestos(): Promise<Presupuesto[]> {
-  const { userId } = await verifySession()
-  const supabase = createServerClient()
+export const getDebts = (supabase: SupabaseClient, userId: string) =>
+  unstable_cache(
+    () => _getDebtsRaw(supabase, userId),
+    [CACHE_TAGS.debts, userId],
+    { tags: [tagFor('debts', userId)] }
+  )()
 
+// ─── Presupuestos ─────────────────────────────────────────────────────────────
+
+async function _getPresupuestosRaw(supabase: SupabaseClient, userId: string): Promise<Presupuesto[]> {
   const { data, error } = await supabase
     .from('presupuestos')
     .select('*, presupuesto_items(id, presupuesto_id, nombre, monto, created_at)')
@@ -64,14 +78,21 @@ export async function getPresupuestos(): Promise<Presupuesto[]> {
   })
 }
 
+export const getPresupuestos = (supabase: SupabaseClient, userId: string) =>
+  unstable_cache(
+    () => _getPresupuestosRaw(supabase, userId),
+    [CACHE_TAGS.presupuestos, userId],
+    { tags: [tagFor('presupuestos', userId)] }
+  )()
+
+// ─── User Settings ────────────────────────────────────────────────────────────
+
 export type UserSettings = {
   currencies: string[]
   displayCurrency: string | null
 }
 
-export async function getUserSettings(): Promise<UserSettings> {
-  const { userId } = await verifySession()
-  const supabase = createServerClient()
+async function _getUserSettingsRaw(supabase: SupabaseClient, userId: string): Promise<UserSettings> {
   const { data, error } = await supabase
     .from('users')
     .select('currencies, display_currency')
@@ -84,10 +105,16 @@ export async function getUserSettings(): Promise<UserSettings> {
   }
 }
 
-export async function getInvestments(): Promise<Investment[]> {
-  const { userId } = await verifySession()
-  const supabase = createServerClient()
+export const getUserSettings = (supabase: SupabaseClient, userId: string) =>
+  unstable_cache(
+    () => _getUserSettingsRaw(supabase, userId),
+    [CACHE_TAGS.userSettings, userId],
+    { tags: [tagFor('userSettings', userId)] }
+  )()
 
+// ─── Investments ──────────────────────────────────────────────────────────────
+
+async function _getInvestmentsRaw(supabase: SupabaseClient, userId: string): Promise<Investment[]> {
   const { data, error } = await supabase
     .from('investments')
     .select('*, investment_returns(id, investment_id, monto, fecha, nota, created_at)')
@@ -112,10 +139,16 @@ export async function getInvestments(): Promise<Investment[]> {
   })
 }
 
-export async function getAhorroAccounts(): Promise<AhorroAccount[]> {
-  const { userId } = await verifySession()
-  const supabase = createServerClient()
+export const getInvestments = (supabase: SupabaseClient, userId: string) =>
+  unstable_cache(
+    () => _getInvestmentsRaw(supabase, userId),
+    [CACHE_TAGS.investments, userId],
+    { tags: [tagFor('investments', userId)] }
+  )()
 
+// ─── Ahorro Accounts ──────────────────────────────────────────────────────────
+
+async function _getAhorroAccountsRaw(supabase: SupabaseClient, userId: string): Promise<AhorroAccount[]> {
   const { data, error } = await supabase
     .from('ahorro_accounts')
     .select('*, ahorro_movimientos(id, account_id, monto, fecha, nota, created_at)')
@@ -139,10 +172,16 @@ export async function getAhorroAccounts(): Promise<AhorroAccount[]> {
   })
 }
 
-export async function getSavingsGoals(): Promise<SavingsGoal[]> {
-  const { userId } = await verifySession()
-  const supabase = createServerClient()
+export const getAhorroAccounts = (supabase: SupabaseClient, userId: string) =>
+  unstable_cache(
+    () => _getAhorroAccountsRaw(supabase, userId),
+    [CACHE_TAGS.ahorros, userId],
+    { tags: [tagFor('ahorros', userId)] }
+  )()
 
+// ─── Savings Goals ────────────────────────────────────────────────────────────
+
+async function _getSavingsGoalsRaw(supabase: SupabaseClient, userId: string): Promise<SavingsGoal[]> {
   const { data, error } = await supabase
     .from('savings_goals')
     .select('*, savings_contributions(id, goal_id, monto, fecha, nota, created_at)')
@@ -169,3 +208,10 @@ export async function getSavingsGoals(): Promise<SavingsGoal[]> {
     } as SavingsGoal
   })
 }
+
+export const getSavingsGoals = (supabase: SupabaseClient, userId: string) =>
+  unstable_cache(
+    () => _getSavingsGoalsRaw(supabase, userId),
+    [CACHE_TAGS.savings, userId],
+    { tags: [tagFor('savings', userId)] }
+  )()

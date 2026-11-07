@@ -1,6 +1,7 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
+import { CACHE_TAGS, tagFor } from '@/lib/cache/tags'
 import { createServerClient } from '@/lib/supabase/server'
 import { getSessionForAction } from '@/lib/auth/session'
 import type { Presupuesto, PresupuestoItem } from '@/types'
@@ -42,7 +43,7 @@ export async function createPresupuesto(
     return { error: `Error al guardar: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.presupuestos, session.userId))
   return { row: data as Presupuesto }
 }
 
@@ -79,7 +80,7 @@ export async function updatePresupuesto(
     return { error: `Error al actualizar: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.presupuestos, session.userId))
   return { row: data as Presupuesto }
 }
 
@@ -100,7 +101,7 @@ export async function deletePresupuesto(
     return { error: `Error al eliminar: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.presupuestos, session.userId))
 }
 
 export async function createPresupuestoItem(
@@ -150,7 +151,7 @@ export async function createPresupuestoItem(
     return { error: `Error al agregar partida: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.presupuestos, session.userId))
   return { row: data as PresupuestoItem }
 }
 
@@ -197,7 +198,7 @@ export async function updatePresupuestoItem(
     return { error: `Error al actualizar partida: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.presupuestos, session.userId))
   return { row: data as PresupuestoItem }
 }
 
@@ -229,5 +230,5 @@ export async function deletePresupuestoItem(
     return { error: `Error al eliminar partida: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.presupuestos, session.userId))
 }

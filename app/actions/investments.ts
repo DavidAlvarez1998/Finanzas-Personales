@@ -1,6 +1,7 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
+import { CACHE_TAGS, tagFor } from '@/lib/cache/tags'
 import { createServerClient } from '@/lib/supabase/server'
 import { getSessionForAction } from '@/lib/auth/session'
 import type { Investment, InvestmentReturn, InvestmentStatus, ReturnPeriod } from '@/types'
@@ -70,7 +71,7 @@ export async function createInvestment(
 
   if (error) return { error: `Error al guardar inversión: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.investments, session.userId))
   return { row: data as Investment }
 }
 
@@ -133,7 +134,7 @@ export async function updateInvestment(
   if (error) return { error: `Error al actualizar inversión: ${error.message}` }
   if (!data) return { error: 'Investment not found' }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.investments, session.userId))
   return { row: data as Investment }
 }
 
@@ -152,7 +153,7 @@ export async function deleteInvestment(
 
   if (error) return { error: `Error al eliminar inversión: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.investments, session.userId))
 }
 
 export async function updateInvestmentStatus(
@@ -178,7 +179,7 @@ export async function updateInvestmentStatus(
 
   if (error) return { error: `Error al actualizar estado: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.investments, session.userId))
   return { row: data as Investment }
 }
 
@@ -228,7 +229,7 @@ export async function addReturn(
 
   if (insertError) return { error: `Error al agregar retorno: ${insertError.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.investments, session.userId))
   return { row: data as InvestmentReturn }
 }
 
@@ -261,5 +262,5 @@ export async function deleteReturn(
 
   if (error) return { error: `Error al eliminar retorno: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.investments, session.userId))
 }

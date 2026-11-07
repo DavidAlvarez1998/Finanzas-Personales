@@ -1,6 +1,7 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
+import { CACHE_TAGS, tagFor } from '@/lib/cache/tags'
 import { createServerClient } from '@/lib/supabase/server'
 import { getSessionForAction } from '@/lib/auth/session'
 import type { Transaction } from '@/types'
@@ -58,7 +59,7 @@ export async function createTransaction(
     return { error: `Error al guardar: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.transactions, session.userId))
   return { row: data as Transaction }
 }
 
@@ -108,7 +109,7 @@ export async function updateTransaction(
     return { error: `Error al actualizar: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.transactions, session.userId))
   return { row: data as Transaction }
 }
 
@@ -129,5 +130,5 @@ export async function deleteTransaction(
     return { error: `Error al eliminar: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.transactions, session.userId))
 }

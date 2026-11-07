@@ -1,6 +1,7 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
+import { CACHE_TAGS, tagFor } from '@/lib/cache/tags'
 import { createServerClient } from '@/lib/supabase/server'
 import { getSessionForAction } from '@/lib/auth/session'
 import type { SavingsGoal, SavingsContribution, SavingsGoalStatus } from '@/types'
@@ -39,7 +40,7 @@ export async function createSavingsGoal(
 
   if (error) return { error: `Error al guardar meta: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.savings, session.userId))
   return { row: data as SavingsGoal }
 }
 
@@ -77,7 +78,7 @@ export async function updateSavingsGoal(
   if (error) return { error: `Error al actualizar meta: ${error.message}` }
   if (!data) return { error: 'Goal not found' }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.savings, session.userId))
   return { row: data as SavingsGoal }
 }
 
@@ -96,7 +97,7 @@ export async function deleteSavingsGoal(
 
   if (error) return { error: `Error al eliminar meta: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.savings, session.userId))
 }
 
 export async function updateGoalStatus(
@@ -122,7 +123,7 @@ export async function updateGoalStatus(
 
   if (error) return { error: `Error al actualizar estado: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.savings, session.userId))
   return { row: data as SavingsGoal }
 }
 
@@ -149,7 +150,7 @@ export async function updateGoalStatusInternal(
 
   if (error) return { error: `Error al actualizar estado interno: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.savings, session.userId))
   return { row: data as SavingsGoal }
 }
 
@@ -215,7 +216,7 @@ export async function addContribution(
       .eq('user_id', session.userId)
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.savings, session.userId))
   return { row: data as SavingsContribution }
 }
 
@@ -250,5 +251,5 @@ export async function deleteContribution(
 
   // No auto-revert of goal status on contribution delete (by design)
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.savings, session.userId))
 }

@@ -1,6 +1,7 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
+import { CACHE_TAGS, tagFor } from '@/lib/cache/tags'
 import { createServerClient } from '@/lib/supabase/server'
 import { getSessionForAction } from '@/lib/auth/session'
 import type { Debt, DebtPayment } from '@/types'
@@ -42,7 +43,7 @@ export async function createDebt(
     return { error: `Error al guardar: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.debts, session.userId))
   return { row: data as Debt }
 }
 
@@ -83,7 +84,7 @@ export async function updateDebt(
     return { error: `Error al actualizar: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.debts, session.userId))
   return { row: data as Debt }
 }
 
@@ -104,7 +105,7 @@ export async function deleteDebt(
     return { error: `Error al eliminar: ${error.message}` }
   }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.debts, session.userId))
 }
 
 export async function createDebtPayment(
@@ -149,7 +150,7 @@ export async function createDebtPayment(
 
   if (error) return { error: `Error al registrar pago: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.debts, session.userId))
   return { row: data as DebtPayment }
 }
 
@@ -179,5 +180,5 @@ export async function deleteDebtPayment(
 
   if (error) return { error: `Error al eliminar pago: ${error.message}` }
 
-  revalidatePath('/')
+  updateTag(tagFor(CACHE_TAGS.debts, session.userId))
 }

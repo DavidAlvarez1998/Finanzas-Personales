@@ -1,12 +1,14 @@
 import { Suspense } from 'react'
 import { getTransactions, getDebts, getPresupuestos, getSavingsGoals, getInvestments, getAhorroAccounts, getUserSettings } from '@/lib/supabase/dal'
 import { verifySession } from '@/lib/supabase/verify-session'
+import { createServerClient } from '@/lib/supabase/server'
 import { DashboardShell } from '@/components/DashboardShell'
 
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
 
 async function Dashboard() {
   const { userId } = await verifySession()
+  const supabase = createServerClient()
 
   if (OFFLINE_ENABLED) {
     // In offline mode, DashboardShell reads all data from Dexie via useLiveQuery.
@@ -27,13 +29,13 @@ async function Dashboard() {
   }
 
   const [transactions, debts, presupuestos, savingsGoals, investments, ahorroAccounts, settings] = await Promise.all([
-    getTransactions(),
-    getDebts(),
-    getPresupuestos(),
-    getSavingsGoals(),
-    getInvestments(),
-    getAhorroAccounts(),
-    getUserSettings(),
+    getTransactions(supabase, userId),
+    getDebts(supabase, userId),
+    getPresupuestos(supabase, userId),
+    getSavingsGoals(supabase, userId),
+    getInvestments(supabase, userId),
+    getAhorroAccounts(supabase, userId),
+    getUserSettings(supabase, userId),
   ])
   const { currencies, displayCurrency } = settings
 
