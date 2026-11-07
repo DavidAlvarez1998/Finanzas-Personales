@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { getTransactions, getDebts, getPresupuestos, getSavingsGoals, getInvestments, getAhorroAccounts, getUserCurrencies, getDisplayCurrency } from '@/lib/supabase/dal'
+import { getTransactions, getDebts, getPresupuestos, getSavingsGoals, getInvestments, getAhorroAccounts, getUserSettings } from '@/lib/supabase/dal'
 import { verifySession } from '@/lib/supabase/verify-session'
 import { DashboardShell } from '@/components/DashboardShell'
 
@@ -26,16 +26,16 @@ async function Dashboard() {
     )
   }
 
-  const [transactions, debts, presupuestos, savingsGoals, investments, ahorroAccounts, currencies, displayCurrency] = await Promise.all([
+  const [transactions, debts, presupuestos, savingsGoals, investments, ahorroAccounts, settings] = await Promise.all([
     getTransactions(),
     getDebts(),
     getPresupuestos(),
     getSavingsGoals(),
     getInvestments(),
     getAhorroAccounts(),
-    getUserCurrencies(),
-    getDisplayCurrency(),
+    getUserSettings(),
   ])
+  const { currencies, displayCurrency } = settings
 
   return (
     <DashboardShell

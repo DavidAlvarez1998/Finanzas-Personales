@@ -8,7 +8,7 @@ export async function getTransactions(): Promise<Transaction[]> {
 
   const { data, error } = await supabase
     .from('transactions')
-    .select('*')
+    .select('id, user_id, description, date, income, expense, currency, category, created_at')
     .eq('user_id', userId)
     .order('date', { ascending: false })
 
@@ -64,15 +64,24 @@ export async function getPresupuestos(): Promise<Presupuesto[]> {
   })
 }
 
-export async function getUserCurrencies(): Promise<string[]> {
+export type UserSettings = {
+  currencies: string[]
+  displayCurrency: string | null
+}
+
+export async function getUserSettings(): Promise<UserSettings> {
   const { userId } = await verifySession()
   const supabase = createServerClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('users')
-    .select('currencies')
+    .select('currencies, display_currency')
     .eq('id', userId)
     .single()
-  return (data?.currencies as string[] | null) ?? []
+  if (error) throw new Error(`getUserSettings failed: ${error.message}`)
+  return {
+    currencies: (data?.currencies as string[] | null) ?? [],
+    displayCurrency: (data?.display_currency as string | null) ?? null,
+  }
 }
 
 export async function getInvestments(): Promise<Investment[]> {
@@ -128,17 +137,6 @@ export async function getAhorroAccounts(): Promise<AhorroAccount[]> {
       total_actual,
     } as AhorroAccount
   })
-}
-
-export async function getDisplayCurrency(): Promise<string | null> {
-  const { userId } = await verifySession()
-  const supabase = createServerClient()
-  const { data } = await supabase
-    .from('users')
-    .select('display_currency')
-    .eq('id', userId)
-    .single()
-  return (data?.display_currency as string | null) ?? null
 }
 
 export async function getSavingsGoals(): Promise<SavingsGoal[]> {
