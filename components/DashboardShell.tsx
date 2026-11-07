@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useDelayedUnmount } from '@/lib/hooks/useDelayedUnmount'
 import { toast } from 'sonner'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { SummaryCards } from '@/components/SummaryCards'
@@ -132,6 +133,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   const [pickerOpen, setPickerOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { online } = useNetworkStatus()
+  const [hydrationTimedOut, setHydrationTimedOut] = useState(false)
+  const shouldRenderForm = useDelayedUnmount(showForm, 120)
+  const shouldRenderPicker = useDelayedUnmount(pickerOpen, 120)
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const failedOps = useLiveQuery<PendingOp[], PendingOp[]>(
@@ -241,6 +245,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       setActiveDisplayCurrency(dexieDisplayCurrency ?? null)
     }
   }, [dexieDisplayCurrency])
+
+  // Hydration watchdog — if still loading after 5s, show error/retry UI
+  useEffect(() => {
+    if (!isHydrating) return
+    const timer = setTimeout(() => setHydrationTimedOut(true), 5000)
+    return () => clearTimeout(timer)
+  }, [isHydrating])
 
   const [rates, setRates] = useState<Map<string, number>>(new Map())
   const [staleRates, setStaleRates] = useState<Set<string>>(new Set())
@@ -1040,6 +1051,21 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   }, [])
 
   if (isHydrating) {
+    if (hydrationTimedOut) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <p className="text-zinc-600 dark:text-zinc-400 text-sm">Algo salió mal al cargar los datos.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500 transition-colors"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-zinc-400 dark:text-zinc-500 text-sm animate-pulse">Cargando datos...</div>
@@ -1050,7 +1076,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   const showOfflineFirstBoot = OFFLINE_ENABLED && !online && transactions.length === 0
 
   return (
-    <div className="min-h-screen bg-zinc-100 text-zinc-950 dark:bg-zinc-950 dark:text-white">
+    <div className="min-h-screen bg-zinc-100 text-zinc-950 dark:bg-zinc-950 dark:text-white" style={{ paddingTop: 'var(--banner-h, 0px)' }}>
       {/* Offline status banner */}
       {OFFLINE_ENABLED && <OfflineBanner />}
       {/* Header */}
@@ -1221,6 +1247,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
                     </div>
                   </div>
 
+                  <div key={viewMode} className="animate-tab-enter">
                   {viewMode === 'list' ? (
                     <TransactionTable
                       transactions={transactions}
@@ -1235,6 +1262,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
                   ) : (
                     <ChartsSection transactions={transactions} />
                   )}
+                  </div>
                 </>
               )}
             </>
@@ -1307,24 +1335,28 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       </main>
 
       {/* Transaction form modal */}
-      {showForm && (
+      {shouldRenderForm && (
         <TransactionForm
           onSave={handleTransactionSave}
           onClose={handleCloseForm}
           editing={editing}
           initialType={initialType}
           currencies={effectiveCurrencies}
+          isPending={isPending}
+          isOnline={online}
+          className={!showForm ? 'animate-modal-out' : ''}
         />
       )}
 
       {/* Settings modal */}
-      {pickerOpen && (
+      {shouldRenderPicker && (
         <CurrencyPicker
           selected={effectiveCurrencies}
           displayCurrency={activeDisplayCurrency}
           onClose={() => setPickerOpen(false)}
           onDisplayCurrencyChange={handleDisplayCurrencyChange}
           onCurrenciesChange={handleCurrenciesChange}
+          className={!pickerOpen ? 'animate-modal-out' : ''}
         />
       )}
 

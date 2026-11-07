@@ -24,7 +24,7 @@ export function SyncStatusBadge({ drawerOpen: _drawerOpen, onToggleDrawer }: Syn
   if (!queuedCount && !failedCount) return null
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5 transition-opacity duration-200">
       {queuedCount > 0 && (
         <span className="flex items-center gap-1 rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300">
           <span className="inline-block h-2 w-2 animate-spin rounded-full border border-zinc-500 border-t-transparent dark:border-zinc-400" />

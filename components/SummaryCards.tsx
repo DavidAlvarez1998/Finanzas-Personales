@@ -49,19 +49,19 @@ export function SummaryCards({
         )}
         {display.map(g => (
           <div key={g.currency} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 dark:border-emerald-800/40 dark:bg-emerald-950/30">
+            <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 dark:border-emerald-800/40 dark:bg-emerald-950/30 hover:shadow-md hover:-translate-y-0.5 transition-[transform,box-shadow] duration-200 cursor-default">
               <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700/70 mb-1 dark:text-emerald-400/70">
                 Ingresos · {g.currency}
               </p>
               <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{formatAmount(g.income)}</p>
             </div>
-            <div className="rounded-xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-800/40 dark:bg-rose-950/30">
+            <div className="rounded-xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-800/40 dark:bg-rose-950/30 hover:shadow-md hover:-translate-y-0.5 transition-[transform,box-shadow] duration-200 cursor-default">
               <p className="text-xs font-semibold uppercase tracking-widest text-rose-700/70 mb-1 dark:text-rose-400/70">
                 Egresos · {g.currency}
               </p>
               <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{formatAmount(g.expense)}</p>
             </div>
-            <div className={`rounded-xl border p-5 ${
+            <div className={`rounded-xl border p-5 hover:shadow-md hover:-translate-y-0.5 transition-[transform,box-shadow] duration-200 cursor-default ${
               g.balance >= 0
                 ? 'border-sky-300 bg-sky-50 dark:border-sky-800/40 dark:bg-sky-950/30'
                 : 'border-amber-300 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-950/30'
@@ -103,19 +103,19 @@ export function SummaryCards({
         </p>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 dark:border-emerald-800/40 dark:bg-emerald-950/30">
+        <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 dark:border-emerald-800/40 dark:bg-emerald-950/30 hover:shadow-md hover:-translate-y-0.5 transition-[transform,box-shadow] duration-200 cursor-default">
           <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700/70 mb-1 dark:text-emerald-400/70">
             Ingresos · {displayCurrency}
           </p>
           <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{formatAmount(totalIncome)}</p>
         </div>
-        <div className="rounded-xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-800/40 dark:bg-rose-950/30">
+        <div className="rounded-xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-800/40 dark:bg-rose-950/30 hover:shadow-md hover:-translate-y-0.5 transition-[transform,box-shadow] duration-200 cursor-default">
           <p className="text-xs font-semibold uppercase tracking-widest text-rose-700/70 mb-1 dark:text-rose-400/70">
             Egresos · {displayCurrency}
           </p>
           <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{formatAmount(totalExpense)}</p>
         </div>
-        <div className={`rounded-xl border p-5 ${
+        <div className={`rounded-xl border p-5 hover:shadow-md hover:-translate-y-0.5 transition-[transform,box-shadow] duration-200 cursor-default ${
           totalBalance >= 0
             ? 'border-sky-300 bg-sky-50 dark:border-sky-800/40 dark:bg-sky-950/30'
             : 'border-amber-300 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-950/30'

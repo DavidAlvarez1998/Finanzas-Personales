@@ -14,9 +14,10 @@ interface Props {
   onDisplayCurrencyChange: (code: string | null) => void
   /** Optional override for saving currencies (used in offline mode). */
   onCurrenciesChange?: (codes: string[]) => void
+  className?: string
 }
 
-export function CurrencyPicker({ selected, displayCurrency, onClose, onDisplayCurrencyChange, onCurrenciesChange }: Props) {
+export function CurrencyPicker({ selected, displayCurrency, onClose, onDisplayCurrencyChange, onCurrenciesChange, className }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('currencies')
   const [localSelected, setLocalSelected] = useState<string[]>(selected)
   const [search, setSearch] = useState('')
@@ -62,7 +63,7 @@ export function CurrencyPicker({ selected, displayCurrency, onClose, onDisplayCu
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-4 pb-4 sm:pb-0${className ? ` ${className}` : ''}`}
       onClick={onClose}
     >
       <div
