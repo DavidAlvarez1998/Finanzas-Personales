@@ -45,6 +45,8 @@ export function MonthlyTrendChart({ data, currency, incomeColor, expenseColor, t
               name === 'income' ? 'Ingresos' : 'Egresos',
             ]}
             contentStyle={tooltipStyle}
+            labelStyle={{ color: tooltipStyle.color }}
+            itemStyle={{ color: tooltipStyle.color }}
             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Legend formatter={name => name === 'income' ? 'Ingresos' : 'Egresos'} />

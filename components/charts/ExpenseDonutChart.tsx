@@ -50,6 +50,8 @@ export function ExpenseDonutChart({ data, currency, colors, tooltipStyle, tickCo
           </Pie>
           <Tooltip
             contentStyle={tooltipStyle}
+            labelStyle={{ color: tooltipStyle.color }}
+            itemStyle={{ color: tooltipStyle.color }}
             formatter={(value: number, name: string) => {
               const pct = total > 0 ? (value / total) * 100 : 0
               return [`${formatAmount(value)} ${currency} (${pct.toFixed(1)}%)`, name]
