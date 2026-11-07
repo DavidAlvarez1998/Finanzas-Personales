@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, createContext, useContext } from 'rea
 import { useRouter } from 'next/navigation'
 import { hydrateFromServer, isSyncStale } from '@/lib/db/seed'
 import { clearHydrated } from '@/lib/db/hydration-flag'
-import { useSyncTrigger } from '@/lib/hooks/useSyncTrigger'
+import { useSyncTrigger, resetFailedAndDrain } from '@/lib/hooks/useSyncTrigger'
 
 interface OfflineContextValue {
   userId: string
@@ -61,22 +61,27 @@ export function OfflineProvider({ userId, children }: OfflineProviderProps) {
     maybeHydrate()
   }, [userId])
 
-  // Re-pull from server on tab focus if local data is stale (> 2 min).
-  // This ensures changes made on other devices show up without a full reload.
+  // Re-pull from server on tab focus: drain pending ops first, then hydrate if stale.
+  // Drain-before-hydrate prevents overwriting local pending writes with stale server data.
   useEffect(() => {
     if (!userId) return
-    function handleVisibility() {
+    async function handleVisibility() {
       if (document.visibilityState !== 'visible' || !navigator.onLine) return
-      isSyncStale().then(stale => {
-        if (stale) {
-          hydrateFromServer(userId)
-            .then(() => setSyncError(null))
-            .catch(err => {
-              console.error('[OfflineProvider] re-sync failed:', err)
-              setSyncError(err instanceof Error ? err.message : 'Error de sincronización')
-            })
-        }
-      })
+      try {
+        await resetFailedAndDrain()
+      } catch (err) {
+        console.error('[OfflineProvider] drain on focus failed:', err)
+        // continue to hydrate anyway — stale-check will decide
+      }
+      const stale = await isSyncStale()
+      if (!stale) return
+      try {
+        await hydrateFromServer(userId)
+        setSyncError(null)
+      } catch (err) {
+        console.error('[OfflineProvider] re-sync failed:', err)
+        setSyncError(err instanceof Error ? err.message : 'Error de sincronización')
+      }
     }
     document.addEventListener('visibilitychange', handleVisibility)
     return () => document.removeEventListener('visibilitychange', handleVisibility)

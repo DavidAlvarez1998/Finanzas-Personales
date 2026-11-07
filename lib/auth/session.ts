@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -49,8 +50,10 @@ export async function getSession(): Promise<SessionPayload | null> {
  *
  * When a superadmin is actively impersonating, returns the target user's identity
  * as the active userId (isSuperadmin = false). DAL functions always call this.
+ *
+ * Request-memoized via React cache(). Must remain side-effect-free.
  */
-export async function verifySession(): Promise<VerifiedSession> {
+export const verifySession = cache(async (): Promise<VerifiedSession> => {
   const base = await getSession()
   if (!base) redirect('/login')
 
@@ -90,7 +93,7 @@ export async function verifySession(): Promise<VerifiedSession> {
     isSuperadmin: effectiveIsSuperadmin,
     impersonation: imp ?? undefined,
   }
-}
+})
 
 /**
  * Resolves the EFFECTIVE session for Server Action callers.
@@ -102,6 +105,8 @@ export async function verifySession(): Promise<VerifiedSession> {
  *
  * Why: redirect() throws NEXT_REDIRECT, which the offline-sync classifier maps
  * to 'transient' (misclassified), causing retries + data loss on session expiry.
+ *
+ * DO NOT wrap with cache() — Server Actions require fresh session validation per call.
  */
 export async function getSessionForAction(): Promise<VerifiedSession | null> {
   const base = await getSession()

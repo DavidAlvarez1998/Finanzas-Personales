@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { drainQueue } from '@/lib/db/sync'
 import { db } from '@/lib/db'
 
-async function resetFailedAndDrain(): Promise<void> {
+export async function resetFailedAndDrain(): Promise<void> {
   const failedOps = await db.pending_ops.where('status').equals('failed').toArray()
   // Only auto-reset ops that failed transiently (or have no class recorded — legacy default to transient).
   // Validation failures must stay 'failed' until the user explicitly retries from DeadLetterDrawer.
@@ -32,18 +32,13 @@ export function useSyncTrigger(): void {
       resetFailedAndDrain().catch(() => {})
     }
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        resetFailedAndDrain().catch(() => {})
-      }
-    }
-
     window.addEventListener('online', handleOnline)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // NOTE: visibilitychange intentionally handled by OfflineProvider —
+    // it needs to await drain before hydrate to avoid overwriting pending local writes.
 
     return () => {
       window.removeEventListener('online', handleOnline)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
 }

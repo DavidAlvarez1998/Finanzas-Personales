@@ -152,32 +152,32 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dexieDebts = useLiveQuery(
-    () => (OFFLINE_ENABLED ? getDebtsDexie(userId) : Promise.resolve(undefined)),
-    [userId]
+    () => (OFFLINE_ENABLED && tab === 'debts' ? getDebtsDexie(userId) : Promise.resolve(undefined)),
+    [userId, tab]
   )
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dexiePresupuestos = useLiveQuery(
-    () => (OFFLINE_ENABLED ? getPresupuestosDexie(userId) : Promise.resolve(undefined)),
-    [userId]
+    () => (OFFLINE_ENABLED && tab === 'presupuestos' ? getPresupuestosDexie(userId) : Promise.resolve(undefined)),
+    [userId, tab]
   )
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dexieSavingsGoals = useLiveQuery(
-    () => (OFFLINE_ENABLED ? getSavingsGoalsDexie(userId) : Promise.resolve(undefined)),
-    [userId]
+    () => (OFFLINE_ENABLED && tab === 'savings' ? getSavingsGoalsDexie(userId) : Promise.resolve(undefined)),
+    [userId, tab]
   )
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dexieInvestments = useLiveQuery(
-    () => (OFFLINE_ENABLED ? getInvestmentsDexie(userId) : Promise.resolve(undefined)),
-    [userId]
+    () => (OFFLINE_ENABLED && tab === 'inversiones' ? getInvestmentsDexie(userId) : Promise.resolve(undefined)),
+    [userId, tab]
   )
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dexieAhorroAccounts = useLiveQuery(
-    () => (OFFLINE_ENABLED ? getAhorroAccountsDexie(userId) : Promise.resolve(undefined)),
-    [userId]
+    () => (OFFLINE_ENABLED && tab === 'ahorros' ? getAhorroAccountsDexie(userId) : Promise.resolve(undefined)),
+    [userId, tab]
   )
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -223,13 +223,10 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
 
   // Show skeleton only on true cold start — if we've ever hydrated, trust Dexie
   // to resolve to [] in a frame or two and let components render empty states.
+  // Only check always-on hooks: gated hooks return undefined by design when their tab is inactive,
+  // so including them would cause a permanent "Cargando..." state on non-default tabs.
   const isHydrating = OFFLINE_ENABLED && !everHydrated && (
     dexieTransactions === undefined ||
-    dexieDebts === undefined ||
-    dexiePresupuestos === undefined ||
-    dexieSavingsGoals === undefined ||
-    dexieInvestments === undefined ||
-    dexieAhorroAccounts === undefined ||
     dexieCurrencies === undefined ||
     dexieDisplayCurrency === undefined
   )
