@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import type { Debt } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
@@ -17,7 +17,7 @@ interface Props {
   currencies: string[]
 }
 
-export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPending, currencies }: Props) {
+function DebtSectionImpl({ debts, onAdd, onUpdate, onDelete, onPayment, isPending, currencies }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Debt | null>(null)
   const [description, setDescription] = useState('')
@@ -336,3 +336,5 @@ export function DebtSection({ debts, onAdd, onUpdate, onDelete, onPayment, isPen
     </div>
   )
 }
+
+export const DebtSection = memo(DebtSectionImpl)

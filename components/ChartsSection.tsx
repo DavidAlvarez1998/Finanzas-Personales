@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { groupByMonth, groupByCategory } from '@/lib/aggregations'
 import { MonthlyTrendChart } from '@/components/charts/MonthlyTrendChart'
 import { CategoryChart } from '@/components/charts/CategoryChart'
@@ -22,21 +22,36 @@ export function ChartsSection({ transactions }: Props) {
   const currencies = Array.from(new Set(transactions.map(t => t.currency ?? 'COP')))
   const [selectedCurrency, setSelectedCurrency] = useState(currencies[0] ?? 'COP')
 
-  const monthData = groupByMonth(transactions, selectedCurrency)
-  const expenseByCategory = groupByCategory(transactions, selectedCurrency, 'expense')
-  const incomeByCategory = groupByCategory(transactions, selectedCurrency, 'income')
+  const monthData = useMemo(
+    () => groupByMonth(transactions, selectedCurrency),
+    [transactions, selectedCurrency]
+  )
+  const expenseByCategory = useMemo(
+    () => groupByCategory(transactions, selectedCurrency, 'expense'),
+    [transactions, selectedCurrency]
+  )
+  const incomeByCategory = useMemo(
+    () => groupByCategory(transactions, selectedCurrency, 'income'),
+    [transactions, selectedCurrency]
+  )
 
-  const incomeColor = getCSSVar('--color-income') || '#10b981'
-  const expenseColor = getCSSVar('--color-expense') || '#f43f5e'
-  const tickColor = getCSSVar('--color-text-muted') || getCSSVar('--color-text') || '#a1a1aa'
-
-  const tooltipStyle: React.CSSProperties = {
-    fontSize: 12,
-    borderRadius: 8,
-    backgroundColor: getCSSVar('--color-surface') || '#18181b',
-    border: `1px solid ${getCSSVar('--color-border') || '#3f3f46'}`,
-    color: getCSSVar('--color-text') || '#fafafa',
-  }
+  const { incomeColor, expenseColor, tickColor, tooltipStyle } = useMemo(() => {
+    const income = getCSSVar('--color-income') || '#10b981'
+    const expense = getCSSVar('--color-expense') || '#f43f5e'
+    const tick = getCSSVar('--color-text-muted') || getCSSVar('--color-text') || '#a1a1aa'
+    return {
+      incomeColor: income,
+      expenseColor: expense,
+      tickColor: tick,
+      tooltipStyle: {
+        fontSize: 12,
+        borderRadius: 8,
+        backgroundColor: getCSSVar('--color-surface') || '#18181b',
+        border: `1px solid ${getCSSVar('--color-border') || '#3f3f46'}`,
+        color: getCSSVar('--color-text') || '#fafafa',
+      } as React.CSSProperties,
+    }
+  }, [mounted])
 
   if (!mounted) {
     return (

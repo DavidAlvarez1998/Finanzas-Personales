@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useTransition, useMemo, useEffect, useRef } from 'react'
+import { useState, useTransition, useMemo, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { SummaryCards } from '@/components/SummaryCards'
 import { TransactionTable } from '@/components/TransactionTable'
-import { TransactionForm } from '@/components/TransactionForm'
+import dynamic from 'next/dynamic'
 import { DebtSection } from '@/components/DebtSection'
-import { ChartsSection } from '@/components/ChartsSection'
 import { PresupuestosSection } from '@/components/PresupuestosSection'
 import { SavingsSection } from '@/components/SavingsSection'
 import { AhorrosSection } from '@/components/AhorrosSection'
@@ -51,14 +50,12 @@ import {
   deleteReturn,
 } from '@/app/actions/investments'
 import { updateUserCurrencies, updateDisplayCurrency } from '@/app/actions/currencies'
-import { CurrencyPicker } from '@/components/CurrencyPicker'
 import { fetchRateWithCache } from '@/lib/fx/frankfurter'
 import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus, Investment, InvestmentStatus, AhorroAccount, AhorroAccountStatus } from '@/types'
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
 import { db } from '@/lib/db/index'
 import { writeOp } from '@/lib/db/write-adapter'
 import { SyncStatusBadge } from '@/components/SyncStatusBadge'
-import { DeadLetterDrawer } from '@/components/DeadLetterDrawer'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import { drainQueue } from '@/lib/db/sync'
 import type { PendingOp } from '@/lib/db/schema'
@@ -75,6 +72,38 @@ import {
 import { isHydrated } from '@/lib/db/hydration-flag'
 
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
+
+const ChartsSection = dynamic(
+  () => import('@/components/ChartsSection').then(m => m.ChartsSection),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-6">
+        {[1, 2, 3].map(i => (
+          <div
+            key={i}
+            className="h-48 animate-pulse rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800"
+          />
+        ))}
+      </div>
+    ),
+  }
+)
+
+const TransactionForm = dynamic(
+  () => import('@/components/TransactionForm').then(m => m.TransactionForm),
+  { ssr: false, loading: () => null }
+)
+
+const CurrencyPicker = dynamic(
+  () => import('@/components/CurrencyPicker').then(m => m.CurrencyPicker),
+  { ssr: false, loading: () => null }
+)
+
+const DeadLetterDrawer = dynamic(
+  () => import('@/components/DeadLetterDrawer').then(m => m.DeadLetterDrawer),
+  { ssr: false, loading: () => null }
+)
 
 interface Props {
   userId: string
@@ -93,6 +122,7 @@ type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'ahorros' | '
 
 export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, ahorroAccounts: serverAhorroAccounts, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
+  const tabSwitched = useRef(false)
   const [viewMode, setViewMode] = useState<'list' | 'charts'>('list')
   const everHydrated = useState(() => isHydrated())[0]
   const [showForm, setShowForm] = useState(false)
@@ -290,17 +320,17 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDisplayCurrency, currencyGroups])
 
-  function handleEdit(t: Transaction) {
+  const handleEdit = useCallback((t: Transaction) => {
     setEditing(t)
     setShowForm(true)
-  }
+  }, [])
 
-  function handleCloseForm() {
+  const handleCloseForm = useCallback(() => {
     setShowForm(false)
     setEditing(null)
-  }
+  }, [])
 
-  async function handleRetry(id: string) {
+  const handleRetry = useCallback(async (id: string) => {
     await db.pending_ops.update(id, {
       status: 'queued',
       attempts: 0,
@@ -312,13 +342,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     if (!ran) {
       toast.info('Sincronizando…')
     }
-  }
+  }, [])
 
-  async function handleDismiss(id: string) {
+  const handleDismiss = useCallback(async (id: string) => {
     await db.pending_ops.delete(id)
-  }
+  }, [])
 
-  function handleTransactionSave(t: Omit<Transaction, 'id'>) {
+  const handleTransactionSave = useCallback((t: Omit<Transaction, 'id'>) => {
     setEditing(null)
     setShowForm(false)
 
@@ -376,9 +406,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Registro agregado')
     })
-  }
+  }, [editing, userId])
 
-  function handleDeleteTransaction(id: string) {
+  const handleDeleteTransaction = useCallback((id: string) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('transaction.delete', { id })
@@ -392,11 +422,11 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Registro eliminado')
     })
-  }
+  }, [])
 
   // ── Debt handlers ────────────────────────────────────────────────────
 
-  function handleDebtAdd(d: Omit<Debt, 'id'>) {
+  const handleDebtAdd = useCallback((d: Omit<Debt, 'id'>) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('debt.create', {
@@ -422,9 +452,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Deuda agregada')
     })
-  }
+  }, [userId])
 
-  function handleDebtUpdate(d: Debt) {
+  const handleDebtUpdate = useCallback((d: Debt) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('debt.update', {
@@ -447,9 +477,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       const result = await updateDebt(d.id, fd)
       if (result && 'error' in result) toast.error(result.error)
     })
-  }
+  }, [])
 
-  function handleDeleteDebt(id: string) {
+  const handleDeleteDebt = useCallback((id: string) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('debt.delete', { id })
@@ -463,9 +493,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Deuda eliminada')
     })
-  }
+  }, [])
 
-  function handleDebtPayment(debtId: string, fd: FormData) {
+  const handleDebtPayment = useCallback((debtId: string, fd: FormData) => {
     if (OFFLINE_ENABLED) {
       const amountRaw = fd.get('amount') as string | null
       const note = fd.get('note') as string | null
@@ -487,11 +517,11 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Pago registrado')
     })
-  }
+  }, [])
 
   // ── Presupuesto handlers ─────────────────────────────────────────────
 
-  function handlePresupuestoCreate(p: { nombre: string; total: number; currency: string }) {
+  const handlePresupuestoCreate = useCallback((p: { nombre: string; total: number; currency: string }) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto.create', {
@@ -516,9 +546,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Presupuesto creado')
     })
-  }
+  }, [userId])
 
-  function handlePresupuestoUpdate(id: string, p: { nombre: string; total: number; currency: string }) {
+  const handlePresupuestoUpdate = useCallback((id: string, p: { nombre: string; total: number; currency: string }) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto.update', {
@@ -540,9 +570,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       const result = await updatePresupuesto(id, fd)
       if (result && 'error' in result) toast.error(result.error)
     })
-  }
+  }, [])
 
-  function handlePresupuestoDelete(id: string) {
+  const handlePresupuestoDelete = useCallback((id: string) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto.delete', { id })
@@ -556,9 +586,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Presupuesto eliminado')
     })
-  }
+  }, [])
 
-  function handlePresupuestoItemCreate(presupuestoId: string, item: { nombre: string; monto: number }) {
+  const handlePresupuestoItemCreate = useCallback((presupuestoId: string, item: { nombre: string; monto: number }) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto_item.create', {
@@ -581,9 +611,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Ítem agregado')
     })
-  }
+  }, [])
 
-  function handlePresupuestoItemUpdate(itemId: string, item: { nombre: string; monto: number }) {
+  const handlePresupuestoItemUpdate = useCallback((itemId: string, item: { nombre: string; monto: number }) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto_item.update', {
@@ -603,9 +633,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       const result = await updatePresupuestoItem(itemId, fd)
       if (result && 'error' in result) toast.error(result.error)
     })
-  }
+  }, [])
 
-  function handlePresupuestoItemDelete(itemId: string) {
+  const handlePresupuestoItemDelete = useCallback((itemId: string) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto_item.delete', { id: itemId })
@@ -617,11 +647,11 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       const result = await deletePresupuestoItem(itemId)
       if (result && 'error' in result) toast.error(result.error)
     })
-  }
+  }, [])
 
   // ── Savings Goal handlers ────────────────────────────────────────────
 
-  function handleGoalAdd(g: Omit<SavingsGoal, 'id'>) {
+  const handleGoalAdd = useCallback((g: Omit<SavingsGoal, 'id'>) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('savings_goal.create', {
@@ -647,9 +677,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Meta creada')
     })
-  }
+  }, [userId])
 
-  function handleGoalUpdate(g: SavingsGoal) {
+  const handleGoalUpdate = useCallback((g: SavingsGoal) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('savings_goal.update', {
@@ -671,9 +701,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       const result = await updateSavingsGoal(g.id, fd)
       if (result && 'error' in result) toast.error(result.error)
     })
-  }
+  }, [])
 
-  function handleGoalDelete(id: string) {
+  const handleGoalDelete = useCallback((id: string) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('savings_goal.delete', { id })
@@ -687,9 +717,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Meta eliminada')
     })
-  }
+  }, [])
 
-  function handleGoalStatus(id: string, status: SavingsGoalStatus) {
+  const handleGoalStatus = useCallback((id: string, status: SavingsGoalStatus) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('savings_goal.status', { goal_id: id, status })
@@ -701,9 +731,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       const result = await updateGoalStatus(id, status)
       if (result && 'error' in result) toast.error(result.error)
     })
-  }
+  }, [])
 
-  function handleContributionAdd(goalId: string, fd: FormData) {
+  const handleContributionAdd = useCallback((goalId: string, fd: FormData) => {
     if (OFFLINE_ENABLED) {
       const montoRaw = fd.get('monto') as string | null
       const fecha = (fd.get('fecha') as string | null) || new Date().toISOString().split('T')[0]
@@ -726,9 +756,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Contribución registrada')
     })
-  }
+  }, [])
 
-  function handleContributionDelete(id: string) {
+  const handleContributionDelete = useCallback((id: string) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('savings_contribution.delete', { id })
@@ -740,11 +770,11 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       const result = await deleteContribution(id)
       if (result && 'error' in result) toast.error(result.error)
     })
-  }
+  }, [])
 
   // ── Investment handlers ──────────────────────────────────────────────
 
-  function handleCreateInvestment(payload: Record<string, unknown>) {
+  const handleCreateInvestment = useCallback((payload: Record<string, unknown>) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('investment.create', {
@@ -765,9 +795,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Inversión creada')
     })
-  }
+  }, [userId])
 
-  function handleUpdateInvestment(id: string, payload: Record<string, unknown>) {
+  const handleUpdateInvestment = useCallback((id: string, payload: Record<string, unknown>) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('investment.update', { id, ...payload })
@@ -785,9 +815,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Inversión actualizada')
     })
-  }
+  }, [])
 
-  function handleDeleteInvestment(id: string) {
+  const handleDeleteInvestment = useCallback((id: string) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('investment.delete', { id })
@@ -801,9 +831,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Inversión eliminada')
     })
-  }
+  }, [])
 
-  function handleUpdateInvestmentStatus(id: string, status: InvestmentStatus) {
+  const handleUpdateInvestmentStatus = useCallback((id: string, status: InvestmentStatus) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('investment.status', { investment_id: id, status })
@@ -817,9 +847,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Estado actualizado')
     })
-  }
+  }, [])
 
-  function handleAddReturn(investmentId: string, payload: Record<string, unknown>) {
+  const handleAddReturn = useCallback((investmentId: string, payload: Record<string, unknown>) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('investment_return.create', {
@@ -840,9 +870,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Retorno registrado')
     })
-  }
+  }, [])
 
-  function handleDeleteReturn(id: string) {
+  const handleDeleteReturn = useCallback((id: string) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('investment_return.delete', { id })
@@ -856,11 +886,11 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Retorno eliminado')
     })
-  }
+  }, [])
 
   // ── Ahorro handlers ──────────────────────────────────────────────────
 
-  function handleAhorroAdd(fd: FormData) {
+  const handleAhorroAdd = useCallback((fd: FormData) => {
     if (OFFLINE_ENABLED) {
       const nombreRaw = (fd.get('nombre') as string | null)?.trim() ?? ''
       const currency = (fd.get('currency') as string | null) ?? 'COP'
@@ -882,9 +912,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Cuenta creada')
     })
-  }
+  }, [userId])
 
-  function handleAhorroUpdate(id: string, fd: FormData) {
+  const handleAhorroUpdate = useCallback((id: string, fd: FormData) => {
     if (OFFLINE_ENABLED) {
       const nombreRaw = (fd.get('nombre') as string | null)?.trim() ?? ''
       const currency = (fd.get('currency') as string | null) ?? 'COP'
@@ -904,9 +934,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Cuenta actualizada')
     })
-  }
+  }, [])
 
-  function handleAhorroDelete(id: string) {
+  const handleAhorroDelete = useCallback((id: string) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('ahorro_account.delete', { id })
@@ -920,9 +950,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Cuenta eliminada')
     })
-  }
+  }, [])
 
-  function handleAhorroStatus(id: string, status: AhorroAccountStatus) {
+  const handleAhorroStatus = useCallback((id: string, status: AhorroAccountStatus) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('ahorro_account.status', { account_id: id, status })
@@ -936,9 +966,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success(status === 'archived' ? 'Cuenta archivada' : 'Cuenta reactivada')
     })
-  }
+  }, [])
 
-  function handleMovimientoAdd(accountId: string, fd: FormData) {
+  const handleMovimientoAdd = useCallback((accountId: string, fd: FormData) => {
     if (OFFLINE_ENABLED) {
       const montoRaw = fd.get('monto') as string | null // already signed by UI
       const fecha = (fd.get('fecha') as string | null) || new Date().toISOString().split('T')[0]
@@ -961,9 +991,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Movimiento registrado')
     })
-  }
+  }, [])
 
-  function handleMovimientoDelete(id: string) {
+  const handleMovimientoDelete = useCallback((id: string) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('ahorro_movimiento.delete', { id })
@@ -977,11 +1007,11 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Movimiento eliminado')
     })
-  }
+  }, [])
 
   // ── Currency handlers ────────────────────────────────────────────────
 
-  function handleCurrenciesChange(codes: string[]) {
+  const handleCurrenciesChange = useCallback((codes: string[]) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('user.currencies', { codes })
@@ -993,9 +1023,9 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       const result = await updateUserCurrencies(codes)
       if (result && 'error' in result) toast.error(result.error)
     })
-  }
+  }, [])
 
-  function handleDisplayCurrencyChange(code: string | null) {
+  const handleDisplayCurrencyChange = useCallback((code: string | null) => {
     setActiveDisplayCurrency(code)
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
@@ -1010,7 +1040,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       if (result && 'error' in result) toast.error(result.error)
       else toast.success('Moneda actualizada')
     })
-  }
+  }, [])
 
   if (isHydrating) {
     return (
@@ -1071,7 +1101,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           <div className="mb-4 overflow-x-auto -mx-4 px-4 pb-1">
           <div className="flex gap-1 rounded-xl border border-zinc-200 bg-zinc-100/50 p-1 w-max dark:border-zinc-800 dark:bg-zinc-900/50">
             <button
-              onClick={() => setTab('transactions')}
+              onClick={() => { tabSwitched.current = true; setTab('transactions') }}
               className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'transactions'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
@@ -1081,7 +1111,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               Registros
             </button>
             <button
-              onClick={() => setTab('debts')}
+              onClick={() => { tabSwitched.current = true; setTab('debts') }}
               className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'debts'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
@@ -1096,7 +1126,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               )}
             </button>
             <button
-              onClick={() => setTab('presupuestos')}
+              onClick={() => { tabSwitched.current = true; setTab('presupuestos') }}
               className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'presupuestos'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
@@ -1111,7 +1141,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               )}
             </button>
             <button
-              onClick={() => setTab('savings')}
+              onClick={() => { tabSwitched.current = true; setTab('savings') }}
               className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'savings'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
@@ -1126,7 +1156,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               )}
             </button>
             <button
-              onClick={() => setTab('ahorros')}
+              onClick={() => { tabSwitched.current = true; setTab('ahorros') }}
               className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'ahorros'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
@@ -1141,7 +1171,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               )}
             </button>
             <button
-              onClick={() => setTab('inversiones')}
+              onClick={() => { tabSwitched.current = true; setTab('inversiones') }}
               className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-150 ${
                 tab === 'inversiones'
                   ? 'bg-zinc-200 text-zinc-950 shadow dark:bg-zinc-700 dark:text-white'
@@ -1158,6 +1188,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           </div>
           </div>
 
+          <div key={tab} className={tabSwitched.current ? 'animate-tab-enter' : undefined}>
           {tab === 'transactions' && (
             <>
               {showOfflineFirstBoot ? (
@@ -1274,6 +1305,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               currencies={effectiveCurrencies}
             />
           )}
+          </div>
         </div>
       </main>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, memo } from 'react'
 import type { Transaction } from '@/types'
 import { Select } from '@/components/ui/Select'
 import { formatAmount } from '@/lib/format'
@@ -79,7 +79,7 @@ async function exportToXLSX(rows: Transaction[], month: string, year: number) {
   URL.revokeObjectURL(url)
 }
 
-export function TransactionTable({ transactions, onEdit, onDelete, isPending }: Props) {
+function TransactionTableImpl({ transactions, onEdit, onDelete, isPending }: Props) {
   const [filterMonth, setFilterMonth] = useState(0)
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -443,3 +443,5 @@ export function TransactionTable({ transactions, onEdit, onDelete, isPending }: 
     </div>
   )
 }
+
+export const TransactionTable = memo(TransactionTableImpl)

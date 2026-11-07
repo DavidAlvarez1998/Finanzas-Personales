@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import type { Presupuesto, PresupuestoItem } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
@@ -19,7 +19,7 @@ interface Props {
   currencies: string[]
 }
 
-export function PresupuestosSection({
+function PresupuestosSectionImpl({
   presupuestos,
   onCreate,
   onUpdate,
@@ -427,3 +427,5 @@ export function PresupuestosSection({
     </div>
   )
 }
+
+export const PresupuestosSection = memo(PresupuestosSectionImpl)
