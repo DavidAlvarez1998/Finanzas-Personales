@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { groupByMonth, groupByCategory } from '@/lib/aggregations'
 import { MonthlyTrendChart } from '@/components/charts/MonthlyTrendChart'
 import { CategoryChart } from '@/components/charts/CategoryChart'
+import { ExpenseDonutChart } from '@/components/charts/ExpenseDonutChart'
+import { CATEGORY_COLORS } from '@/lib/constants/chart-colors'
 import type { Transaction } from '@/types'
 
 interface Props {
@@ -84,41 +86,65 @@ export function ChartsSection({ transactions }: Props) {
         </div>
       )}
 
+      {/* Row 1: trend full-width */}
       <div>
         <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
           Tendencia mensual ({selectedCurrency})
         </h3>
         <MonthlyTrendChart
           data={monthData}
+          currency={selectedCurrency}
           incomeColor={incomeColor}
           expenseColor={expenseColor}
+          tickColor={tickColor}
           tooltipStyle={tooltipStyle}
         />
       </div>
 
-      <div>
-        <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          Top gastos por categoría ({selectedCurrency})
-        </h3>
-        <CategoryChart
-          data={expenseByCategory}
-          color={expenseColor}
-          tooltipStyle={tooltipStyle}
-          tickColor={tickColor}
-        />
+      {/* Row 2: donut + expense bar side-by-side on lg+ */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            Distribución de gastos ({selectedCurrency})
+          </h3>
+          <ExpenseDonutChart
+            data={expenseByCategory}
+            currency={selectedCurrency}
+            colors={CATEGORY_COLORS}
+            tooltipStyle={tooltipStyle}
+            tickColor={tickColor}
+          />
+        </div>
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            Top gastos por categoría ({selectedCurrency})
+          </h3>
+          <CategoryChart
+            data={expenseByCategory}
+            currency={selectedCurrency}
+            color={expenseColor}
+            colors={CATEGORY_COLORS}
+            tooltipStyle={tooltipStyle}
+            tickColor={tickColor}
+          />
+        </div>
       </div>
 
-      <div>
-        <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          Top ingresos por categoría ({selectedCurrency})
-        </h3>
-        <CategoryChart
-          data={incomeByCategory}
-          color={incomeColor}
-          tooltipStyle={tooltipStyle}
-          tickColor={tickColor}
-        />
-      </div>
+      {/* Row 3: income bar, only rendered when there is income data */}
+      {incomeByCategory.length > 0 && (
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            Top ingresos por categoría ({selectedCurrency})
+          </h3>
+          <CategoryChart
+            data={incomeByCategory}
+            currency={selectedCurrency}
+            color={incomeColor}
+            tooltipStyle={tooltipStyle}
+            tickColor={tickColor}
+          />
+        </div>
+      )}
     </div>
   )
 }

@@ -9,11 +9,20 @@ import { formatAmount } from '@/lib/format'
 interface Props {
   data: CategoryData[]
   color: string
+  colors?: readonly string[]
+  currency: string
   tooltipStyle: React.CSSProperties
   tickColor?: string
 }
 
-export function CategoryChart({ data, color, tooltipStyle, tickColor = '#71717a' }: Props) {
+function formatCurrencyTick(n: number, currency: string): string {
+  const k = (n / 1000).toFixed(0)
+  if (currency === 'USD') return `$${k}k`
+  if (currency === 'EUR') return `€${k}k`
+  return `${k}k ${currency}`
+}
+
+export function CategoryChart({ data, color, colors, currency, tooltipStyle, tickColor = '#71717a' }: Props) {
   if (data.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -35,7 +44,7 @@ export function CategoryChart({ data, color, tooltipStyle, tickColor = '#71717a'
             tick={{ fontSize: 10, fill: tickColor }}
             stroke={tickColor}
             strokeOpacity={0.3}
-            tickFormatter={n => `$${(n / 1000).toFixed(0)}k`}
+            tickFormatter={n => formatCurrencyTick(n, currency)}
           />
           <YAxis
             type="category"
@@ -51,9 +60,11 @@ export function CategoryChart({ data, color, tooltipStyle, tickColor = '#71717a'
             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Bar dataKey="amount" radius={[0, 4, 4, 0]} maxBarSize={22} background={{ fill: 'rgba(128,128,128,0.08)', radius: 4 }}>
-            {data.map((_, i) => (
-              <Cell key={i} fill={color} fillOpacity={Math.max(0.6, 1 - i * 0.05)} />
-            ))}
+            {data.map((_, i) =>
+              colors
+                ? <Cell key={i} fill={colors[i % colors.length]} />
+                : <Cell key={i} fill={color} fillOpacity={Math.max(0.6, 1 - i * 0.05)} />
+            )}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
