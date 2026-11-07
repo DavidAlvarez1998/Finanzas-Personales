@@ -256,9 +256,9 @@ async function replicateSideEffects(op: PendingOp, _serverRow: ServerRow): Promi
   }
 }
 
-export async function drainQueue(): Promise<void> {
-  if (draining) return
-  if (typeof navigator !== 'undefined' && !navigator.onLine) return
+export async function drainQueue(): Promise<boolean> {
+  if (draining) return false
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return false
 
   draining = true
   try {
@@ -346,4 +346,5 @@ export async function drainQueue(): Promise<void> {
   } finally {
     draining = false
   }
+  return true
 }
