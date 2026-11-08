@@ -7,6 +7,7 @@ export interface Transaction {
   expense: number | null
   currency?: string
   category?: string | null
+  notes?: string | null
   created_at?: string
 }
 
@@ -91,6 +92,7 @@ export interface PresupuestoItem {
   presupuesto_id: string
   nombre: string
   monto: number
+  category?: string | null
   created_at?: string
 }
 
@@ -100,6 +102,8 @@ export interface Presupuesto {
   nombre: string
   total: number
   currency: string
+  mes: number
+  anio: number
   created_at?: string
   items?: PresupuestoItem[]
   /** Sum of items[].monto, computed in the DAL */

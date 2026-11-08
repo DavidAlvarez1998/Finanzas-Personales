@@ -19,6 +19,7 @@ export async function createTransaction(
   const amountRaw = formData.get('amount') as string | null
   const currency = (formData.get('currency') as string | null) ?? 'COP'
   const category = (formData.get('category') as string | null) || null
+  const notes = (formData.get('notes') as string | null) || null
 
   if (!description || !date || !type || !amountRaw) {
     return { error: 'Todos los campos son obligatorios.' }
@@ -42,6 +43,7 @@ export async function createTransaction(
     expense,
     currency,
     category,
+    notes,
   }
 
   // Accept client-supplied UUID — idempotent upsert so retries after disconnect don't duplicate
@@ -76,6 +78,7 @@ export async function updateTransaction(
   const amountRaw = formData.get('amount') as string | null
   const currency = (formData.get('currency') as string | null) ?? 'COP'
   const category = (formData.get('category') as string | null) || null
+  const notes = (formData.get('notes') as string | null) || null
 
   if (!description || !date || !type || !amountRaw) {
     return { error: 'Todos los campos son obligatorios.' }
@@ -99,6 +102,7 @@ export async function updateTransaction(
       expense,
       currency,
       category,
+      notes,
     })
     .eq('id', id)
     .eq('user_id', session.userId) // RLS + explicit app-layer guard

@@ -78,7 +78,7 @@ export function DeadLetterDrawer({ failedOps, onRetry, onDismiss }: DeadLetterDr
   if (failedOps.length === 0) return null
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 max-h-80 overflow-y-auto">
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 max-h-80 overflow-y-auto">
       <div className="animate-modal mx-auto max-w-5xl px-4 py-3">
         <p className="text-xs font-semibold uppercase tracking-widest text-rose-600 dark:text-rose-400 mb-3">
           Operaciones fallidas ({failedOps.length})

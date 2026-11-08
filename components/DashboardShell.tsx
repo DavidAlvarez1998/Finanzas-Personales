@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useTransition, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useDelayedUnmount } from '@/lib/hooks/useDelayedUnmount'
 import { toast } from 'sonner'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -71,8 +71,40 @@ import {
   getDisplayCurrency as getDisplayCurrencyDexie,
 } from '@/lib/db/dal-offline'
 import { isHydrated } from '@/lib/db/hydration-flag'
+import { ReceiptText, Landmark, LayoutList, Target, PiggyBank, TrendingUp } from 'lucide-react'
 
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
+
+// ── Mobile nav constants (exported for MobileBottomNav) ──────────────────────
+
+export type TabKey = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'ahorros' | 'inversiones'
+
+export interface BadgeCounts {
+  debts: number
+  presupuestos: number
+  savings: number
+  ahorros: number
+  inversiones: number
+}
+
+export interface TabDef {
+  key: TabKey
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  getBadge: (counts: BadgeCounts) => number
+}
+
+export const TABS: TabDef[] = [
+  { key: 'transactions', label: 'Registros',    icon: ReceiptText, getBadge: () => 0 },
+  { key: 'debts',        label: 'Deudas',       icon: Landmark,    getBadge: c => c.debts },
+  { key: 'presupuestos', label: 'Presupuestos', icon: LayoutList,  getBadge: c => c.presupuestos },
+  { key: 'savings',      label: 'Metas',        icon: Target,      getBadge: c => c.savings },
+  { key: 'ahorros',      label: 'Ahorros',      icon: PiggyBank,   getBadge: c => c.ahorros },
+  { key: 'inversiones',  label: 'Inversiones',  icon: TrendingUp,  getBadge: c => c.inversiones },
+]
+
+export const PRIMARY_TAB_KEYS: TabKey[] = ['transactions', 'debts', 'presupuestos', 'savings']
+export const MAS_TAB_KEYS: TabKey[]     = ['ahorros', 'inversiones']
 
 function filterTxByPeriod(t: Transaction, period: SummaryPeriod, now: Date): boolean {
   if (period === 'all') return true
@@ -119,6 +151,11 @@ const DeadLetterDrawer = dynamic(
   { ssr: false, loading: () => null }
 )
 
+const MobileBottomNav = dynamic(
+  () => import('@/components/MobileBottomNav').then(m => m.MobileBottomNav),
+  { ssr: false, loading: () => null }
+)
+
 interface Props {
   userId: string
   /** null means offline mode — data will come from Dexie via useLiveQuery */
@@ -132,7 +169,7 @@ interface Props {
   displayCurrency: string | null
 }
 
-type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'ahorros' | 'inversiones'
+type Tab = TabKey
 
 export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, ahorroAccounts: serverAhorroAccounts, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
@@ -409,6 +446,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
             amount: String(amount),
             currency: t.currency ?? 'COP',
             category: t.category ?? '',
+            notes: t.notes ?? null,
           })
           if (!result.ok) toast.error(result.error)
           else toast.success('Registro actualizado')
@@ -421,6 +459,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
             expense: type === 'expense' ? amount : null,
             currency: t.currency ?? 'COP',
             category: t.category ?? null,
+            notes: t.notes ?? null,
           })
           if (!result.ok) toast.error(result.error)
           else toast.success('Registro agregado')
@@ -436,6 +475,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('amount', String(amount))
     fd.set('currency', t.currency ?? 'COP')
     fd.set('category', t.category ?? '')
+    if (t.notes) fd.set('notes', t.notes)
 
     startTransition(async () => {
       const result = editing
@@ -563,7 +603,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
 
   // ── Presupuesto handlers ─────────────────────────────────────────────
 
-  const handlePresupuestoCreate = useCallback((p: { nombre: string; total: number; currency: string }) => {
+  const handlePresupuestoCreate = useCallback((p: { nombre: string; total: number; currency: string; mes: number; anio: number }) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto.create', {
@@ -572,6 +612,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           nombre: p.nombre.toUpperCase(),
           total: p.total,
           currency: p.currency,
+          mes: p.mes,
+          anio: p.anio,
         })
         if (!result.ok) toast.error(result.error)
         else toast.success('Presupuesto creado')
@@ -583,6 +625,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('nombre', p.nombre)
     fd.set('total', String(p.total))
     fd.set('currency', p.currency)
+    fd.set('mes', String(p.mes))
+    fd.set('anio', String(p.anio))
     startTransition(async () => {
       const result = await createPresupuesto(fd)
       if (result && 'error' in result) toast.error(result.error)
@@ -590,7 +634,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     })
   }, [userId])
 
-  const handlePresupuestoUpdate = useCallback((id: string, p: { nombre: string; total: number; currency: string }) => {
+  const handlePresupuestoUpdate = useCallback((id: string, p: { nombre: string; total: number; currency: string; mes: number; anio: number }) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto.update', {
@@ -598,6 +642,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           nombre: p.nombre,
           total: p.total,
           currency: p.currency,
+          mes: p.mes,
+          anio: p.anio,
         })
         if (!result.ok) toast.error(result.error)
       })
@@ -608,6 +654,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('nombre', p.nombre)
     fd.set('total', String(p.total))
     fd.set('currency', p.currency)
+    fd.set('mes', String(p.mes))
+    fd.set('anio', String(p.anio))
     startTransition(async () => {
       const result = await updatePresupuesto(id, fd)
       if (result && 'error' in result) toast.error(result.error)
@@ -630,7 +678,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     })
   }, [])
 
-  const handlePresupuestoItemCreate = useCallback((presupuestoId: string, item: { nombre: string; monto: number }) => {
+  const handlePresupuestoItemCreate = useCallback((presupuestoId: string, item: { nombre: string; monto: number; category?: string | null }) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto_item.create', {
@@ -638,6 +686,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           presupuesto_id: presupuestoId,
           nombre: item.nombre.toUpperCase(),
           monto: item.monto,
+          category: item.category ?? null,
         })
         if (!result.ok) toast.error(result.error)
         else toast.success('Ítem agregado')
@@ -648,6 +697,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     const fd = new FormData()
     fd.set('nombre', item.nombre)
     fd.set('monto', String(item.monto))
+    fd.set('category', item.category ?? '')
     startTransition(async () => {
       const result = await createPresupuestoItem(presupuestoId, fd)
       if (result && 'error' in result) toast.error(result.error)
@@ -655,13 +705,14 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     })
   }, [])
 
-  const handlePresupuestoItemUpdate = useCallback((itemId: string, item: { nombre: string; monto: number }) => {
+  const handlePresupuestoItemUpdate = useCallback((itemId: string, item: { nombre: string; monto: number; category?: string | null }) => {
     if (OFFLINE_ENABLED) {
       startTransition(async () => {
         const result = await writeOp('presupuesto_item.update', {
           id: itemId,
           nombre: item.nombre,
           monto: item.monto,
+          category: item.category ?? null,
         })
         if (!result.ok) toast.error(result.error)
       })
@@ -671,6 +722,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     const fd = new FormData()
     fd.set('nombre', item.nombre)
     fd.set('monto', String(item.monto))
+    fd.set('category', item.category ?? '')
     startTransition(async () => {
       const result = await updatePresupuestoItem(itemId, fd)
       if (result && 'error' in result) toast.error(result.error)
@@ -1113,6 +1165,14 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
 
   const showOfflineFirstBoot = OFFLINE_ENABLED && !online && transactions.length === 0
 
+  const badgeCounts: BadgeCounts = {
+    debts: debts.length,
+    presupuestos: presupuestos.length,
+    savings: savingsGoals.length,
+    ahorros: ahorroAccounts.length,
+    inversiones: investments.length,
+  }
+
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-950 dark:bg-zinc-950 dark:text-white" style={{ paddingTop: 'var(--banner-h, 0px)' }}>
       {/* Offline status banner */}
@@ -1146,7 +1206,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6" style={{ paddingBottom: 'calc(var(--bottom-nav-h, 0px) + env(safe-area-inset-bottom, 0px))' }}>
         {/* Summary cards */}
         <SummaryCards
           groups={currencyGroupsForPeriod}
@@ -1161,7 +1221,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
 
         {/* Tabs */}
         <div>
-          <div className="mb-4 overflow-x-auto -mx-4 px-4 pb-1">
+          <div className="mb-4 overflow-x-auto -mx-4 px-4 pb-1 hidden md:flex">
           <div className="flex gap-1 rounded-xl border border-zinc-200 bg-zinc-100/50 p-1 w-max dark:border-zinc-800 dark:bg-zinc-900/50">
             <button
               onClick={() => { tabSwitched.current = true; setTab('transactions') }}
@@ -1321,6 +1381,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           {tab === 'presupuestos' && (
             <PresupuestosSection
               presupuestos={presupuestos}
+              transactions={transactions}
               onCreate={handlePresupuestoCreate}
               onUpdate={handlePresupuestoUpdate}
               onDelete={handlePresupuestoDelete}
@@ -1407,6 +1468,12 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           onDismiss={handleDismiss}
         />
       )}
+
+      <MobileBottomNav
+        tab={tab}
+        onTabChange={(t) => { tabSwitched.current = true; setTab(t) }}
+        badges={badgeCounts}
+      />
     </div>
   )
 }

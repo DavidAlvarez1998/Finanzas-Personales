@@ -69,6 +69,9 @@ import type {
 function toFormData(obj: Record<string, unknown>): FormData {
   const fd = new FormData()
   for (const [k, v] of Object.entries(obj)) {
+    // null/undefined values are skipped — the key is absent from FormData.
+    // Server actions read optional fields as `formData.get(key) || null`,
+    // so absent keys resolve to null correctly (no "null" string corruption).
     if (v != null) fd.set(k, String(v))
   }
   return fd

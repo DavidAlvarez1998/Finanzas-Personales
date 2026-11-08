@@ -31,6 +31,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState(() => currencies[0] ?? 'COP')
   const [category, setCategory] = useState('')
+  const [notes, setNotes] = useState('')
 
   useEffect(() => {
     if (editing) {
@@ -40,6 +41,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
       setAmount(String(editing.income ?? editing.expense ?? ''))
       setCurrency(editing.currency ?? currencies[0] ?? 'COP')
       setCategory(editing.category ?? '')
+      setNotes(editing.notes ?? '')
     }
   }, [editing])
 
@@ -66,6 +68,7 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
       expense: type === 'expense' ? num : null,
       currency,
       category: category || null,
+      notes: notes.trim() || null,
     })
     onClose()
   }
@@ -119,6 +122,20 @@ export function TransactionForm({ onSave, onClose, editing, initialType = 'expen
               onChange={e => setDescription(e.target.value)}
               placeholder="Ej: Salario semanal"
               className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+              Notas
+            </label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Notas opcionales..."
+              rows={2}
+              maxLength={280}
+              className="w-full resize-none rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
             />
           </div>
 

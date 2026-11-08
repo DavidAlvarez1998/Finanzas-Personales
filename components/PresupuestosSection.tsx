@@ -1,19 +1,32 @@
 'use client'
 
-import { useState, memo } from 'react'
-import type { Presupuesto, PresupuestoItem } from '@/types'
+import { useState, memo, useMemo } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import type { Presupuesto, PresupuestoItem, Transaction } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
 import { formatAmount } from '@/lib/format'
+import dynamic from 'next/dynamic'
+
+const PresupuestoVsRealChart = dynamic(
+  () => import('@/components/charts/PresupuestoVsRealChart').then(m => m.PresupuestoVsRealChart),
+  { ssr: false, loading: () => null }
+)
+
+const MONTH_NAMES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]
 
 interface Props {
   presupuestos: Presupuesto[]
-  onCreate: (p: { nombre: string; total: number; currency: string }) => void
-  onUpdate: (id: string, p: { nombre: string; total: number; currency: string }) => void
+  transactions: Transaction[]
+  onCreate: (p: { nombre: string; total: number; currency: string; mes: number; anio: number }) => void
+  onUpdate: (id: string, p: { nombre: string; total: number; currency: string; mes: number; anio: number }) => void
   onDelete: (id: string) => void
-  onCreateItem: (presupuestoId: string, item: { nombre: string; monto: number }) => void
-  onUpdateItem: (itemId: string, item: { nombre: string; monto: number }) => void
+  onCreateItem: (presupuestoId: string, item: { nombre: string; monto: number; category?: string | null }) => void
+  onUpdateItem: (itemId: string, item: { nombre: string; monto: number; category?: string | null }) => void
   onDeleteItem: (itemId: string) => void
   isPending: boolean
   currencies: string[]
@@ -21,6 +34,7 @@ interface Props {
 
 function PresupuestosSectionImpl({
   presupuestos,
+  transactions,
   onCreate,
   onUpdate,
   onDelete,
@@ -30,7 +44,30 @@ function PresupuestosSectionImpl({
   isPending,
   currencies,
 }: Props) {
-  // Presupuesto form modal state
+  const now = new Date()
+
+  // ── Period selection ──────────────────────────────────────────────────
+  const [selectedMes, setSelectedMes] = useState(now.getMonth() + 1)
+  const [selectedAnio, setSelectedAnio] = useState(now.getFullYear())
+
+  function prevPeriod() {
+    if (selectedMes === 1) {
+      setSelectedMes(12)
+      setSelectedAnio(a => a - 1)
+    } else {
+      setSelectedMes(m => m - 1)
+    }
+  }
+  function nextPeriod() {
+    if (selectedMes === 12) {
+      setSelectedMes(1)
+      setSelectedAnio(a => a + 1)
+    } else {
+      setSelectedMes(m => m + 1)
+    }
+  }
+
+  // ── Presupuesto form modal state ──────────────────────────────────────
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Presupuesto | null>(null)
   const [nombre, setNombre] = useState('')
@@ -38,12 +75,56 @@ function PresupuestosSectionImpl({
   const [currency, setCurrency] = useState(() => currencies[0] ?? 'COP')
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  // Item modal state
-  const [itemModalFor, setItemModalFor] = useState<string | null>(null) // parent presupuesto id
+  // ── Item modal state ──────────────────────────────────────────────────
+  const [itemModalFor, setItemModalFor] = useState<string | null>(null)
   const [editingItem, setEditingItem] = useState<PresupuestoItem | null>(null)
   const [itemNombre, setItemNombre] = useState('')
   const [itemMonto, setItemMonto] = useState('')
+  const [itemCategory, setItemCategory] = useState('')
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
+
+  // ── Period-filtered presupuestos ──────────────────────────────────────
+  const filteredPresupuestos = useMemo(
+    () => presupuestos.filter(p => p.mes === selectedMes && p.anio === selectedAnio),
+    [presupuestos, selectedMes, selectedAnio]
+  )
+
+  // ── Category datalist from transactions in selected period ────────────
+  const periodPrefix = `${selectedAnio}-${String(selectedMes).padStart(2, '0')}`
+  const periodCategories = useMemo(
+    () =>
+      [...new Set(
+        transactions
+          .filter(tx => tx.date.startsWith(periodPrefix) && tx.category)
+          .map(tx => tx.category!)
+      )].sort(),
+    [transactions, periodPrefix]
+  )
+
+  // ── Tooltip style (read CSS vars) ─────────────────────────────────────
+  const tooltipStyle: React.CSSProperties = {
+    background: 'var(--color-zinc-900, #18181b)',
+    border: '1px solid var(--color-zinc-700, #3f3f46)',
+    borderRadius: 8,
+    color: 'var(--color-zinc-100, #f4f4f5)',
+    fontSize: 12,
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────
+
+  function computeGastado(item: PresupuestoItem, presupuesto: Presupuesto): number {
+    if (!item.category) return 0
+    const mesStr = String(presupuesto.mes).padStart(2, '0')
+    const prefix = `${presupuesto.anio}-${mesStr}`
+    return transactions
+      .filter(tx =>
+        tx.date.startsWith(prefix) &&
+        (tx.currency ?? 'COP') === presupuesto.currency &&
+        tx.expense != null &&
+        tx.category === item.category
+      )
+      .reduce((s, tx) => s + (tx.expense ?? 0), 0)
+  }
 
   function openNewPresupuesto() {
     setEditing(null)
@@ -67,9 +148,9 @@ function PresupuestosSectionImpl({
     if (!nombre || isNaN(parsedTotal) || parsedTotal <= 0) return
 
     if (editing) {
-      onUpdate(editing.id, { nombre, total: parsedTotal, currency })
+      onUpdate(editing.id, { nombre, total: parsedTotal, currency, mes: editing.mes, anio: editing.anio })
     } else {
-      onCreate({ nombre, total: parsedTotal, currency })
+      onCreate({ nombre, total: parsedTotal, currency, mes: selectedMes, anio: selectedAnio })
     }
     setShowForm(false)
   }
@@ -79,6 +160,7 @@ function PresupuestosSectionImpl({
     setEditingItem(null)
     setItemNombre('')
     setItemMonto('')
+    setItemCategory('')
   }
 
   function openEditItem(item: PresupuestoItem, presupuestoId: string) {
@@ -86,6 +168,7 @@ function PresupuestosSectionImpl({
     setEditingItem(item)
     setItemNombre(item.nombre)
     setItemMonto(String(item.monto))
+    setItemCategory(item.category ?? '')
   }
 
   function handleItemSubmit(e: React.FormEvent) {
@@ -93,10 +176,12 @@ function PresupuestosSectionImpl({
     const parsedMonto = parseFloat(itemMonto)
     if (!itemNombre || isNaN(parsedMonto) || parsedMonto <= 0) return
 
+    const category = itemCategory.trim() || null
+
     if (editingItem) {
-      onUpdateItem(editingItem.id, { nombre: itemNombre, monto: parsedMonto })
+      onUpdateItem(editingItem.id, { nombre: itemNombre, monto: parsedMonto, category })
     } else if (itemModalFor) {
-      onCreateItem(itemModalFor, { nombre: itemNombre, monto: parsedMonto })
+      onCreateItem(itemModalFor, { nombre: itemNombre, monto: parsedMonto, category })
     }
     setItemModalFor(null)
     setEditingItem(null)
@@ -105,13 +190,35 @@ function PresupuestosSectionImpl({
   return (
     <div>
       {/* Header row */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Presupuestos</h2>
           <p className="text-xs text-zinc-500">
             {presupuestos.length} presupuesto{presupuestos.length !== 1 ? 's' : ''} registrado{presupuestos.length !== 1 ? 's' : ''}
           </p>
         </div>
+
+        {/* Period nav */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={prevPeriod}
+            className="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            aria-label="Mes anterior"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="min-w-[9rem] text-center text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            {MONTH_NAMES[selectedMes - 1]} {selectedAnio}
+          </span>
+          <button
+            onClick={nextPeriod}
+            className="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            aria-label="Mes siguiente"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
         <button
           onClick={openNewPresupuesto}
           className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-500 transition-colors"
@@ -120,17 +227,38 @@ function PresupuestosSectionImpl({
         </button>
       </div>
 
-      {/* Empty state */}
-      {presupuestos.length === 0 ? (
+      {/* Empty state for selected period */}
+      {filteredPresupuestos.length === 0 ? (
         <div className="rounded-xl border border-zinc-200 py-10 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-600">
-          No hay presupuestos registrados
+          {presupuestos.length === 0
+            ? 'No hay presupuestos registrados'
+            : `Sin presupuestos en ${MONTH_NAMES[selectedMes - 1]} ${selectedAnio}`}
         </div>
       ) : (
         <div className="space-y-4">
-          {presupuestos.map(p => {
+          {filteredPresupuestos.map(p => {
             const asignado = p.monto_asignado ?? 0
             const libre = p.monto_libre ?? p.total
             const libreIsNegative = libre < 0
+            const items = p.items ?? []
+            const hasCategories = items.some(item => !!item.category)
+
+            const mesStr = String(p.mes).padStart(2, '0')
+            const prefix = `${p.anio}-${mesStr}`
+            const chartData = items
+              .filter(item => item.category)
+              .map(item => ({
+                category: item.category!,
+                presupuestado: item.monto,
+                gastado: transactions
+                  .filter(tx =>
+                    tx.date.startsWith(prefix) &&
+                    (tx.currency ?? 'COP') === p.currency &&
+                    tx.expense != null &&
+                    tx.category === item.category
+                  )
+                  .reduce((s, tx) => s + (tx.expense ?? 0), 0),
+              }))
 
             return (
               <div
@@ -176,39 +304,54 @@ function PresupuestosSectionImpl({
                 </div>
 
                 {/* Items sub-list */}
-                {(p.items ?? []).length > 0 && (
+                {items.length > 0 && (
                   <div className="mb-3 space-y-1.5">
-                    {(p.items ?? []).map(item => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-sky-200/60 bg-white/60 px-3 py-2 dark:border-sky-900/20 dark:bg-zinc-900/40"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-zinc-800 break-words dark:text-zinc-200">{item.nombre}</p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-3">
-                          <span className="font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                            {formatAmount(item.monto)}
-                          </span>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => openEditItem(item, p.id)}
-                              disabled={isPending}
-                              className={`rounded px-1.5 py-0.5 text-xs text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 transition-colors dark:hover:bg-zinc-700 dark:hover:text-zinc-300 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => setDeletingItemId(item.id)}
-                              disabled={isPending}
-                              className={`rounded px-1.5 py-0.5 text-xs text-zinc-400 hover:bg-rose-100/80 hover:text-rose-500 transition-colors dark:hover:bg-rose-900/40 dark:hover:text-rose-400 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                              Eliminar
-                            </button>
+                    {items.map(item => {
+                      const gastado = computeGastado(item, p)
+                      const isOver = item.category != null && gastado > item.monto
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-sky-200/60 bg-white/60 px-3 py-2 dark:border-sky-900/20 dark:bg-zinc-900/40"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-zinc-800 break-words dark:text-zinc-200">{item.nombre}</p>
+                            {item.category && (
+                              <p className="text-xs text-zinc-400 dark:text-zinc-500">{item.category}</p>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-3">
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                                {formatAmount(item.monto)}
+                              </span>
+                              {item.category && (
+                                <span className={`font-mono text-xs ${isOver ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                  Gstd: {formatAmount(gastado)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => openEditItem(item, p.id)}
+                                disabled={isPending}
+                                className={`rounded px-1.5 py-0.5 text-xs text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 transition-colors dark:hover:bg-zinc-700 dark:hover:text-zinc-300 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => setDeletingItemId(item.id)}
+                                disabled={isPending}
+                                className={`rounded px-1.5 py-0.5 text-xs text-zinc-400 hover:bg-rose-100/80 hover:text-rose-500 transition-colors dark:hover:bg-rose-900/40 dark:hover:text-rose-400 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                Eliminar
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
 
@@ -220,6 +363,22 @@ function PresupuestosSectionImpl({
                 >
                   + Agregar partida
                 </button>
+
+                {/* Chart section */}
+                {items.length > 0 && (
+                  <div className="mt-4 border-t border-sky-200/60 pt-4 dark:border-sky-900/20">
+                    {hasCategories ? (
+                      <PresupuestoVsRealChart
+                        data={chartData}
+                        tooltipStyle={tooltipStyle}
+                      />
+                    ) : (
+                      <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
+                        Asigná categorías a las partidas para ver el gráfico
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })}
@@ -339,6 +498,22 @@ function PresupuestosSectionImpl({
                   accent="sky"
                   required
                 />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+                  Categoría <span className="normal-case font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  list="item-categories"
+                  value={itemCategory}
+                  onChange={e => setItemCategory(e.target.value)}
+                  placeholder="Ej: Alimentación"
+                  className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
+                />
+                <datalist id="item-categories">
+                  {periodCategories.map(c => <option key={c} value={c} />)}
+                </datalist>
               </div>
               <div className="flex gap-3 pt-2">
                 <button

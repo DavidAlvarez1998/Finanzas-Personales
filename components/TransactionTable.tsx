@@ -56,20 +56,65 @@ function fmtTime(dateStr: string): string | null {
 
 async function exportToXLSX(rows: Transaction[], month: string, year: number) {
   const { utils, write } = await import('xlsx')
+  // Column order: Fecha(0) Descripción(1) Categoría(2) Notas(3) Ingreso(4) Egreso(5) Divisa(6)
+  // Ingreso/Egreso use null (not '') so SheetJS produces numeric cells and numFmt applies.
   const data = rows.map(t => {
     const time = fmtTime(t.date)
     return {
       Fecha: fmtDate(t.date) + (time ? ` ${time}` : ''),
       Descripción: t.description,
-      Ingreso: t.income ?? '',
-      Egreso: t.expense ?? '',
+      Categoría: t.category ?? null,
+      Notas: t.notes ?? null,
+      Ingreso: t.income ?? null,
+      Egreso: t.expense ?? null,
       Divisa: t.currency ?? 'COP',
     }
   })
   const ws = utils.json_to_sheet(data)
+
+  // ── Post-processing: bold headers, alternating fill, numFmt, freeze, auto-width ──
+  const range = utils.decode_range(ws['!ref']!)
+  const wchMins = [18, 32, 20, 36, 14, 14, 8]
+
+  // Compute auto-widths from data
+  const headers = ['Fecha', 'Descripción', 'Categoría', 'Notas', 'Ingreso', 'Egreso', 'Divisa']
+  const colWidths = headers.map((h, ci) => {
+    const maxData = data.reduce((max, row) => {
+      const val = Object.values(row)[ci]
+      return Math.max(max, String(val ?? '').length)
+    }, 0)
+    return Math.max(wchMins[ci], Math.max(h.length, maxData) + 2)
+  })
+  ws['!cols'] = colWidths.map(wch => ({ wch }))
+
+  // Freeze header row
+  ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' }
+
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    // Bold header row
+    const hAddr = utils.encode_cell({ r: 0, c: C })
+    if (ws[hAddr]) ws[hAddr].s = { font: { bold: true } }
+
+    // Data rows: alternating fill + numFmt for amount columns
+    for (let R = range.s.r + 1; R <= range.e.r; R++) {
+      const addr = utils.encode_cell({ r: R, c: C })
+      if (!ws[addr]) continue
+      const style: Record<string, unknown> = {}
+      // Even data rows (1, 3, 5...) → R values 2, 4, 6... → R % 2 === 0
+      if (R % 2 === 0) {
+        style.fill = { patternType: 'solid', fgColor: { rgb: 'F4F4F5' } }
+      }
+      // Columns 4 (Ingreso) and 5 (Egreso) — apply numFmt to numeric cells only
+      if ((C === 4 || C === 5) && typeof ws[addr].v === 'number') {
+        style.numFmt = '#,##0.00'
+      }
+      if (Object.keys(style).length) ws[addr].s = style
+    }
+  }
+
   const wb = utils.book_new()
   utils.book_append_sheet(wb, ws, 'Registros')
-  const buf = write(wb, { type: 'array', bookType: 'xlsx' })
+  const buf = write(wb, { type: 'array', bookType: 'xlsx', cellStyles: true })
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -243,7 +288,12 @@ function TransactionTableImpl({ transactions, onEdit, onDelete, isPending }: Pro
                       <span className="ml-1.5 text-[10px] text-zinc-400 dark:text-zinc-600">{fmtTime(t.date)}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-zinc-950 font-medium dark:text-white">{t.description}</td>
+                  <td className="px-4 py-3 text-zinc-950 font-medium dark:text-white">
+                    <div>{t.description}</div>
+                    {t.notes && (
+                      <p className="text-xs text-zinc-400 dark:text-zinc-500 truncate">{t.notes}</p>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-500">{t.category || '—'}</td>
                   <td className={`px-4 py-3 font-mono font-medium ${
                     t.income ? 'text-emerald-400' : 'text-rose-400'
@@ -344,6 +394,9 @@ function TransactionTableImpl({ transactions, onEdit, onDelete, isPending }: Pro
                     {fmtDate(t.date)}{fmtTime(t.date) && <span className="ml-1 text-zinc-400">{fmtTime(t.date)}</span>}
                   </p>
                   <p className="text-sm font-medium text-zinc-950 break-words dark:text-white">{t.description}</p>
+                  {t.notes && (
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 break-words">{t.notes}</p>
+                  )}
                   {t.category && <span className="inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800">{t.category}</span>}
                 </div>
                 <div className="shrink-0 text-right">

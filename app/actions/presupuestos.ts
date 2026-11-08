@@ -16,6 +16,10 @@ export async function createPresupuesto(
   const nombre = formData.get('nombre') as string | null
   const totalRaw = formData.get('total') as string | null
   const currency = (formData.get('currency') as string | null) ?? 'COP'
+  const mesRaw  = formData.get('mes')  as string | null
+  const anioRaw = formData.get('anio') as string | null
+  const mes  = mesRaw  ? parseInt(mesRaw,  10) : new Date().getMonth() + 1
+  const anio = anioRaw ? parseInt(anioRaw, 10) : new Date().getFullYear()
 
   if (!nombre || !totalRaw) {
     return { error: 'Nombre y total son obligatorios.' }
@@ -24,6 +28,13 @@ export async function createPresupuesto(
   const total = parseFloat(totalRaw)
   if (isNaN(total) || total <= 0) {
     return { error: 'El total debe ser un número positivo.' }
+  }
+
+  if (mes < 1 || mes > 12 || isNaN(mes)) {
+    return { error: 'Mes inválido.' }
+  }
+  if (anio < 2000 || isNaN(anio)) {
+    return { error: 'Año inválido.' }
   }
 
   const supabase = createServerClient()
@@ -35,6 +46,8 @@ export async function createPresupuesto(
       nombre: nombre.toUpperCase(),
       total,
       currency,
+      mes,
+      anio,
     }, { onConflict: 'id' })
     .select('*')
     .single()
@@ -57,6 +70,10 @@ export async function updatePresupuesto(
   const nombre = formData.get('nombre') as string | null
   const totalRaw = formData.get('total') as string | null
   const currency = (formData.get('currency') as string | null) ?? 'COP'
+  const mesRaw  = formData.get('mes')  as string | null
+  const anioRaw = formData.get('anio') as string | null
+  const mes  = mesRaw  ? parseInt(mesRaw,  10) : new Date().getMonth() + 1
+  const anio = anioRaw ? parseInt(anioRaw, 10) : new Date().getFullYear()
 
   if (!nombre || !totalRaw) {
     return { error: 'Nombre y total son obligatorios.' }
@@ -67,10 +84,17 @@ export async function updatePresupuesto(
     return { error: 'El total debe ser un número positivo.' }
   }
 
+  if (mes < 1 || mes > 12 || isNaN(mes)) {
+    return { error: 'Mes inválido.' }
+  }
+  if (anio < 2000 || isNaN(anio)) {
+    return { error: 'Año inválido.' }
+  }
+
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from('presupuestos')
-    .update({ nombre: nombre.toUpperCase(), total, currency })
+    .update({ nombre: nombre.toUpperCase(), total, currency, mes, anio })
     .eq('id', id)
     .eq('user_id', session.userId)
     .select('*')
@@ -114,6 +138,7 @@ export async function createPresupuestoItem(
   const clientId = (formData.get('id') as string | null) || undefined
   const nombre = formData.get('nombre') as string | null
   const montoRaw = formData.get('monto') as string | null
+  const category = (formData.get('category') as string | null) || null
 
   if (!nombre || !montoRaw) {
     return { error: 'Nombre y monto son obligatorios.' }
@@ -143,6 +168,7 @@ export async function createPresupuestoItem(
       presupuesto_id: presupuestoId,
       nombre: nombre.toUpperCase(),
       monto,
+      category,
     }, { onConflict: 'id' })
     .select('*')
     .single()
@@ -164,6 +190,7 @@ export async function updatePresupuestoItem(
 
   const nombre = formData.get('nombre') as string | null
   const montoRaw = formData.get('monto') as string | null
+  const category = (formData.get('category') as string | null) || null
 
   if (!nombre || !montoRaw) {
     return { error: 'Nombre y monto son obligatorios.' }
@@ -189,7 +216,7 @@ export async function updatePresupuestoItem(
 
   const { data, error } = await supabase
     .from('presupuesto_items')
-    .update({ nombre: nombre.toUpperCase(), monto })
+    .update({ nombre: nombre.toUpperCase(), monto, category })
     .eq('id', itemId)
     .select('*')
     .single()

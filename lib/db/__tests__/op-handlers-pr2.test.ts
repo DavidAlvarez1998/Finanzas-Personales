@@ -71,6 +71,7 @@ function makePendingOp(type: string, payload: Record<string, unknown>) {
 
 const fakePresupuesto: Presupuesto = {
   id: 'pres-1', user_id: 'user-1', nombre: 'ENERO', total: 500000, currency: 'COP',
+  mes: 1, anio: 2026,
 }
 const fakeItem: PresupuestoItem = {
   id: 'item-1', presupuesto_id: 'pres-1', nombre: 'ALQUILER', monto: 200000,
