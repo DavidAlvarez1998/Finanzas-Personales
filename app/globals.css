@@ -3,6 +3,7 @@
 @custom-variant dark (&:is(.dark, .dark *));
 
 :root {
+  --bottom-nav-h: 0px;
   --background: #f4f4f5;
   --foreground: #09090b;
   --color-bg: #f4f4f5;
@@ -90,6 +91,14 @@ body {
 }
 .animate-modal-out {
   animation: fadeOutScale 120ms ease-in forwards;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.animate-sheet-up {
+  animation: slideUp 220ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
 button, [role="button"] {

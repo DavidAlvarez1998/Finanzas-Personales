@@ -32,7 +32,7 @@ export function PWAInstallBanner() {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200/60 bg-white/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)] dark:border-zinc-800/60 dark:bg-zinc-900/95">
+    <div className="fixed inset-x-0 z-50 border-t border-zinc-200/60 bg-white/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)] dark:border-zinc-800/60 dark:bg-zinc-900/95" style={{ bottom: 'var(--bottom-nav-h, 0px)' }}>
       <div className="mx-auto flex max-w-sm items-center gap-3 px-4 py-3">
         <Image
           src="/android-chrome-192x192.png"

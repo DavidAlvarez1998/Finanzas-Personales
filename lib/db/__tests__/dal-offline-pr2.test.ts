@@ -71,6 +71,7 @@ describe('dal-offline — getPresupuestos', () => {
   it('returns presupuestos with items joined and computed fields', async () => {
     const p: Presupuesto = {
       id: 'pres-1', user_id: 'user-1', nombre: 'ENERO', total: 500, currency: 'COP',
+      mes: 1, anio: 2026,
       created_at: new Date().toISOString(),
     }
     const item1: PresupuestoItem = { id: 'item-1', presupuesto_id: 'pres-1', nombre: 'A', monto: 200 }

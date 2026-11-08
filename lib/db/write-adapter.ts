@@ -46,6 +46,7 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
         expense: payload.expense != null ? Number(payload.expense) : null,
         currency: (payload.currency as string) ?? 'COP',
         category: (payload.category as string | null) ?? null,
+        notes: (payload.notes as string | null) ?? null,
       }
       await db.transactions.put(record)
       break
@@ -65,6 +66,7 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
           expense: expenseVal,
           currency: (payload.currency as string) ?? existing.currency,
           category: (payload.category as string | null) ?? existing.category,
+          notes: (payload.notes as string | null) ?? existing.notes ?? null,
         }
         await db.transactions.put(updated)
       }
@@ -129,6 +131,8 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
         nombre: (payload.nombre as string) ?? '',
         total: Number(payload.total),
         currency: (payload.currency as string) ?? 'COP',
+        mes: Number(payload.mes),
+        anio: Number(payload.anio),
         created_at: (payload.created_at as string) ?? new Date().toISOString(),
         items: [],
         monto_asignado: 0,
@@ -142,6 +146,8 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
         nombre: payload.nombre as string,
         total: Number(payload.total),
         currency: payload.currency as string,
+        mes: Number(payload.mes),
+        anio: Number(payload.anio),
       })
       break
     }
@@ -155,6 +161,7 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
         presupuesto_id: payload.presupuesto_id as string,
         nombre: (payload.nombre as string) ?? '',
         monto: Number(payload.monto),
+        category: (payload.category as string | null) ?? null,
         created_at: (payload.created_at as string) ?? new Date().toISOString(),
       }
       await db.presupuesto_items.put(record)
@@ -164,6 +171,7 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
       await db.presupuesto_items.update(payload.id as string, {
         nombre: payload.nombre as string,
         monto: Number(payload.monto),
+        category: (payload.category as string | null) ?? null,
       })
       break
     }

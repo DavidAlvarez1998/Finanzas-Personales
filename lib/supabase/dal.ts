@@ -10,7 +10,7 @@ type SupabaseClient = ReturnType<typeof createServerClient>
 async function _getTransactionsRaw(supabase: SupabaseClient, userId: string): Promise<Transaction[]> {
   const { data, error } = await supabase
     .from('transactions')
-    .select('id, user_id, description, date, income, expense, currency, category, created_at')
+    .select('id, user_id, description, date, income, expense, currency, category, notes, created_at')
     .eq('user_id', userId)
     .order('date', { ascending: false })
 
@@ -60,7 +60,7 @@ export const getDebts = (supabase: SupabaseClient, userId: string) =>
 async function _getPresupuestosRaw(supabase: SupabaseClient, userId: string): Promise<Presupuesto[]> {
   const { data, error } = await supabase
     .from('presupuestos')
-    .select('*, presupuesto_items(id, presupuesto_id, nombre, monto, created_at)')
+    .select('*, presupuesto_items(id, presupuesto_id, nombre, monto, category, created_at)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 

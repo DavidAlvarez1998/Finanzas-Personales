@@ -154,5 +154,42 @@ export class FinanzasDB extends Dexie {
       fx_rates:              'pair, fetched_at',
       meta:                  'key',
     })
+
+    // v5: adds notes (non-indexed text) to transactions — bump required by Dexie's upgrade protocol
+    // even when only a non-indexed field is added. Upgrade function is a no-op.
+    this.version(5).stores({
+      transactions:          'id, user_id, date, [user_id+date], currency',
+      debts:                 'id, user_id, created_at, currency',
+      debt_payments:         'id, debt_id, paid_at, [debt_id+paid_at]',
+      presupuestos:          'id, user_id, created_at',
+      presupuesto_items:     'id, presupuesto_id',
+      savings_goals:         'id, user_id, status, [user_id+status], currency',
+      savings_contributions: 'id, goal_id, fecha, [goal_id+fecha]',
+      investments:           'id, user_id, status, [user_id+status], currency',
+      investment_returns:    'id, investment_id, fecha, [investment_id+fecha]',
+      ahorro_accounts:       'id, user_id, status, [user_id+status], currency',
+      ahorro_movimientos:    'id, account_id, fecha, [account_id+fecha]',
+      pending_ops:           'id, status, created_at, [status+created_at], type',
+      fx_rates:              'pair, fetched_at',
+      meta:                  'key',
+    })
+
+    // v6: adds compound index [user_id+anio+mes] to presupuestos for period-aware queries
+    this.version(6).stores({
+      transactions:          'id, user_id, date, [user_id+date], currency',
+      debts:                 'id, user_id, created_at, currency',
+      debt_payments:         'id, debt_id, paid_at, [debt_id+paid_at]',
+      presupuestos:          'id, user_id, created_at, [user_id+anio+mes]',
+      presupuesto_items:     'id, presupuesto_id',
+      savings_goals:         'id, user_id, status, [user_id+status], currency',
+      savings_contributions: 'id, goal_id, fecha, [goal_id+fecha]',
+      investments:           'id, user_id, status, [user_id+status], currency',
+      investment_returns:    'id, investment_id, fecha, [investment_id+fecha]',
+      ahorro_accounts:       'id, user_id, status, [user_id+status], currency',
+      ahorro_movimientos:    'id, account_id, fecha, [account_id+fecha]',
+      pending_ops:           'id, status, created_at, [status+created_at], type',
+      fx_rates:              'pair, fetched_at',
+      meta:                  'key',
+    })
   }
 }
