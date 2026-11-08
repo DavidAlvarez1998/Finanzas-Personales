@@ -87,6 +87,7 @@ function TransactionTableImpl({ transactions, onEdit, onDelete, isPending }: Pro
   const deferredSearch = useDeferredValue(searchQuery)
   const [page, setPage] = useState(0)
   const [showAll, setShowAll] = useState(false)
+  const [filterCategory, setFilterCategory] = useState('')
 
   useEffect(() => {
     const now = new Date()
@@ -100,22 +101,28 @@ function TransactionTableImpl({ transactions, onEdit, onDelete, isPending }: Pro
     return Array.from(set).sort((a, b) => b - a)
   }, [transactions])
 
+  const categories = useMemo(() => {
+    const unique = [...new Set(transactions.map(t => t.category).filter((c): c is string => Boolean(c)))]
+    return unique.sort((a, b) => a.localeCompare(b))
+  }, [transactions])
+
   const filtered = useMemo(() =>
     transactions
       .filter(t => {
         const { month, year } = parseMonth(t.date)
         const matchesDate = showAll || (month === filterMonth && year === filterYear)
         const matchesSearch = !deferredSearch || t.description.toLowerCase().includes(deferredSearch.toLowerCase())
-        return matchesDate && matchesSearch
+        const matchesCategory = !filterCategory || t.category === filterCategory
+        return matchesDate && matchesSearch && matchesCategory
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    [transactions, filterMonth, filterYear, deferredSearch, showAll]
+    [transactions, filterMonth, filterYear, deferredSearch, showAll, filterCategory]
   )
 
   // Reset page when filters change
   useEffect(() => {
     setPage(0)
-  }, [filterMonth, filterYear, searchQuery, showAll])
+  }, [filterMonth, filterYear, searchQuery, showAll, filterCategory])
 
   const paginated = showAll ? filtered : filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
@@ -173,6 +180,18 @@ function TransactionTableImpl({ transactions, onEdit, onDelete, isPending }: Pro
           onChange={e => { setSearchQuery(e.target.value); setPage(0) }}
           className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-950 placeholder-zinc-400 focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
         />
+
+        {categories.length > 0 && (
+          <Select
+            value={filterCategory}
+            onChange={v => setFilterCategory(v)}
+            options={[
+              { value: '', label: 'Todas las categorías' },
+              ...categories.map(c => ({ value: c, label: c })),
+            ]}
+            accent="sky"
+          />
+        )}
 
         <button
           onClick={() => exportToXLSX(filtered, MONTHS[filterMonth], filterYear)}

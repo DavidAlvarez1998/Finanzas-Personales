@@ -62,6 +62,7 @@ function SavingsSectionImpl({
   const [nombre, setNombre] = useState('')
   const [montoObjetivo, setMontoObjetivo] = useState('')
   const [currency, setCurrency] = useState(() => currencies[0] ?? 'COP')
+  const [fechaObjetivo, setFechaObjetivo] = useState('')
 
   // Goal delete confirm
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -85,6 +86,7 @@ function SavingsSectionImpl({
     setNombre('')
     setMontoObjetivo('')
     setCurrency(currencies[0] ?? 'COP')
+    setFechaObjetivo('')
     setShowForm(true)
   }
 
@@ -93,6 +95,7 @@ function SavingsSectionImpl({
     setNombre(goal.nombre)
     setMontoObjetivo(String(goal.monto_objetivo))
     setCurrency(goal.currency)
+    setFechaObjetivo(goal.fecha_objetivo ?? '')
     setShowForm(true)
   }
 
@@ -108,6 +111,7 @@ function SavingsSectionImpl({
       monto_objetivo: parseFloat(montoObjetivo) || 0,
       currency,
       status: editing?.status ?? 'active',
+      fecha_objetivo: fechaObjetivo || null,
     }
     if (editing) {
       onUpdate({ ...editing, ...parsed })
@@ -184,6 +188,52 @@ function SavingsSectionImpl({
         const rem = goal.remaining ?? goal.monto_objetivo
         const isExpanded = expandedGoalId === goal.id
 
+        // Badge computation — no date-fns
+        const trackingBadge = (() => {
+          if (!goal.fecha_objetivo) return null
+          const now = new Date()
+          const cy = now.getFullYear()
+          const cm = now.getMonth()
+          const target = new Date(goal.fecha_objetivo + 'T00:00:00')
+          const ty = target.getFullYear()
+          const tm = target.getMonth()
+          const monthsRemaining = (ty - cy) * 12 + (tm - cm)
+
+          if (monthsRemaining <= 0) {
+            return (
+              <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400">
+                Fecha superada
+              </span>
+            )
+          }
+
+          const createdAt = goal.created_at ? new Date(goal.created_at) : now
+          const monthsSinceCreated = (cy - createdAt.getFullYear()) * 12 + (cm - createdAt.getMonth())
+          const avgMonthly = total / Math.max(1, monthsSinceCreated)
+          const neededMonthly = rem / monthsRemaining
+
+          const label = `${monthsRemaining} ${monthsRemaining === 1 ? 'mes restante' : 'meses restantes'}`
+
+          if (avgMonthly >= neededMonthly) {
+            return (
+              <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+                <span>{label}</span>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                  En ritmo
+                </span>
+              </span>
+            )
+          }
+          return (
+            <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+              <span>{label}</span>
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                Atrasada
+              </span>
+            </span>
+          )
+        })()
+
         return (
           <div
             key={goal.id}
@@ -244,6 +294,13 @@ function SavingsSectionImpl({
                 Restante: <span className="font-medium">{formatCurrency(rem, goal.currency)}</span>
               </span>
             </div>
+
+            {/* Tracking badge */}
+            {trackingBadge && (
+              <div className="px-4 pb-2">
+                {trackingBadge}
+              </div>
+            )}
 
             {/* Action row */}
             <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
@@ -374,6 +431,18 @@ function SavingsSectionImpl({
                   options={currencies.map(c => ({ value: c, label: currencyLabel(c), icon: currencyFlagUrl(c) }))}
                   accent="violet"
                   disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  Fecha objetivo <span className="font-normal text-zinc-400">(opcional)</span>
+                </label>
+                <input
+                  type="date"
+                  value={fechaObjetivo}
+                  onChange={e => setFechaObjetivo(e.target.value)}
+                  disabled={isPending}
+                  className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 focus:border-violet-600 focus:outline-none focus:ring-1 focus:ring-violet-600/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-violet-500 disabled:opacity-50"
                 />
               </div>
               <div className="flex gap-2 pt-2">

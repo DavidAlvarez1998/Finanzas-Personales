@@ -16,6 +16,8 @@ export async function createSavingsGoal(
   const nombreRaw = (formData.get('nombre') as string | null)?.trim() ?? ''
   const montoRaw = formData.get('monto_objetivo') as string | null
   const currency = (formData.get('currency') as string | null) ?? 'COP'
+  const fechaObjetivoRaw = formData.get('fecha_objetivo') as string | null
+  const fecha_objetivo = fechaObjetivoRaw && fechaObjetivoRaw !== '' ? fechaObjetivoRaw : null
 
   if (!nombreRaw) return { error: 'nombre is required' }
 
@@ -34,6 +36,7 @@ export async function createSavingsGoal(
       monto_objetivo,
       currency,
       status: 'active',
+      fecha_objetivo,
     }, { onConflict: 'id' })
     .select('*')
     .single()
@@ -54,6 +57,8 @@ export async function updateSavingsGoal(
   const nombreRaw = (formData.get('nombre') as string | null)?.trim() ?? ''
   const montoRaw = formData.get('monto_objetivo') as string | null
   const currency = (formData.get('currency') as string | null) ?? 'COP'
+  const fechaObjetivoRaw = formData.get('fecha_objetivo') as string | null
+  const fecha_objetivo = fechaObjetivoRaw && fechaObjetivoRaw !== '' ? fechaObjetivoRaw : null
 
   if (!nombreRaw) return { error: 'nombre is required' }
 
@@ -69,6 +74,7 @@ export async function updateSavingsGoal(
       nombre: nombreRaw.toUpperCase(),
       monto_objetivo,
       currency,
+      fecha_objetivo,
     })
     .eq('id', id)
     .eq('user_id', session.userId)

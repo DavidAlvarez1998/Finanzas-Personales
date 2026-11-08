@@ -83,6 +83,7 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
         description: (payload.description as string) ?? '',
         amount: Number(payload.amount),
         currency: (payload.currency as string) ?? 'COP',
+        due_date: (payload.due_date as string | null) ?? null,
         created_at: (payload.created_at as string) ?? new Date().toISOString(),
         payments: [],
         total_paid: 0,
@@ -96,6 +97,7 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
         description: payload.description as string,
         amount: Number(payload.amount),
         currency: payload.currency as string,
+        due_date: (payload.due_date as string | null) ?? null,
       })
       break
     }
@@ -179,6 +181,7 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
         monto_objetivo: Number(payload.monto_objetivo),
         currency: (payload.currency as string) ?? 'COP',
         status: (payload.status as 'active' | 'completed' | 'paused') ?? 'active',
+        fecha_objetivo: (payload.fecha_objetivo as string | null) ?? null,
         created_at: (payload.created_at as string) ?? new Date().toISOString(),
         contributions: [],
         total_aportado: 0,
@@ -193,6 +196,7 @@ async function applyOptimistic(type: PendingOpType, payload: Payload): Promise<v
         nombre: payload.nombre as string,
         monto_objetivo: Number(payload.monto_objetivo),
         currency: payload.currency as string,
+        fecha_objetivo: (payload.fecha_objetivo as string | null) ?? null,
       })
       break
     }

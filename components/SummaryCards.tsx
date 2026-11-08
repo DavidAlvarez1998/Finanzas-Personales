@@ -1,6 +1,6 @@
 'use client'
 
-import type { CurrencyGroup } from '@/types'
+import type { CurrencyGroup, SummaryPeriod } from '@/types'
 import { formatAmount } from '@/lib/format'
 
 interface SummaryCardsProps {
@@ -10,9 +10,37 @@ interface SummaryCardsProps {
   staleRates?: Set<string>
   ratesLoading?: boolean
   ratesError?: boolean
+  period?: SummaryPeriod
+  onPeriodChange?: (p: SummaryPeriod) => void
 }
 
 const EMPTY_GROUP: CurrencyGroup = { currency: 'COP', income: 0, expense: 0, balance: 0 }
+
+const PERIOD_LABELS: Record<SummaryPeriod, string> = {
+  month: 'Este mes',
+  '3months': 'Últimos 3 meses',
+  all: 'Todo',
+}
+
+function PeriodPills({ period, onPeriodChange }: { period: SummaryPeriod; onPeriodChange: (p: SummaryPeriod) => void }) {
+  return (
+    <div className="mb-3 flex gap-1.5">
+      {(['month', '3months', 'all'] as SummaryPeriod[]).map(p => (
+        <button
+          key={p}
+          onClick={() => onPeriodChange(p)}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            period === p
+              ? 'bg-sky-600 text-white'
+              : 'border border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
+          }`}
+        >
+          {PERIOD_LABELS[p]}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 export function SummaryCards({
   groups,
@@ -21,19 +49,24 @@ export function SummaryCards({
   staleRates,
   ratesLoading,
   ratesError,
+  period = 'month',
+  onPeriodChange,
 }: SummaryCardsProps) {
   const display = groups.length === 0 ? [EMPTY_GROUP] : groups
 
   // Loading state
   if (displayCurrency && ratesLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[0, 1, 2].map(i => (
-          <div key={i} className="rounded-xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900/50 animate-pulse">
-            <div className="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-700 mb-3" />
-            <div className="h-7 w-28 rounded bg-zinc-200 dark:bg-zinc-700" />
-          </div>
-        ))}
+      <div>
+        {onPeriodChange && <PeriodPills period={period} onPeriodChange={onPeriodChange} />}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="rounded-xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900/50 animate-pulse">
+              <div className="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-700 mb-3" />
+              <div className="h-7 w-28 rounded bg-zinc-200 dark:bg-zinc-700" />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
@@ -42,6 +75,7 @@ export function SummaryCards({
   if (!displayCurrency || ratesError || !rates) {
     return (
       <div className="space-y-3">
+        {onPeriodChange && <PeriodPills period={period} onPeriodChange={onPeriodChange} />}
         {ratesError && (
           <p className="text-xs text-amber-600 dark:text-amber-400 px-1">
             No se pudo obtener el tipo de cambio. Mostrando valores originales.
@@ -97,6 +131,7 @@ export function SummaryCards({
 
   return (
     <div className="space-y-1">
+      {onPeriodChange && <PeriodPills period={period} onPeriodChange={onPeriodChange} />}
       {hasStaleRate && (
         <p className="text-xs text-amber-600 dark:text-amber-400 px-1">
           ⚠ tasa desactualizada — usando el último valor guardado
