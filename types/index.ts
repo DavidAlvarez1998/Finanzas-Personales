@@ -25,6 +25,7 @@ export interface Debt {
   description: string
   amount: number
   currency: string
+  due_date?: string | null
   created_at?: string
   payments?: DebtPayment[]
   total_paid?: number
@@ -125,6 +126,7 @@ export interface SavingsGoal {
   monto_objetivo: number
   currency: string
   status: SavingsGoalStatus
+  fecha_objetivo?: string | null
   created_at?: string
   contributions?: SavingsContribution[]
   /** Sum of contributions.monto, computed by DAL */
@@ -192,6 +194,8 @@ export interface AhorroAccount {
   /** sum(monto) — may be negative if withdrawals exceed deposits. Computed by DAL, never stored. */
   total_actual?: number
 }
+
+export type SummaryPeriod = 'month' | '3months' | 'all'
 
 export interface FxRateResponse {
   rate: number

@@ -16,6 +16,8 @@ export async function createDebt(
   const description = formData.get('description') as string | null
   const amountRaw = formData.get('amount') as string | null
   const currency = (formData.get('currency') as string | null) ?? 'COP'
+  const dueDateRaw = formData.get('due_date') as string | null
+  const due_date = dueDateRaw && dueDateRaw !== '' ? dueDateRaw : null
 
   if (!description || !amountRaw) {
     return { error: 'Descripción y monto son obligatorios.' }
@@ -35,6 +37,7 @@ export async function createDebt(
       description: description.toUpperCase(),
       amount,
       currency,
+      due_date,
     }, { onConflict: 'id' })
     .select('*')
     .single()
@@ -57,6 +60,8 @@ export async function updateDebt(
   const description = formData.get('description') as string | null
   const amountRaw = formData.get('amount') as string | null
   const currency = (formData.get('currency') as string | null) ?? 'COP'
+  const dueDateRaw = formData.get('due_date') as string | null
+  const due_date = dueDateRaw && dueDateRaw !== '' ? dueDateRaw : null
 
   if (!description || !amountRaw) {
     return { error: 'Descripción y monto son obligatorios.' }
@@ -74,6 +79,7 @@ export async function updateDebt(
       description: description.toUpperCase(),
       amount,
       currency,
+      due_date,
     })
     .eq('id', id)
     .eq('user_id', session.userId)

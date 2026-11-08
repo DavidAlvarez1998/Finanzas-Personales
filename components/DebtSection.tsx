@@ -23,6 +23,7 @@ function DebtSectionImpl({ debts, onAdd, onUpdate, onDelete, onPayment, isPendin
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState(() => currencies[0] ?? 'COP')
+  const [dueDate, setDueDate] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [payingDebtId, setPayingDebtId] = useState<string | null>(null)
   const [payAmount, setPayAmount] = useState('')
@@ -38,6 +39,7 @@ function DebtSectionImpl({ debts, onAdd, onUpdate, onDelete, onPayment, isPendin
     setDescription('')
     setAmount('')
     setCurrency(currencies[0] ?? 'COP')
+    setDueDate('')
     setShowForm(true)
   }
 
@@ -47,6 +49,7 @@ function DebtSectionImpl({ debts, onAdd, onUpdate, onDelete, onPayment, isPendin
     // amount is now a number — convert to string for the input
     setAmount(String(d.amount))
     setCurrency(d.currency)
+    setDueDate(d.due_date ?? '')
     setShowForm(true)
   }
 
@@ -62,12 +65,14 @@ function DebtSectionImpl({ debts, onAdd, onUpdate, onDelete, onPayment, isPendin
         description: description.toUpperCase(),
         amount: parsedAmount,
         currency,
+        due_date: dueDate || null,
       })
     } else {
       onAdd({
         description: description.toUpperCase(),
         amount: parsedAmount,
         currency,
+        due_date: dueDate || null,
       })
     }
     setShowForm(false)
@@ -109,11 +114,45 @@ function DebtSectionImpl({ debts, onAdd, onUpdate, onDelete, onPayment, isPendin
                   aria-expanded={isExpanded}
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-zinc-950 dark:text-white">{d.description}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-semibold text-zinc-950 dark:text-white">{d.description}</p>
+                      {(() => {
+                        if (!d.due_date) return null
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        const due = new Date(d.due_date + 'T00:00:00')
+                        const remaining = d.remaining ?? d.amount
+                        if (due < today && remaining > 0) {
+                          return (
+                            <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                              Vencida
+                            </span>
+                          )
+                        }
+                        return null
+                      })()}
+                    </div>
                     <span className="mt-0.5 inline-flex items-center gap-1">
                       <img src={currencyFlagUrl(d.currency)} alt={d.currency} className="h-3.5 w-3.5 rounded-sm object-cover" />
                       <span className="text-xs text-zinc-500">{d.currency}</span>
                     </span>
+                    {d.due_date && (() => {
+                      const today = new Date()
+                      today.setHours(0, 0, 0, 0)
+                      const due = new Date(d.due_date + 'T00:00:00')
+                      const remaining = d.remaining ?? d.amount
+                      if (due >= today || remaining === 0) {
+                        const dd = String(due.getDate()).padStart(2, '0')
+                        const mm = String(due.getMonth() + 1).padStart(2, '0')
+                        const yyyy = due.getFullYear()
+                        return (
+                          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                            Vence: {dd}/{mm}/{yyyy}
+                          </p>
+                        )
+                      }
+                      return null
+                    })()}
                     {d.remaining != null && (
                       <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-zinc-500">
                         <span>Original: <span className="font-mono">${formatAmount(d.amount)}</span></span>
@@ -242,6 +281,17 @@ function DebtSectionImpl({ debts, onAdd, onUpdate, onDelete, onPayment, isPendin
                     accent="amber"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+                  Vencimiento <span className="normal-case text-zinc-400">(opcional)</span>
+                </label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={e => setDueDate(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-950 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                />
               </div>
               <div className="flex gap-3 pt-2">
                 <button

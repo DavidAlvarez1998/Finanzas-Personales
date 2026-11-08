@@ -52,7 +52,7 @@ import {
 } from '@/app/actions/investments'
 import { updateUserCurrencies, updateDisplayCurrency } from '@/app/actions/currencies'
 import { fetchRateWithCache } from '@/lib/fx/frankfurter'
-import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus, Investment, InvestmentStatus, AhorroAccount, AhorroAccountStatus } from '@/types'
+import type { Transaction, Debt, CurrencyGroup, Presupuesto, SavingsGoal, SavingsGoalStatus, Investment, InvestmentStatus, AhorroAccount, AhorroAccountStatus, SummaryPeriod } from '@/types'
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
 import { db } from '@/lib/db/index'
 import { writeOp } from '@/lib/db/write-adapter'
@@ -73,6 +73,19 @@ import {
 import { isHydrated } from '@/lib/db/hydration-flag'
 
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
+
+function filterTxByPeriod(t: Transaction, period: SummaryPeriod, now: Date): boolean {
+  if (period === 'all') return true
+  const txDate = t.date.includes('T') ? new Date(t.date) : new Date(t.date + 'T00:00:00')
+  if (period === 'month') {
+    return txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth()
+  }
+  // '3months': tx date >= start of the month that is 2 months before `now`
+  const startYear = now.getMonth() < 2 ? now.getFullYear() - 1 : now.getFullYear()
+  const startMonth = (now.getMonth() - 2 + 12) % 12
+  const start = new Date(startYear, startMonth, 1)
+  return txDate >= start
+}
 
 const ChartsSection = dynamic(
   () => import('@/components/ChartsSection').then(m => m.ChartsSection),
@@ -123,6 +136,7 @@ type Tab = 'transactions' | 'debts' | 'presupuestos' | 'savings' | 'ahorros' | '
 
 export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, ahorroAccounts: serverAhorroAccounts, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
+  const [summaryPeriod, setSummaryPeriod] = useState<SummaryPeriod>('month')
   const tabSwitched = useRef(false)
   const [viewMode, setViewMode] = useState<'list' | 'charts'>('list')
   const everHydrated = useState(() => isHydrated())[0]
@@ -277,6 +291,22 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       return acc
     }, {})
   ), [transactions])
+
+  const currencyGroupsForPeriod = useMemo<CurrencyGroup[]>(() => {
+    const now = new Date()
+    return Object.values(
+      transactions
+        .filter(t => filterTxByPeriod(t, summaryPeriod, now))
+        .reduce<Record<string, CurrencyGroup>>((acc, t) => {
+          const cur = t.currency ?? 'COP'
+          if (!acc[cur]) acc[cur] = { currency: cur, income: 0, expense: 0, balance: 0 }
+          acc[cur].income += t.income ?? 0
+          acc[cur].expense += t.expense ?? 0
+          acc[cur].balance = acc[cur].income - acc[cur].expense
+          return acc
+        }, {})
+    )
+  }, [transactions, summaryPeriod])
 
   useEffect(() => {
     if (!activeDisplayCurrency) {
@@ -443,6 +473,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           description: d.description.toUpperCase(),
           amount: d.amount,
           currency: d.currency,
+          due_date: d.due_date ?? null,
         })
         if (!result.ok) toast.error(result.error)
         else toast.success('Deuda agregada')
@@ -454,6 +485,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('description', d.description)
     fd.set('amount', String(d.amount))
     fd.set('currency', d.currency)
+    fd.set('due_date', d.due_date ?? '')
 
     startTransition(async () => {
       const result = await createDebt(fd)
@@ -470,6 +502,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           description: d.description,
           amount: d.amount,
           currency: d.currency,
+          due_date: d.due_date ?? null,
         })
         if (!result.ok) toast.error(result.error)
       })
@@ -480,6 +513,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('description', d.description)
     fd.set('amount', String(d.amount))
     fd.set('currency', d.currency)
+    fd.set('due_date', d.due_date ?? '')
 
     startTransition(async () => {
       const result = await updateDebt(d.id, fd)
@@ -669,6 +703,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           monto_objetivo: g.monto_objetivo,
           currency: g.currency,
           status: 'active',
+          fecha_objetivo: g.fecha_objetivo ?? null,
         })
         if (!result.ok) toast.error(result.error)
         else toast.success('Meta creada')
@@ -680,6 +715,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('nombre', g.nombre)
     fd.set('monto_objetivo', String(g.monto_objetivo))
     fd.set('currency', g.currency)
+    fd.set('fecha_objetivo', g.fecha_objetivo ?? '')
     startTransition(async () => {
       const result = await createSavingsGoal(fd)
       if (result && 'error' in result) toast.error(result.error)
@@ -695,6 +731,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
           nombre: g.nombre,
           monto_objetivo: g.monto_objetivo,
           currency: g.currency,
+          fecha_objetivo: g.fecha_objetivo ?? null,
         })
         if (!result.ok) toast.error(result.error)
       })
@@ -705,6 +742,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
     fd.set('nombre', g.nombre)
     fd.set('monto_objetivo', String(g.monto_objetivo))
     fd.set('currency', g.currency)
+    fd.set('fecha_objetivo', g.fecha_objetivo ?? '')
     startTransition(async () => {
       const result = await updateSavingsGoal(g.id, fd)
       if (result && 'error' in result) toast.error(result.error)
@@ -1111,12 +1149,14 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
         {/* Summary cards */}
         <SummaryCards
-          groups={currencyGroups}
+          groups={currencyGroupsForPeriod}
           displayCurrency={activeDisplayCurrency}
           rates={rates}
           staleRates={staleRates}
           ratesLoading={ratesLoading}
           ratesError={ratesError}
+          period={summaryPeriod}
+          onPeriodChange={setSummaryPeriod}
         />
 
         {/* Tabs */}
