@@ -71,7 +71,7 @@ import {
   getDisplayCurrency as getDisplayCurrencyDexie,
 } from '@/lib/db/dal-offline'
 import { isHydrated } from '@/lib/db/hydration-flag'
-import { ReceiptText, Landmark, LayoutList, Target, PiggyBank, TrendingUp } from 'lucide-react'
+import { ReceiptText, Landmark, LayoutList, Target, PiggyBank, TrendingUp, UserCircle } from 'lucide-react'
 
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
 
@@ -1184,6 +1184,13 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-zinc-950 dark:text-white">Finanzas</span>
+            <button
+              onClick={() => window.dispatchEvent(new Event('open-account-sheet'))}
+              className="md:hidden p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+              aria-label="Cuenta"
+            >
+              <UserCircle className="w-5 h-5" />
+            </button>
             {OFFLINE_ENABLED && (
               <SyncStatusBadge
                 drawerOpen={drawerOpen}

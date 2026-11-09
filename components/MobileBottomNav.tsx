@@ -6,7 +6,6 @@ import Link from 'next/link'
 import {
   TABS,
   PRIMARY_TAB_KEYS,
-  MAS_TAB_KEYS,
   type TabKey,
   type BadgeCounts,
 } from '@/components/DashboardShell'
@@ -31,7 +30,7 @@ const BADGE_COLORS: Partial<Record<TabKey, string>> = {
 
 export function MobileBottomNav({ tab, onTabChange, badges, userEmail, isSuperadmin = false }: MobileBottomNavProps) {
   const navRef = useRef<HTMLElement>(null)
-  const [masOpen, setMasOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
 
   // Publish --bottom-nav-h CSS var so other components can read nav height
   useEffect(() => {
@@ -48,53 +47,29 @@ export function MobileBottomNav({ tab, onTabChange, badges, userEmail, isSuperad
     }
   }, [])
 
-  const primaryTabs = TABS.filter(t => PRIMARY_TAB_KEYS.includes(t.key))
-  const masTabs = TABS.filter(t => MAS_TAB_KEYS.includes(t.key))
+  // Listen for open-account-sheet event from the header button
+  useEffect(() => {
+    const handler = () => setAccountOpen(true)
+    window.addEventListener('open-account-sheet', handler)
+    return () => window.removeEventListener('open-account-sheet', handler)
+  }, [])
 
-  const isMasActive = MAS_TAB_KEYS.includes(tab)
+  const primaryTabs = TABS.filter(t => PRIMARY_TAB_KEYS.includes(t.key))
 
   return (
     <div className="flex md:hidden fixed bottom-0 inset-x-0 z-30 flex-col">
-      {/* Más backdrop */}
-      {masOpen && (
+      {/* Account sheet backdrop */}
+      {accountOpen && (
         <div
           className="fixed inset-0 z-10 bg-black/40"
-          onClick={() => setMasOpen(false)}
+          onClick={() => setAccountOpen(false)}
         />
       )}
 
-      {/* Más sheet panel */}
-      {masOpen && (
+      {/* Account sheet panel */}
+      {accountOpen && (
         <div className="relative z-20 bg-white dark:bg-zinc-900 rounded-t-2xl px-4 pt-4 pb-[env(safe-area-inset-bottom,0px)] max-h-[50dvh] overflow-y-auto animate-sheet-up">
           <div className="flex flex-col gap-1">
-            {masTabs.map(t => {
-              const Icon = t.icon
-              const badgeCount = t.getBadge(badges)
-              const isActive = tab === t.key
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => { onTabChange(t.key); setMasOpen(false) }}
-                  className={`flex items-center gap-3 w-full rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400'
-                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span>{t.label}</span>
-                  {badgeCount > 0 && (
-                    <span className={`ml-auto rounded-full px-1.5 py-0.5 text-xs font-bold ${BADGE_COLORS[t.key] ?? 'bg-zinc-500 text-white'}`}>
-                      {badgeCount}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Account section */}
-          <div className="mt-3 border-t border-zinc-200 dark:border-zinc-800 pt-3 flex flex-col gap-1">
             {userEmail && (
               <p className="px-4 py-1 text-xs text-zinc-400 dark:text-zinc-500 truncate">{userEmail}</p>
             )}
@@ -103,7 +78,7 @@ export function MobileBottomNav({ tab, onTabChange, badges, userEmail, isSuperad
               <ThemeToggle />
             </div>
             <button
-              onClick={() => { window.dispatchEvent(new Event('open-settings')); setMasOpen(false) }}
+              onClick={() => { window.dispatchEvent(new Event('open-settings')); setAccountOpen(false) }}
               className="flex items-center gap-3 w-full rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             >
               Ajustes
@@ -111,7 +86,7 @@ export function MobileBottomNav({ tab, onTabChange, badges, userEmail, isSuperad
             {isSuperadmin && (
               <Link
                 href="/admin"
-                onClick={() => setMasOpen(false)}
+                onClick={() => setAccountOpen(false)}
                 className="flex items-center gap-3 w-full rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
               >
                 Admin
@@ -129,7 +104,6 @@ export function MobileBottomNav({ tab, onTabChange, badges, userEmail, isSuperad
         ref={navRef}
         className="relative z-30 flex items-stretch bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 pb-[env(safe-area-inset-bottom,0px)]"
       >
-        {/* Primary tab buttons */}
         {primaryTabs.map(t => {
           const Icon = t.icon
           const badgeCount = t.getBadge(badges)
@@ -158,19 +132,6 @@ export function MobileBottomNav({ tab, onTabChange, badges, userEmail, isSuperad
             </button>
           )
         })}
-
-        {/* Más button */}
-        <button
-          onClick={() => setMasOpen(v => !v)}
-          className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 px-1 text-xs font-medium transition-colors ${
-            isMasActive || masOpen
-              ? 'text-sky-600 dark:text-sky-400'
-              : 'text-zinc-500 dark:text-zinc-400'
-          }`}
-        >
-          <UserCircle className="w-5 h-5" />
-          <span>Cuenta</span>
-        </button>
       </nav>
     </div>
   )
