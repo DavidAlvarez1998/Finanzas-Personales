@@ -7,7 +7,7 @@ import { DashboardShell } from '@/components/DashboardShell'
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
 
 async function Dashboard() {
-  const { userId } = await verifySession()
+  const { userId, email: userEmail, isSuperadmin } = await verifySession()
   const supabase = createServerClient()
 
   if (OFFLINE_ENABLED) {
@@ -24,6 +24,8 @@ async function Dashboard() {
         ahorroAccounts={null}
         currencies={null}
         displayCurrency={null}
+        userEmail={userEmail}
+        isSuperadmin={isSuperadmin}
       />
     )
   }
@@ -50,6 +52,8 @@ async function Dashboard() {
       ahorroAccounts={ahorroAccounts}
       currencies={currencies}
       displayCurrency={displayCurrency}
+      userEmail={userEmail}
+      isSuperadmin={isSuperadmin}
     />
   )
 }

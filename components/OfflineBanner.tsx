@@ -5,6 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useNetworkStatus } from '@/lib/hooks/useNetworkStatus'
 import { db } from '@/lib/db/index'
 import { useOfflineContext } from '@/app/providers/OfflineProvider'
+import { registerBanner, unregisterBanner } from '@/lib/ui/banner-offset'
 
 function formatLastSync(ts: number): string {
   const diffMs = Date.now() - ts
@@ -63,14 +64,20 @@ export function OfflineBanner() {
   // Determine visibility and content
   const visible = !online || (online && showSyncError) || (online && showOnline)
 
-  // Publish banner height as CSS variable on the root element
+  // Publish banner height via the coordinator so multiple banners sum correctly
   useEffect(() => {
     const el = bannerRef.current
     if (!el) return
     if (visible) {
-      document.documentElement.style.setProperty('--banner-h', el.offsetHeight + 'px')
+      const ro = new ResizeObserver(() => registerBanner('offline', el.offsetHeight))
+      ro.observe(el)
+      registerBanner('offline', el.offsetHeight)
+      return () => {
+        ro.disconnect()
+        unregisterBanner('offline')
+      }
     } else {
-      document.documentElement.style.setProperty('--banner-h', '0px')
+      unregisterBanner('offline')
     }
   }, [visible])
 

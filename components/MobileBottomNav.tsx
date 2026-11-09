@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { MoreHorizontal } from 'lucide-react'
+import Link from 'next/link'
 import {
   TABS,
   PRIMARY_TAB_KEYS,
@@ -9,11 +10,15 @@ import {
   type TabKey,
   type BadgeCounts,
 } from '@/components/DashboardShell'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import { LogoutForm } from '@/components/LogoutForm'
 
 interface MobileBottomNavProps {
   tab: TabKey
   onTabChange: (tab: TabKey) => void
   badges: BadgeCounts
+  userEmail?: string | null
+  isSuperadmin?: boolean
 }
 
 const BADGE_COLORS: Partial<Record<TabKey, string>> = {
@@ -24,7 +29,7 @@ const BADGE_COLORS: Partial<Record<TabKey, string>> = {
   inversiones:  'bg-emerald-500 text-white',
 }
 
-export function MobileBottomNav({ tab, onTabChange, badges }: MobileBottomNavProps) {
+export function MobileBottomNav({ tab, onTabChange, badges, userEmail, isSuperadmin = false }: MobileBottomNavProps) {
   const navRef = useRef<HTMLElement>(null)
   const [masOpen, setMasOpen] = useState(false)
 
@@ -86,6 +91,35 @@ export function MobileBottomNav({ tab, onTabChange, badges }: MobileBottomNavPro
                 </button>
               )
             })}
+          </div>
+
+          {/* Account section */}
+          <div className="mt-3 border-t border-zinc-200 dark:border-zinc-800 pt-3 flex flex-col gap-1">
+            {userEmail && (
+              <p className="px-4 py-1 text-xs text-zinc-400 dark:text-zinc-500 truncate">{userEmail}</p>
+            )}
+            <div className="flex items-center justify-between px-4 py-2">
+              <span className="text-sm text-zinc-700 dark:text-zinc-300">Tema</span>
+              <ThemeToggle />
+            </div>
+            <button
+              onClick={() => { window.dispatchEvent(new Event('open-settings')); setMasOpen(false) }}
+              className="flex items-center gap-3 w-full rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Ajustes
+            </button>
+            {isSuperadmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMasOpen(false)}
+                className="flex items-center gap-3 w-full rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Admin
+              </Link>
+            )}
+            <div className="px-4 py-1">
+              <LogoutForm />
+            </div>
           </div>
         </div>
       )}

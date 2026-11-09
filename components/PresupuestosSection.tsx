@@ -190,7 +190,7 @@ function PresupuestosSectionImpl({
   return (
     <div>
       {/* Header row */}
-      <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Presupuestos</h2>
           <p className="text-xs text-zinc-500">
@@ -198,33 +198,35 @@ function PresupuestosSectionImpl({
           </p>
         </div>
 
-        {/* Period nav */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-between sm:justify-end">
+          {/* Period nav */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={prevPeriod}
+              className="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              aria-label="Mes anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="min-w-0 truncate text-center text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {MONTH_NAMES[selectedMes - 1]} {selectedAnio}
+            </span>
+            <button
+              onClick={nextPeriod}
+              className="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              aria-label="Mes siguiente"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
           <button
-            onClick={prevPeriod}
-            className="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-            aria-label="Mes anterior"
+            onClick={openNewPresupuesto}
+            className="shrink-0 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-500 transition-colors"
           >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span className="min-w-[9rem] text-center text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            {MONTH_NAMES[selectedMes - 1]} {selectedAnio}
-          </span>
-          <button
-            onClick={nextPeriod}
-            className="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-            aria-label="Mes siguiente"
-          >
-            <ChevronRight className="h-4 w-4" />
+            + Nuevo presupuesto
           </button>
         </div>
-
-        <button
-          onClick={openNewPresupuesto}
-          className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-500 transition-colors"
-        >
-          + Nuevo presupuesto
-        </button>
       </div>
 
       {/* Empty state for selected period */}

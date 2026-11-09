@@ -167,11 +167,13 @@ interface Props {
   ahorroAccounts: AhorroAccount[] | null
   currencies: string[] | null
   displayCurrency: string | null
+  userEmail?: string | null
+  isSuperadmin?: boolean
 }
 
 type Tab = TabKey
 
-export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, ahorroAccounts: serverAhorroAccounts, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency }: Props) {
+export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, ahorroAccounts: serverAhorroAccounts, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency, userEmail, isSuperadmin = false }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
   const [summaryPeriod, setSummaryPeriod] = useState<SummaryPeriod>('month')
   const tabSwitched = useRef(false)
@@ -1189,7 +1191,7 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
               />
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => { setEditing(null); setInitialType('income'); setShowForm(true) }}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/30"
@@ -1473,6 +1475,8 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
         tab={tab}
         onTabChange={(t) => { tabSwitched.current = true; setTab(t) }}
         badges={badgeCounts}
+        userEmail={userEmail}
+        isSuperadmin={isSuperadmin}
       />
     </div>
   )
