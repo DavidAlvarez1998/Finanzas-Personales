@@ -103,8 +103,8 @@ export const TABS: TabDef[] = [
   { key: 'inversiones',  label: 'Inversiones',  icon: TrendingUp,  getBadge: c => c.inversiones },
 ]
 
-export const PRIMARY_TAB_KEYS: TabKey[] = ['transactions', 'debts', 'presupuestos', 'savings']
-export const MAS_TAB_KEYS: TabKey[]     = ['ahorros', 'inversiones']
+export const PRIMARY_TAB_KEYS: TabKey[] = ['transactions', 'debts', 'presupuestos', 'savings', 'ahorros', 'inversiones']
+export const MAS_TAB_KEYS: TabKey[]     = []
 
 function filterTxByPeriod(t: Transaction, period: SummaryPeriod, now: Date): boolean {
   if (period === 'all') return true

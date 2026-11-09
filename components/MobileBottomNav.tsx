@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
-import { MoreHorizontal } from 'lucide-react'
+import { UserCircle } from 'lucide-react'
 import Link from 'next/link'
 import {
   TABS,
@@ -168,8 +168,8 @@ export function MobileBottomNav({ tab, onTabChange, badges, userEmail, isSuperad
               : 'text-zinc-500 dark:text-zinc-400'
           }`}
         >
-          <MoreHorizontal className="w-5 h-5" />
-          <span>Más</span>
+          <UserCircle className="w-5 h-5" />
+          <span>Cuenta</span>
         </button>
       </nav>
     </div>
