@@ -175,7 +175,7 @@ type Tab = TabKey
 
 export function DashboardShell({ userId, transactions: serverTransactions, debts: serverDebts, presupuestos: serverPresupuestos, savingsGoals: serverSavingsGoals, investments: serverInvestments, ahorroAccounts: serverAhorroAccounts, currencies: serverCurrencies, displayCurrency: initialDisplayCurrency, userEmail, isSuperadmin = false }: Props) {
   const [tab, setTab] = useState<Tab>('transactions')
-  const [summaryPeriod, setSummaryPeriod] = useState<SummaryPeriod>('month')
+  const [summaryPeriod, setSummaryPeriod] = useState<SummaryPeriod>('all')
   const tabSwitched = useRef(false)
   const [viewMode, setViewMode] = useState<'list' | 'charts'>('list')
   const everHydrated = useState(() => isHydrated())[0]
