@@ -1,21 +1,20 @@
 import { Suspense } from 'react'
 import { getTransactions, getDebts, getPresupuestos, getSavingsGoals, getInvestments, getAhorroAccounts, getUserSettings } from '@/lib/supabase/dal'
-import { verifySession } from '@/lib/supabase/verify-session'
+import { verifySession, getSession } from '@/lib/auth/session'
 import { createServerClient } from '@/lib/supabase/server'
 import { DashboardShell } from '@/components/DashboardShell'
+import { redirect } from 'next/navigation'
 
 const OFFLINE_ENABLED = process.env.NEXT_PUBLIC_OFFLINE === '1'
 
 async function Dashboard() {
-  const { userId, email: userEmail, isSuperadmin } = await verifySession()
-  const supabase = createServerClient()
-
   if (OFFLINE_ENABLED) {
-    // In offline mode, DashboardShell reads all data from Dexie via useLiveQuery.
-    // No server-side DAL calls needed — hydration happens in OfflineProvider.
+    const session = await getSession()
+    if (!session) redirect('/login')
+    const isSuperadmin = session.email === process.env.SUPERADMIN_EMAIL
     return (
       <DashboardShell
-        userId={userId}
+        userId={session.userId}
         transactions={null}
         debts={null}
         presupuestos={null}
@@ -24,11 +23,14 @@ async function Dashboard() {
         ahorroAccounts={null}
         currencies={null}
         displayCurrency={null}
-        userEmail={userEmail}
+        userEmail={session.email}
         isSuperadmin={isSuperadmin}
       />
     )
   }
+
+  const { userId, email: userEmail, isSuperadmin } = await verifySession()
+  const supabase = createServerClient()
 
   const [transactions, debts, presupuestos, savingsGoals, investments, ahorroAccounts, settings] = await Promise.all([
     getTransactions(supabase, userId),

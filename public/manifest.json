@@ -1,7 +1,7 @@
 {
   "name": "Control de Finanzas Personales",
   "short_name": "Finanzas",
-  "start_url": "/",
+  "start_url": "/app-shell",
   "display": "standalone",
   "background_color": "#09090b",
   "theme_color": "#09090b",
