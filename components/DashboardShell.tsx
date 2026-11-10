@@ -1216,17 +1216,19 @@ export function DashboardShell({ userId, transactions: serverTransactions, debts
       </header>
 
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-6" style={{ paddingBottom: 'calc(var(--bottom-nav-h, 0px) + env(safe-area-inset-bottom, 0px))' }}>
-        {/* Summary cards */}
-        <SummaryCards
-          groups={currencyGroupsForPeriod}
-          displayCurrency={activeDisplayCurrency}
-          rates={rates}
-          staleRates={staleRates}
-          ratesLoading={ratesLoading}
-          ratesError={ratesError}
-          period={summaryPeriod}
-          onPeriodChange={setSummaryPeriod}
-        />
+        {/* Summary cards — only relevant for the transactions tab */}
+        {tab === 'transactions' && (
+          <SummaryCards
+            groups={currencyGroupsForPeriod}
+            displayCurrency={activeDisplayCurrency}
+            rates={rates}
+            staleRates={staleRates}
+            ratesLoading={ratesLoading}
+            ratesError={ratesError}
+            period={summaryPeriod}
+            onPeriodChange={setSummaryPeriod}
+          />
+        )}
 
         {/* Tabs */}
         <div>
