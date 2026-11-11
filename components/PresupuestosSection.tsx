@@ -89,6 +89,21 @@ function PresupuestosSectionImpl({
     [presupuestos, selectedMes, selectedAnio]
   )
 
+  // ── Stats strip — derivado de props: filteredPresupuestos ───────────
+  const presupuestoStats = useMemo(() => {
+    const totalByCurrency = new Map<string, number>()
+    const libreByCurrency = new Map<string, number>()
+    let overBudgetCount = 0
+    for (const p of filteredPresupuestos) {
+      const cur = p.currency
+      totalByCurrency.set(cur, (totalByCurrency.get(cur) ?? 0) + p.total)
+      const libre = p.monto_libre ?? p.total
+      libreByCurrency.set(cur, (libreByCurrency.get(cur) ?? 0) + libre)
+      if (libre < 0) overBudgetCount++
+    }
+    return { totalByCurrency, libreByCurrency, overBudgetCount }
+  }, [filteredPresupuestos])
+
   // ── Category datalist from transactions in selected period ────────────
   const periodPrefix = `${selectedAnio}-${String(selectedMes).padStart(2, '0')}`
   const periodCategories = useMemo(
@@ -228,6 +243,33 @@ function PresupuestosSectionImpl({
           </button>
         </div>
       </div>
+
+      {/* Stats strip */}
+      {filteredPresupuestos.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2 text-xs sm:text-sm">
+          {[...presupuestoStats.totalByCurrency.entries()].map(([cur, total]) => (
+            <span key={`total-${cur}`} className="rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
+              Total {cur}: <span className="font-mono font-semibold">{formatAmount(total)}</span>
+            </span>
+          ))}
+          {[...presupuestoStats.libreByCurrency.entries()].map(([cur, libre]) => (
+            <span
+              key={`libre-${cur}`}
+              className={libre < 0
+                ? 'rounded-full bg-rose-100 px-3 py-1 font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+                : 'rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
+              }
+            >
+              Libre {cur}: <span className="font-mono font-semibold">{formatAmount(libre)}</span>
+            </span>
+          ))}
+          {presupuestoStats.overBudgetCount > 0 && (
+            <span className="rounded-full bg-rose-100 px-3 py-1 font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
+              Sobre presupuesto: <span className="font-mono font-semibold">{presupuestoStats.overBudgetCount}</span>
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Empty state for selected period */}
       {filteredPresupuestos.length === 0 ? (

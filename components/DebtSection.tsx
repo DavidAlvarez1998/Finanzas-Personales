@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, memo } from 'react'
+import { useState, memo, useMemo } from 'react'
 import type { Debt } from '@/types'
 import { AmountInput } from './AmountInput'
 import { Select } from '@/components/ui/Select'
@@ -29,6 +29,24 @@ function DebtSectionImpl({ debts, onAdd, onUpdate, onDelete, onPayment, isPendin
   const [payAmount, setPayAmount] = useState('')
   const [payNote, setPayNote] = useState('')
   const [expandedDebtId, setExpandedDebtId] = useState<string | null>(null)
+
+  // derivado de props: debts
+  const debtStats = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const totalByCurrency = new Map<string, number>()
+    let overdueCount = 0
+    for (const d of debts) {
+      const remaining = d.remaining ?? d.amount
+      if (remaining <= 0) continue
+      totalByCurrency.set(d.currency, (totalByCurrency.get(d.currency) ?? 0) + remaining)
+      if (d.due_date) {
+        const due = new Date(d.due_date + 'T00:00:00')
+        if (due < today) overdueCount++
+      }
+    }
+    return { totalByCurrency, overdueCount }
+  }, [debts])
 
   function toggleExpand(debtId: string) {
     setExpandedDebtId(prev => (prev === debtId ? null : debtId))
@@ -92,6 +110,22 @@ function DebtSectionImpl({ debts, onAdd, onUpdate, onDelete, onPayment, isPendin
           + Nueva Deuda
         </button>
       </div>
+
+      {/* Stats strip */}
+      {debts.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2 text-xs sm:text-sm">
+          {[...debtStats.totalByCurrency.entries()].map(([currency, total]) => (
+            <span key={currency} className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+              Pendiente {currency}: <span className="font-mono font-semibold">{formatAmount(total)}</span>
+            </span>
+          ))}
+          {debtStats.overdueCount > 0 && (
+            <span className="rounded-full bg-rose-100 px-3 py-1 font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
+              Vencidas: <span className="font-mono font-semibold">{debtStats.overdueCount}</span>
+            </span>
+          )}
+        </div>
+      )}
 
       {debts.length === 0 ? (
         <div className="rounded-xl border border-zinc-200 py-10 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-600">

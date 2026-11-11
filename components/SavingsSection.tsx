@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, memo } from 'react'
+import { useState, memo, useMemo } from 'react'
 import { AmountInput } from '@/components/AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
@@ -147,12 +147,27 @@ function SavingsSectionImpl({
     setExpandedGoalId(prev => (prev === goalId ? null : goalId))
   }
 
-  const activeCount = goals.filter(g => g.status === 'active').length
+  // derivado de props: goals
+  const savingsStats = useMemo(() => {
+    const aportadoByCurrency = new Map<string, number>()
+    const objetivoByCurrency = new Map<string, number>()
+    let completedCount = 0
+    let activeCount = 0
+    for (const g of goals) {
+      aportadoByCurrency.set(g.currency, (aportadoByCurrency.get(g.currency) ?? 0) + (g.total_aportado ?? 0))
+      objetivoByCurrency.set(g.currency, (objetivoByCurrency.get(g.currency) ?? 0) + g.monto_objetivo)
+      if (g.status === 'completed') completedCount++
+      if (g.status === 'active') activeCount++
+    }
+    return { aportadoByCurrency, objetivoByCurrency, completedCount, activeCount }
+  }, [goals])
+
+  const { activeCount } = savingsStats
 
   return (
-    <div className="space-y-4">
+    <div>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
             Metas de Ahorro
@@ -181,7 +196,26 @@ function SavingsSectionImpl({
         </div>
       )}
 
+      {/* Stats strip */}
+      {goals.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2 text-xs sm:text-sm">
+          {[...savingsStats.aportadoByCurrency.entries()].map(([cur, aportado]) => (
+            <span key={cur} className="rounded-full bg-violet-100 px-3 py-1 font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+              Aportado {cur}: <span className="font-mono font-semibold">{formatAmount(aportado)}</span>
+              {' / '}
+              <span className="font-mono font-semibold">{formatAmount(savingsStats.objetivoByCurrency.get(cur) ?? 0)}</span>
+            </span>
+          ))}
+          {savingsStats.completedCount > 0 && (
+            <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+              Completadas: <span className="font-mono font-semibold">{savingsStats.completedCount}</span>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Goals list */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 items-start">
       {goals.map(goal => {
         const total = goal.total_aportado ?? 0
         const pct = goal.progress_pct ?? 0
@@ -385,6 +419,7 @@ function SavingsSectionImpl({
           </div>
         )
       })}
+      </div>
 
       {/* Goal create/edit modal */}
       {showForm && (

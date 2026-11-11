@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, memo } from 'react'
+import { useState, memo, useMemo } from 'react'
 import { AmountInput } from '@/components/AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
@@ -126,10 +126,23 @@ function AhorrosSectionImpl({
   const archivedAccounts = accounts.filter(a => a.status === 'archived')
   const visibleAccounts = showArchived ? accounts : activeAccounts
 
+  // derivado de props: accounts
+  const ahorroStats = useMemo(() => {
+    const totalByCurrency = new Map<string, number>()
+    let negativeCount = 0
+    for (const a of accounts) {
+      if (a.status !== 'active') continue
+      const total = a.total_actual ?? 0
+      totalByCurrency.set(a.currency, (totalByCurrency.get(a.currency) ?? 0) + total)
+      if (total < 0) negativeCount++
+    }
+    return { totalByCurrency, negativeCount }
+  }, [accounts])
+
   return (
-    <div className="space-y-4">
+    <div>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
             Cuentas de Ahorro
@@ -158,6 +171,28 @@ function AhorrosSectionImpl({
         </div>
       )}
 
+      {/* Stats strip */}
+      {activeAccounts.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2 text-xs sm:text-sm">
+          {[...ahorroStats.totalByCurrency.entries()].map(([cur, total]) => (
+            <span
+              key={cur}
+              className={total < 0
+                ? 'rounded-full bg-rose-100 px-3 py-1 font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+                : 'rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
+              }
+            >
+              Saldo {cur}: <span className="font-mono font-semibold">{formatAmount(total)}</span>
+            </span>
+          ))}
+          {ahorroStats.negativeCount > 0 && (
+            <span className="rounded-full bg-rose-100 px-3 py-1 font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
+              En rojo: <span className="font-mono font-semibold">{ahorroStats.negativeCount}</span>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Archived toggle */}
       {archivedAccounts.length > 0 && (
         <button
@@ -171,6 +206,7 @@ function AhorrosSectionImpl({
       )}
 
       {/* Accounts list */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 items-start">
       {visibleAccounts.map(account => {
         const total = account.total_actual ?? 0
         const isExpanded = expandedAccountId === account.id
@@ -305,6 +341,7 @@ function AhorrosSectionImpl({
           </div>
         )
       })}
+      </div>
 
       {/* Account create/edit modal */}
       {showForm && (

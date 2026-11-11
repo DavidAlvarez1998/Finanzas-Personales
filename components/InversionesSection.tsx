@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, memo } from 'react'
+import { useState, memo, useMemo } from 'react'
 import { AmountInput } from '@/components/AmountInput'
 import { Select } from '@/components/ui/Select'
 import { currencyLabel, currencyFlagUrl } from '@/lib/constants/currencies'
@@ -215,12 +215,33 @@ function InversionesSectionImpl({
     setExpandedId(prev => (prev === id ? null : id))
   }
 
-  const activeCount = investments.filter(i => i.status === 'active').length
+  // derivado de props: investments
+  const invStats = useMemo(() => {
+    const principalByCurrency = new Map<string, number>()
+    const retornosByCurrency = new Map<string, number>()
+    let activeCount = 0
+    for (const i of investments) {
+      if (i.status === 'withdrawn') continue
+      principalByCurrency.set(i.currency, (principalByCurrency.get(i.currency) ?? 0) + Number(i.principal))
+      retornosByCurrency.set(i.currency, (retornosByCurrency.get(i.currency) ?? 0) + (i.total_retornos ?? 0))
+      if (i.status === 'active') activeCount++
+    }
+    const roiByCurrency = new Map<string, number>()
+    for (const [cur, p] of principalByCurrency) {
+      if (p > 0) {
+        const r = retornosByCurrency.get(cur) ?? 0
+        roiByCurrency.set(cur, (r / p) * 100)
+      }
+    }
+    return { principalByCurrency, retornosByCurrency, roiByCurrency, activeCount }
+  }, [investments])
+
+  const { activeCount } = invStats
 
   return (
-    <div className="space-y-4">
+    <div>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
             Inversiones
@@ -249,7 +270,30 @@ function InversionesSectionImpl({
         </div>
       )}
 
+      {/* Stats strip */}
+      {investments.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2 text-xs sm:text-sm">
+          {[...invStats.principalByCurrency.entries()].map(([cur, principal]) => (
+            <span key={`cartera-${cur}`} className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+              Cartera {cur}: <span className="font-mono font-semibold">{formatAmount(principal)}</span>
+            </span>
+          ))}
+          {[...invStats.roiByCurrency.entries()].map(([cur, roi]) => (
+            <span
+              key={`roi-${cur}`}
+              className={roi < 0
+                ? 'rounded-full bg-rose-100 px-3 py-1 font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+                : 'rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+              }
+            >
+              ROI {cur}: <span className="font-mono font-semibold">{formatAmount(roi)}%</span>
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Investments list */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 items-start">
       {investments.map(inv => {
         const isExpanded = expandedId === inv.id
         const totalRetornos = inv.total_retornos ?? 0
@@ -356,7 +400,25 @@ function InversionesSectionImpl({
               )}
             </div>
 
-            {/* Expandable returns list + forecast */}
+            {/* Forecast slim row — visible sin abrir accordion */}
+            {forecast && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-emerald-200/60 dark:border-emerald-900/20 px-4 py-2 text-xs">
+                <span className="font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                  Proyección:
+                </span>
+                <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300">
+                  {formatCurrency(forecast.projectedTotal, inv.currency)}
+                </span>
+                {forecast.fechaVencimientoFormatted && (
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    Vence {forecast.fechaVencimientoFormatted}
+                    {forecast.daysToMaturity !== null && ` (${forecast.daysToMaturity}d)`}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Expandable returns list */}
             {isExpanded && (
               <div className="border-t border-emerald-200/60 dark:border-emerald-900/20 px-4 py-3 space-y-3">
                 {/* Returns */}
@@ -391,43 +453,12 @@ function InversionesSectionImpl({
                     ))
                   )}
                 </div>
-
-                {/* Forecast card */}
-                {forecast && (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 dark:border-emerald-800/40 dark:bg-emerald-950/40 px-4 py-3 space-y-1.5">
-                    <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Proyección</p>
-                    <div className="flex flex-col gap-1 text-xs text-zinc-600 dark:text-zinc-300">
-                      <span>
-                        Proyectado:{' '}
-                        <span className="font-semibold text-emerald-700 dark:text-emerald-300">
-                          {formatCurrency(forecast.projectedTotal, inv.currency)}
-                        </span>
-                      </span>
-                      <span>
-                        Ya ganado:{' '}
-                        <span className="font-medium">{formatCurrency(forecast.totalEarned, inv.currency)}</span>
-                        {' '}
-                        <span className="text-emerald-600 dark:text-emerald-400">({formatAmount(forecast.roiPct)}%)</span>
-                      </span>
-                      {forecast.fechaVencimientoFormatted ? (
-                        <span>
-                          Vencimiento:{' '}
-                          <span className="font-medium">{forecast.fechaVencimientoFormatted}</span>
-                          {forecast.daysToMaturity !== null && (
-                            <span className="text-zinc-400"> ({forecast.daysToMaturity} días)</span>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400">Sin fecha de vencimiento</span>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>
         )
       })}
+      </div>
 
       {/* Investment create/edit modal */}
       {showForm && (
